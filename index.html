@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Twisty's Tornado</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; background: #87CEEB;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+    touch-action: none; overscroll-behavior: none;
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  #game { display: block; width: 100vw; height: 100vh; }
+  #err {
+    position: fixed; left: 0; top: 0; right: 0; z-index: 99999;
+    display: none; padding: 14px 16px; box-sizing: border-box;
+    font: 14px/1.4 ui-monospace, Menlo, monospace; color: #fff;
+    background: rgba(190,30,30,0.96); white-space: pre-wrap; word-break: break-word;
+  }
+  #boot {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font: 600 18px/1.5 -apple-system, system-ui, sans-serif; color: #2b4a63;
+    text-align: center; padding: 24px; box-sizing: border-box;
+  }
+  /* Tiny build stamp (bottom-right). Lets the redeploy check confirm a new build actually landed.
+     Faint, 9px, never eats touches. */
+  #build {
+    position: fixed; right: 4px; bottom: 3px; z-index: 100000;
+    font: 9px/1 ui-monospace, Menlo, monospace; color: rgba(43,74,99,0.40);
+    pointer-events: none; -webkit-user-select: none; user-select: none;
+  }
+</style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#87CEEB">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="Twisty">
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="boot">Loading Twisty…</div>
+<div id="err"></div>
+<div id="build"></div>
+<script>
+"use strict";
+/* On-screen error reporter — so a problem shows up as readable text on the
+   tablet instead of a blank screen. Turns "it's not working" into a real clue. */
+function showErr(msg){
+  try {
+    var d = document.getElementById('err');
+    d.style.display = 'block';
+    d.textContent = "Twisty hit a snag:\n" + msg + "\n\n(Screenshot this and send it to a grown-up.)";
+  } catch(e) {}
+}
+window.onerror = function(message, source, lineno){
+  showErr(message + "  (line " + lineno + ")");
+  return false;
+};
+window.addEventListener('error', function(e){ if(e && e.message) showErr(e.message); });
+/* =====================================================================
+   TWISTY'S TORNADO  —  v1
+   One offline file. Canvas. Finger-follow. No fail state.
+   Loop: touch -> follow -> scoop 5 -> big swirl -> sticker -> next world
+   ---------------------------------------------------------------------
+   TUNING block below = the "feel" knobs Ben tunes by watching her thumbs.
+   These are sensible defaults, built to be dialed in. Nothing else needs
+   to change to adjust feel — just these numbers.
+   ===================================================================== */
+const TUNING = {
+  twistyGlide:      0.14,  // how snappy Twisty follows the finger (0=slow, 1=instant). soft-stop lives here.
+  twistyMaxSpeed:   34,    // px/frame cap so she never teleports
+  scoopRadius:      1.05,  // multiplier on Twisty size = the visible scoop bubble
+  magnetRadius:     2.6,   // multiplier on scoop bubble = invisible assist reach
+  magnetStrength:   0.16,  // how hard the magnet pulls light objects in
+  absorbDist:       0.55,  // multiplier on scoop bubble = where a light object gets swallowed
+  fleeRadius:       2.2,   // multiplier on scoop bubble = how close before a living thing flutters off
+  fleeStrength:     6.5,   // how fast living things scoot away
+  heavyWobble:      8,     // px shake when she bumps a heavy thing
+  lightOnScreen:    3,     // max light objects visible at once (2-3 feel)
+  heaviesOnScreen:  2,     // 1-2 heavies present so the lesson lands
+  lightPerRound:    5,     // scoop this many to fill the meter
+  stickerDragMs:    4000,  // her drag window before it auto-sticks
+  placeBeatMs:      1100,  // pause after it sticks, before next world
+};
+
+/* ---------------- Canvas + responsive (portrait OR landscape) -------- */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, DPR = 1, S = 1; // S = scale unit derived from screen size
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  // Robust size read: some mobile webviews report innerHeight late or as 0.
+  W = window.innerWidth  || document.documentElement.clientWidth  || 360;
+  H = window.innerHeight || document.documentElement.clientHeight || 640;
+  if (window.visualViewport) { W = window.visualViewport.width || W; H = window.visualViewport.height || H; }
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // S scales everything off the short edge so it feels right in any orientation.
+  S = Math.min(W, H) / 100;
+  // Keep things inside the new shape — the screen just "refills", no rotate nag.
+  if (twisty) { twisty.x = clamp(twisty.x, 0, W); twisty.y = clamp(twisty.y, 0, H); }
+  layoutUI();
+  if (objects) objects.forEach(o => { o.x = clamp(o.x, 40*S/10, W-40*S/10); o.y = clamp(o.y, topBand()+30*S/10, H-30*S/10); });
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 60));
+
+/* ---------------- Helpers ------------------------------------------- */
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function rand(a, b){ return a + Math.random() * (b - a); }
+function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
+function dist(ax, ay, bx, by){ const dx=ax-bx, dy=ay-by; return Math.sqrt(dx*dx+dy*dy); }
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+/* ---------------- Worlds & content ---------------------------------- */
+// light = scoopable. heavy = too heavy, teaches the rule. living = never scooped, flutters aside.
+const WORLDS = [
+  {
+    name: "Farm",
+    sky:   ["#aee9ff", "#d6f5d6"],
+    ground:"#7ec85a",
+    light: ["🌾","🍎","🌻","🍂","🪶","🥚"],
+    heavy: ["🚜","🛞"],
+    living:["🐔","🐑"],
+    stickers: [
+      {emoji:"🌾", name:"Hay Twister",  hue:48},
+      {emoji:"🍎", name:"Apple Spinner",hue:0},
+      {emoji:"🌻", name:"Sunny Cyclone",hue:45},
+    ],
+  },
+  {
+    name: "Beach",
+    sky:   ["#bdefff", "#fff0c9"],
+    ground:"#f2dca6",
+    light: ["🐚","⭐","🪁","🍦","🏖️","🪀"],
+    heavy: ["⚓","🪨"],
+    living:["🦀","🐤"],
+    stickers: [
+      {emoji:"🐚", name:"Shell Swirl",  hue:200},
+      {emoji:"⭐", name:"Star Spinner", hue:50},
+      {emoji:"🪁", name:"Breezy Twist", hue:330},
+    ],
+  },
+  {
+    name: "Garden",
+    sky:   ["#d8f0ff", "#ffe3f1"],
+    ground:"#86c66b",
+    light: ["🌷","🌸","🍃","🍄","🌼","🫐"],
+    heavy: ["🪨","🪵"],
+    living:["🐝","🦋"],
+    stickers: [
+      {emoji:"🌷", name:"Tulip Twirl",  hue:330},
+      {emoji:"🌸", name:"Petal Spin",   hue:320},
+      {emoji:"🦋", name:"Flutter Whirl",hue:280},
+    ],
+  },
+  {
+    name: "Magic",
+    sky:   ["#e6d4ff", "#ffe1f4"],
+    ground:"#c8a6e8",
+    light: ["✨","🌟","💎","🔮","🌸","🪄"],
+    heavy: ["🏰","👑"],
+    living:["🦄","🧚"],
+    stickers: [
+      {emoji:"✨", name:"Sparkle Spin",  hue:285},
+      {emoji:"🦄", name:"Unicorn Whirl", hue:320},
+      {emoji:"🌈", name:"Rainbow Twist", hue:200},
+    ],
+  },
+  {
+    name: "Space",
+    sky:   ["#aec3ff", "#dcc9ff"],
+    ground:"#9385c9",
+    light: ["⭐","🚀","🪐","🌟","🛸","☄️"],
+    heavy: ["🌑","🛰️"],
+    living:["🦕","🦖"],
+    stickers: [
+      {emoji:"🚀", name:"Rocket Twist",  hue:220},
+      {emoji:"🪐", name:"Planet Spin",   hue:40},
+      {emoji:"🦕", name:"Dino Swirl",    hue:130},
+    ],
+  },
+];
+
+/* ---------------- Object names (reading) — flat map keyed by emoji ---
+   Read ONLY in scoopLight; the emoji arrays above stay untouched (zero-risk). */
+const NAMES = {
+  "🌾":"Wheat","🍎":"Apple","🌻":"Sunflower","🍂":"Leaf","🪶":"Feather","🥚":"Egg",
+  "🐚":"Shell","⭐":"Star","🪁":"Kite","🍦":"Ice cream","🏖️":"Sandcastle","🪀":"Yoyo",
+  "🌷":"Tulip","🌸":"Blossom","🍃":"Leaf","🍄":"Mushroom","🌼":"Daisy","🫐":"Berry",
+  "✨":"Sparkle","🌟":"Star","💎":"Gem","🔮":"Orb","🪄":"Wand",
+  "🚀":"Rocket","🪐":"Planet","🛸":"Saucer","☄️":"Comet",
+};
+const COUNT_WORDS = ["zero","one","two","three","four","five","six","seven","eight"];
+function nameFor(emoji){ return NAMES[emoji] || "Yay"; }
+
+/* ---------------- Persisted progress -------------------------------- */
+// Works on her tablet (localStorage persists). In a sandboxed preview it just
+// resets — try/catch makes that harmless.
+const SAVE_KEY = "twistys_tornado_v1";
+let save = { worldIndex: 0, roundInWorld: 0, earned: [], muted: false };
+function loadSave(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) { const s = JSON.parse(raw); if (s && typeof s === 'object') save = Object.assign(save, s); }
+  } catch(e) {}
+}
+function writeSave(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e) {}
+}
+loadSave();
+
+/* ---------------- Audio (synth) — armed on FIRST TOUCH -------------- */
+// Browser law: nothing makes a sound until she taps. So the game OPENS
+// silent-by-design with a visual invitation, and audio wakes on first touch.
+let audioCtx = null;
+let audioArmed = false;
+let voiceOK = ('speechSynthesis' in window);
+function armAudio(){
+  if (audioArmed) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    audioArmed = true;
+  } catch(e) { audioArmed = true; }
+}
+function tone(freq, dur, type, vol, slideTo){
+  if (!audioArmed || !audioCtx || save.muted) return;
+  try {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  } catch(e) {}
+}
+function sfxWake(){ tone(330, 0.18, 'sine', 0.25, 660); setTimeout(()=>tone(520,0.22,'sine',0.22,780), 90); }
+function sfxScoop(){ tone(rand(500,640), 0.12, 'triangle', 0.22, rand(820,980)); }
+function sfxHeavy(){ tone(120, 0.18, 'sawtooth', 0.18, 80); }
+function sfxLaugh(){ tone(700,0.08,'square',0.12,900); setTimeout(()=>tone(840,0.08,'square',0.12,1020),80); setTimeout(()=>tone(760,0.1,'square',0.1,900),160); }
+function sfxCelebrate(){
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f,i)=> setTimeout(()=>tone(f, 0.25, 'triangle', 0.22, f*1.02), i*120));
+}
+function sfxStick(){ tone(440,0.1,'sine',0.2,880); setTimeout(()=>tone(880,0.14,'sine',0.18,1320),70); }
+function say(text){
+  if (!audioArmed || save.muted || !voiceOK) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.95; u.pitch = 1.5; u.volume = 0.9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+/* ---------------- UI layout (mute button, meter, sky band) ---------- */
+let muteBtn = { x:0, y:0, r:0 };
+function topBand(){ return Math.max(46*S/10, 64); } // reserved strip at top for sky + meter
+function layoutUI(){
+  const r = Math.max(20*S/10, 26);
+  // corner, out of her accidental reach (top-right, small)
+  muteBtn.r = r;
+  muteBtn.x = W - r - 14*S/10;
+  muteBtn.y = r + 12*S/10;
+}
+
+/* ---------------- Game state ---------------------------------------- */
+let twisty = null;
+let objects = [];
+let particles = [];
+let phase = "INTRO"; // INTRO -> PLAYING -> CELEBRATE -> STICKER -> PLACE
+let scooped = 0;          // light scooped this round
+let roundGoal = TUNING.lightPerRound; // how many to scoop this round (gentle ramp, capped — see computeRoundGoal)
+let lightRemaining = TUNING.lightPerRound;
+let floatWords = [];      // rising "Apple" words on scoop (reading)
+let worldIntroT = 0;      // timer for the "World N of 5!" banner
+let lastScoopSpeak = 0;   // frame of last spoken scoop (debounce so rapid scoops don't cut each other)
+let pointer = { x: 0, y: 0, down: false, active: false };
+let phaseTimer = 0;
+let celebrateT = 0;
+let intro = { t: 0, glowObj: null };
+let activeSticker = null; // {world, idx, x, y, vx, vy, dragging, targetX, targetY, t, stuck}
+let frame = 0;
+
+function world(){ return WORLDS[save.worldIndex % WORLDS.length]; }
+
+/* ---------------- Twisty -------------------------------------------- */
+function makeTwisty(){
+  twisty = {
+    x: W/2, y: H*0.62,
+    tx: W/2, ty: H*0.62,
+    size: Math.max(34*S/10, 40),
+    spin: 0, wobble: 0,
+  };
+}
+function twistySize(){ return twisty.size * (phase==="CELEBRATE" ? (1 + celebrateT*1.4) : 1); }
+function scoopBubble(){ return twistySize() * TUNING.scoopRadius; }
+
+/* ---------------- Objects ------------------------------------------- */
+function spawnObject(kind){
+  const w = world();
+  let emoji, type = kind;
+  if (kind === 'light') emoji = pick(w.light);
+  else if (kind === 'heavy') emoji = pick(w.heavy);
+  else emoji = pick(w.living);
+  const margin = 60*S/10;
+  const o = {
+    type, emoji,
+    x: rand(margin, W - margin),
+    y: rand(topBand() + 50*S/10, H - 40*S/10),
+    vx: 0, vy: 0,
+    size: kind==='heavy' ? Math.max(42*S/10,46) : Math.max(34*S/10,38),
+    bob: rand(0, Math.PI*2),
+    wob: 0,
+    born: frame,
+    dead: false,
+  };
+  // don't spawn right on top of Twisty
+  if (twisty && dist(o.x,o.y,twisty.x,twisty.y) < scoopBubble()*2){ o.x = W - o.x; o.y = clamp(H - o.y, topBand()+50*S/10, H-40*S/10); }
+  objects.push(o);
+  return o;
+}
+function countType(t){ return objects.filter(o=>o.type===t && !o.dead).length; }
+
+function refillObjects(){
+  // keep ~2-3 light on screen while light remains this round
+  const wantLight = Math.min(TUNING.lightOnScreen, lightRemaining - countType('light'));
+  for (let i=0;i<wantLight;i++) spawnObject('light');
+  // keep 1-2 heavies present (the lesson must be on screen)
+  while (countType('heavy') < TUNING.heaviesOnScreen) spawnObject('heavy');
+  // a living thing or two for charm — never scooped
+  while (countType('living') < 1) spawnObject('living');
+}
+
+function computeRoundGoal(){
+  // gentle ramp: +1 light every 2 rounds of total progress, floor 5, cap 7.
+  // We raise the GOAL (more reps), not lightOnScreen, so the screen never crowds.
+  // Magnet assist is unchanged, so even the hardest round stays trivially winnable.
+  const totalRounds = save.worldIndex * 3 + save.roundInWorld;
+  return Math.min(7, TUNING.lightPerRound + Math.floor(totalRounds / 2));
+}
+function startRound(){
+  objects = [];
+  particles = [];
+  floatWords = [];
+  scooped = 0;
+  roundGoal = computeRoundGoal();
+  lightRemaining = roundGoal;
+  refillObjects();
+}
+
+/* ---------------- Particles ----------------------------------------- */
+function burst(x, y, color, n){
+  for (let i=0;i<n;i++){
+    const a = rand(0, Math.PI*2), sp = rand(1, 6)*S/10;
+    particles.push({ x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 1, life: 1, color: color || `hsl(${rand(0,360)},90%,60%)`, sz: rand(3,8)*S/10 });
+  }
+}
+function updateParticles(){
+  for (const p of particles){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life-=0.02; }
+  particles = particles.filter(p=>p.life>0);
+}
+
+/* ---------------- Input --------------------------------------------- */
+function getXY(e){
+  const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+  return { x: t.clientX, y: t.clientY };
+}
+function hitMute(x,y){ return dist(x,y,muteBtn.x,muteBtn.y) <= muteBtn.r + 6; }
+
+function onDown(e){
+  e.preventDefault();
+  const {x,y} = getXY(e);
+
+  // First touch ANYWHERE wakes the audio (browser law) — then the wake sound.
+  const firstTouch = !audioArmed;
+  armAudio();
+
+  // Mute button — corner, out of reach, but always honored.
+  if (hitMute(x,y)){
+    save.muted = !save.muted; writeSave();
+    if (!save.muted){ sfxScoop(); }
+    else if (voiceOK){ try{ window.speechSynthesis.cancel(); }catch(_){ } }
+    return;
+  }
+
+  pointer.x = x; pointer.y = y; pointer.down = true; pointer.active = true;
+
+  // World banner: a tap skips straight into play (it also auto-advances on its own).
+  if (phase === "WORLDINTRO"){ endWorldIntro(); twisty.tx = x; twisty.ty = y; return; }
+
+  if (phase === "INTRO"){
+    phase = "PLAYING";
+    sfxWake();
+    say("Hi! Touch me!");
+    twisty.tx = x; twisty.ty = y;
+    return;
+  }
+  if (phase === "STICKER" && activeSticker && !activeSticker.stuck){
+    if (dist(x,y,activeSticker.x,activeSticker.y) < activeSticker.size*1.4){
+      activeSticker.dragging = true;
+    }
+    return;
+  }
+  if (phase === "PLAYING"){
+    twisty.tx = x; twisty.ty = y;
+  }
+  if (firstTouch){ /* audio just armed; nothing else */ }
+}
+function onMove(e){
+  if (!pointer.down) return;
+  e.preventDefault();
+  const {x,y} = getXY(e);
+  pointer.x = x; pointer.y = y;
+  if (phase === "PLAYING"){ twisty.tx = x; twisty.ty = y; }
+  else if (phase === "STICKER" && activeSticker && activeSticker.dragging){
+    activeSticker.x = x; activeSticker.y = y;
+  }
+}
+function onUp(e){
+  e.preventDefault();
+  pointer.down = false;
+  // soft stop: target stays put, Twisty glides to rest (handled in update)
+  if (activeSticker) activeSticker.dragging = false;
+}
+canvas.addEventListener('touchstart', onDown, {passive:false});
+canvas.addEventListener('touchmove',  onMove, {passive:false});
+canvas.addEventListener('touchend',   onUp,   {passive:false});
+canvas.addEventListener('touchcancel',onUp,   {passive:false});
+canvas.addEventListener('mousedown',  onDown);
+canvas.addEventListener('mousemove',  onMove);
+window.addEventListener('mouseup',    onUp);
+
+/* ---------------- Update loop --------------------------------------- */
+function update(){
+  frame++;
+  twisty.spin += 0.25;
+
+  // Twisty follows finger with soft stop (eased, speed-capped)
+  if (phase === "PLAYING" || phase === "INTRO"){
+    let dx = twisty.tx - twisty.x, dy = twisty.ty - twisty.y;
+    let nx = dx * TUNING.twistyGlide, ny = dy * TUNING.twistyGlide;
+    const sp = Math.hypot(nx, ny), cap = TUNING.twistyMaxSpeed;
+    if (sp > cap){ nx = nx/sp*cap; ny = ny/sp*cap; }
+    twisty.x = clamp(twisty.x + nx, 20*S/10, W-20*S/10);
+    twisty.y = clamp(twisty.y + ny, topBand()+10*S/10, H-20*S/10);
+  }
+
+  if (phase === "INTRO"){
+    intro.t += 0.05;
+    // pick a light object to glow as the visual invitation
+    if (!intro.glowObj || intro.glowObj.dead) intro.glowObj = objects.find(o=>o.type==='light');
+  }
+
+  // object physics + interactions
+  const bubble = scoopBubble();
+  const magnetR = bubble * TUNING.magnetRadius;
+  const absorbR = bubble * TUNING.absorbDist;
+  const fleeR   = bubble * TUNING.fleeRadius;
+
+  for (const o of objects){
+    o.bob += 0.05;
+    if (o.wob > 0) o.wob *= 0.85;
+
+    if (phase === "PLAYING"){
+      const d = dist(o.x,o.y,twisty.x,twisty.y);
+      if (o.type === 'light'){
+        if (d < magnetR){
+          // invisible magnet assist: glide toward Twisty
+          const pull = TUNING.magnetStrength * (1 - d/magnetR + 0.2);
+          o.vx += (twisty.x - o.x) * pull * 0.15;
+          o.vy += (twisty.y - o.y) * pull * 0.15;
+        }
+        o.vx *= 0.86; o.vy *= 0.86;
+        o.x += o.vx; o.y += o.vy;
+        if (d < absorbR){ scoopLight(o); }
+      } else if (o.type === 'heavy'){
+        // can't be scooped — it just wobbles when bumped. Lesson lands.
+        if (d < bubble){
+          o.wob = TUNING.heavyWobble;
+          if (frame - (o.lastThud||0) > 28){ o.lastThud = frame; sfxHeavy(); }
+        }
+      } else { // living — flutter safely aside, never grabbed
+        if (d < fleeR){
+          const a = Math.atan2(o.y-twisty.y, o.x-twisty.x);
+          o.vx += Math.cos(a) * TUNING.fleeStrength * S/10 * 0.4;
+          o.vy += Math.sin(a) * TUNING.fleeStrength * S/10 * 0.4 - 0.6;
+          if (frame - (o.lastLaugh||0) > 50){ o.lastLaugh = frame; sfxLaugh(); }
+        }
+        o.vx *= 0.9; o.vy *= 0.9;
+        o.x += o.vx; o.y += o.vy;
+        // bounce gently off edges, keep on screen
+        if (o.x < 30*S/10 || o.x > W-30*S/10) o.vx *= -0.6;
+        if (o.y < topBand()+30*S/10 || o.y > H-30*S/10) o.vy *= -0.6;
+        o.x = clamp(o.x, 30*S/10, W-30*S/10);
+        o.y = clamp(o.y, topBand()+30*S/10, H-30*S/10);
+      }
+    }
+  }
+  objects = objects.filter(o=>!o.dead);
+
+  if (phase === "CELEBRATE"){
+    celebrateT += 0.018;
+    twisty.spin += 0.6;
+    if (frame % 4 === 0) burst(twisty.x + rand(-60,60)*S/10, twisty.y + rand(-60,60)*S/10, null, 4);
+    if (celebrateT >= 1){ startSticker(); }
+  }
+
+  if (phase === "STICKER"){
+    activeSticker.t += 16; // ~ms per frame
+    if (!activeSticker.stuck){
+      if (!activeSticker.dragging){
+        // gentle float
+        activeSticker.y += Math.sin(frame*0.05)*0.3;
+      }
+      if (activeSticker.t >= TUNING.stickerDragMs){
+        // auto-stick: fly up into Twisty's Sky band
+        activeSticker.stuck = true;
+        activeSticker.t = 0;
+        const slot = stickerSlotPos(save.earned.length);
+        activeSticker.targetX = slot.x; activeSticker.targetY = slot.y;
+        sfxStick();
+      }
+    } else {
+      activeSticker.x = lerp(activeSticker.x, activeSticker.targetX, 0.16);
+      activeSticker.y = lerp(activeSticker.y, activeSticker.targetY, 0.16);
+      activeSticker.size = lerp(activeSticker.size, stickerBandSize(), 0.16);
+      if (dist(activeSticker.x,activeSticker.y,activeSticker.targetX,activeSticker.targetY) < 4){
+        // record it and take a short beat in the sky
+        commitSticker();
+        phase = "PLACE"; phaseTimer = frame;
+        burst(activeSticker.targetX, activeSticker.targetY, null, 18);
+      }
+    }
+  }
+
+  if (phase === "PLACE"){
+    if (frame - phaseTimer > TUNING.placeBeatMs/16){
+      nextWorld();
+    }
+  }
+
+  if (phase === "WORLDINTRO"){
+    worldIntroT += 0.016;
+    if (worldIntroT >= 2.4){ endWorldIntro(); }
+  }
+
+  updateParticles();
+  updateFloatWords();
+}
+
+function updateFloatWords(){
+  for (const fw of floatWords){ fw.t += 0.02; fw.y -= 0.8*S/10; }
+  floatWords = floatWords.filter(fw => fw.t < 1);
+}
+
+function scoopLight(o){
+  o.dead = true;
+  scooped++;
+  lightRemaining--;
+  sfxScoop();
+  burst(o.x, o.y, null, 10);
+  // a readable word rising from the scoop (early literacy)
+  const nm = nameFor(o.emoji);
+  floatWords.push({ text: nm, x: o.x, y: o.y, t: 0 });
+  if (scooped >= roundGoal){ startCelebrate(); return; } // celebrate speaks "Yay!" — don't double-speak
+  if (lightRemaining > 0) refillObjects();
+  // ONE short spoken phrase per scoop ("Apple. Three."), debounced so rapid scoops don't cancel each other.
+  if (frame - lastScoopSpeak > 22){
+    lastScoopSpeak = frame;
+    say(nm + ". " + (COUNT_WORDS[scooped] || ""));
+  }
+}
+
+function startCelebrate(){
+  phase = "CELEBRATE";
+  celebrateT = 0;
+  sfxCelebrate();
+  say("Yay! You did it!");
+  burst(twisty.x, twisty.y, null, 30);
+}
+
+function startSticker(){
+  // which sticker: the one for this round in this world
+  const w = world();
+  const idx = save.roundInWorld % w.stickers.length;
+  activeSticker = {
+    world: save.worldIndex % WORLDS.length, idx,
+    x: W/2, y: H*0.52,
+    size: Math.max(58*S/10, 64),
+    dragging: false, stuck: false, t: 0,
+    targetX: W/2, targetY: H*0.52,
+  };
+  phase = "STICKER";
+  const st = w.stickers[idx];
+  say("A new sticker!");
+  burst(W/2, H*0.52, `hsl(${st.hue},85%,60%)`, 22);
+}
+
+function commitSticker(){
+  // store earned sticker (avoid dup of same world/idx)
+  const key = activeSticker.world + ":" + activeSticker.idx;
+  if (!save.earned.includes(key)) save.earned.push(key);
+  writeSave();
+}
+
+function nextWorld(){
+  save.roundInWorld++;
+  const w = WORLDS[save.worldIndex % WORLDS.length];
+  let advancedWorld = false;
+  if (save.roundInWorld >= w.stickers.length){
+    save.roundInWorld = 0;
+    save.worldIndex = (save.worldIndex + 1) % WORLDS.length;
+    advancedWorld = true;
+  }
+  writeSave();
+  activeSticker = null;
+  makeTwistyKeepPos();
+  if (advancedWorld){
+    // brief "World N of 5!" journey beat — auto-advances after a couple seconds; a tap skips it.
+    // It is a TIMED banner, NOT an interactive menu, so a 5yo can never get stuck behind it.
+    objects = [];
+    phase = "WORLDINTRO";
+    worldIntroT = 0;
+    const num = (save.worldIndex % WORLDS.length) + 1;
+    say("World " + num + "! " + world().name);
+  } else {
+    phase = "PLAYING";
+    startRound();
+  }
+}
+function endWorldIntro(){ phase = "PLAYING"; makeTwistyKeepPos(); startRound(); }
+function makeTwistyKeepPos(){
+  const px = twisty.x, py = twisty.y;
+  twisty.tx = px; twisty.ty = py;
+}
+
+/* ---------------- Twisty's Sky band (brief glimpse) ----------------- */
+function stickerBandSize(){ return Math.max(20*S/10, 24); }
+function stickerSlotPos(i){
+  const sz = stickerBandSize();
+  const gap = sz*2.1;
+  const startX = 16*S/10 + sz;
+  return { x: startX + i*gap, y: 20*S/10 + sz*0.4 };
+}
+
+/* ---------------- Rendering ----------------------------------------- */
+function drawBackground(){
+  const w = world();
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, w.sky[0]); g.addColorStop(1, w.sky[1]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  // ground
+  ctx.fillStyle = w.ground;
+  const gy = H*0.82;
+  ctx.beginPath();
+  ctx.moveTo(0, gy);
+  ctx.quadraticCurveTo(W*0.5, gy - 26*S/10, W, gy);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fill();
+  // soft clouds
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  for (let i=0;i<3;i++){
+    const cx = ((frame*0.2 + i*W/3) % (W+200)) - 100;
+    const cy = topBand() + 30*S/10 + i*22*S/10;
+    drawCloud(cx, cy, 26*S/10);
+  }
+}
+function drawCloud(x,y,r){
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.arc(x+r, y+4, r*0.8, 0, Math.PI*2);
+  ctx.arc(x-r, y+4, r*0.8, 0, Math.PI*2);
+  ctx.arc(x, y+r*0.5, r, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawEmoji(emoji, x, y, size, rot, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha==null?1:alpha;
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.font = size + "px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(emoji, 0, 0);
+  ctx.restore();
+}
+
+function drawObjects(){
+  for (const o of objects){
+    const bobY = Math.sin(o.bob) * 4*S/10;
+    const wob = o.wob ? Math.sin(frame*0.8)*o.wob : 0;
+    let alpha = 1, scale = 1;
+    // intro glow on the invitation object
+    if (phase==="INTRO" && o===intro.glowObj){
+      const pulse = 0.5 + 0.5*Math.sin(intro.t*2);
+      ctx.save();
+      ctx.globalAlpha = 0.5*pulse + 0.2;
+      ctx.beginPath();
+      ctx.arc(o.x, o.y+bobY, o.size*0.9, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,240,150,0.9)";
+      ctx.fill();
+      ctx.restore();
+      scale = 1 + 0.08*pulse;
+    }
+    drawEmoji(o.emoji, o.x+wob, o.y+bobY, o.size*scale, 0, alpha);
+  }
+}
+
+function drawTwisty(){
+  const sz = twistySize();
+  const x = twisty.x, y = twisty.y;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // soft glow / scoop bubble (the visible reach)
+  const bub = scoopBubble();
+  const grad = ctx.createRadialGradient(0,0,bub*0.2, 0,0,bub*1.15);
+  grad.addColorStop(0, "rgba(180,235,255,0.45)");
+  grad.addColorStop(1, "rgba(180,235,255,0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(0,0,bub*1.15,0,Math.PI*2); ctx.fill();
+
+  // intro wiggle
+  const wig = phase==="INTRO" ? Math.sin(intro.t*3)*0.12 : 0;
+  ctx.rotate(wig);
+
+  // tornado body: stacked rotating ellipses, wide top -> narrow bottom
+  const layers = 6;
+  for (let i=0;i<layers;i++){
+    const f = i/(layers-1);
+    const ly = lerp(-sz*0.95, sz*0.85, f);
+    const lw = lerp(sz*0.95, sz*0.18, f);
+    const lh = lerp(sz*0.30, sz*0.16, f);
+    const sway = Math.sin(twisty.spin*0.3 + i*0.9) * sz*0.10;
+    ctx.beginPath();
+    ctx.ellipse(sway, ly, lw, lh, 0, 0, Math.PI*2);
+    const c = 200 + i*8;
+    ctx.fillStyle = `rgba(${120+i*12},${190+i*8},${235},${0.92 - i*0.05})`;
+    ctx.fill();
+    // spiral hint
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2*S/10;
+    ctx.beginPath();
+    ctx.ellipse(sway, ly, lw*0.7, lh*0.7, twisty.spin*0.2 + i, 0, Math.PI*1.3);
+    ctx.stroke();
+  }
+
+  // face (near the top, the wide part)
+  const fy = -sz*0.55;
+  const eo = sz*0.30;
+  // eyes
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath(); ctx.arc(-eo, fy, sz*0.16, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( eo, fy, sz*0.16, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#2b2b3a";
+  const look = phase==="PLAYING" ? clamp((twisty.tx-twisty.x)/40,-1,1)*sz*0.05 : 0;
+  ctx.beginPath(); ctx.arc(-eo+look, fy, sz*0.08, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( eo+look, fy, sz*0.08, 0, Math.PI*2); ctx.fill();
+  // rosy cheeks
+  ctx.fillStyle = "rgba(255,150,170,0.6)";
+  ctx.beginPath(); ctx.arc(-eo*1.3, fy+sz*0.22, sz*0.08,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( eo*1.3, fy+sz*0.22, sz*0.08,0,Math.PI*2); ctx.fill();
+  // smile
+  ctx.strokeStyle = "#2b2b3a"; ctx.lineWidth = 3*S/10; ctx.lineCap="round";
+  ctx.beginPath(); ctx.arc(0, fy+sz*0.18, sz*0.16, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawParticles(){
+  for (const p of particles){
+    ctx.globalAlpha = clamp(p.life,0,1);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function roundRectPath(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawSlotMeter(){
+  // Big readable "⭐ 3 / 5" counter (numbers she can read + count). Replaces the circle row.
+  if (phase==="STICKER" || phase==="PLACE" || phase==="WORLDINTRO") return;
+  const cy = topBand()*0.55;
+  const big = Math.max(24*S/10, 28);
+  const label = "⭐ " + scooped + " / " + roundGoal;
+  ctx.save();
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font = "bold " + big + "px -apple-system, system-ui, sans-serif";
+  const padW = ctx.measureText(label).width + big*1.1;
+  const padH = big*1.5;
+  roundRectPath(W/2 - padW/2, cy - padH/2, padW, padH, padH/2);
+  ctx.fillStyle = "rgba(255,255,255,0.62)"; ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2*S/10; ctx.stroke();
+  ctx.fillStyle = "#e6852b";
+  ctx.fillText(label, W/2, cy + big*0.04);
+  ctx.restore();
+}
+
+function drawSkyBand(){
+  // brief glimpse of earned stickers — small, top-left. No browsable screen in v1.
+  const sz = stickerBandSize();
+  for (let i=0;i<save.earned.length;i++){
+    const [wi, si] = save.earned[i].split(":").map(Number);
+    const st = WORLDS[wi].stickers[si];
+    const p = stickerSlotPos(i);
+    drawStickerBadge(p.x, p.y, sz, st, 0.9);
+  }
+  // the one currently flying up is drawn separately in drawSticker()
+}
+
+function drawStickerBadge(x, y, sz, st, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha==null?1:alpha;
+  ctx.translate(x,y);
+  // swirl badge background (tornado-themed)
+  const g = ctx.createRadialGradient(0,0,sz*0.2, 0,0,sz);
+  g.addColorStop(0, `hsl(${st.hue},90%,80%)`);
+  g.addColorStop(1, `hsl(${st.hue},75%,55%)`);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "#ffffff"; ctx.lineWidth = sz*0.12;
+  ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2); ctx.stroke();
+  // little spiral
+  ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = sz*0.08;
+  ctx.beginPath();
+  for (let a=0;a<Math.PI*3;a+=0.2){
+    const rr = (a/(Math.PI*3))*sz*0.7;
+    const px = Math.cos(a+frame*0.02)*rr, py = Math.sin(a+frame*0.02)*rr;
+    if (a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  drawEmoji(st.emoji, 0, 0, sz*1.1);
+  ctx.restore();
+}
+
+function drawSticker(){
+  if (!activeSticker) return;
+  const w = WORLDS[activeSticker.world];
+  const st = w.stickers[activeSticker.idx];
+  // glow
+  if (!activeSticker.stuck){
+    ctx.save();
+    ctx.globalAlpha = 0.4 + 0.2*Math.sin(frame*0.1);
+    ctx.beginPath(); ctx.arc(activeSticker.x, activeSticker.y, activeSticker.size*1.5, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${st.hue},90%,70%,0.5)`; ctx.fill();
+    ctx.restore();
+  }
+  drawStickerBadge(activeSticker.x, activeSticker.y, activeSticker.size, st, 1);
+  if (!activeSticker.stuck && phase==="STICKER"){
+    // a tiny hint that she can drag it
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.font = `${Math.max(16*S/10,18)}px -apple-system, sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline="middle";
+    ctx.fillText("✋ drag me!", activeSticker.x, activeSticker.y + activeSticker.size*1.9);
+  }
+}
+
+function drawIntroPrompt(){
+  if (phase !== "INTRO") return;
+  // "tap me" bounce near Twisty — purely visual, since audio is asleep.
+  const bounce = Math.abs(Math.sin(intro.t*2)) * 14*S/10;
+  ctx.save();
+  ctx.globalAlpha = 0.85 + 0.15*Math.sin(intro.t*3);
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";
+  const tx = twisty.x, ty = twisty.y + twistySize()*1.4 + bounce;
+  ctx.font = `bold ${Math.max(26*S/10,30)}px -apple-system, sans-serif`;
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.lineWidth = 6*S/10;
+  ctx.strokeText("👆 Tap me!", tx, ty);
+  ctx.fillText("👆 Tap me!", tx, ty);
+  ctx.restore();
+}
+
+function drawMute(){
+  ctx.save();
+  ctx.translate(muteBtn.x, muteBtn.y);
+  ctx.beginPath(); ctx.arc(0,0,muteBtn.r,0,Math.PI*2);
+  ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.lineWidth = 2*S/10; ctx.stroke();
+  drawEmoji(save.muted ? "🔇" : "🔊", 0, 0, muteBtn.r*1.1);
+  ctx.restore();
+}
+
+function drawFloatWords(){
+  for (const fw of floatWords){
+    ctx.save();
+    ctx.globalAlpha = clamp(1 - fw.t, 0, 1);
+    ctx.font = "bold " + Math.max(22*S/10, 26) + "px -apple-system, system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.lineWidth = 5*S/10; ctx.strokeStyle = "rgba(255,255,255,0.92)";
+    ctx.strokeText(fw.text, fw.x, fw.y);
+    ctx.fillStyle = "#3a2b5a";
+    ctx.fillText(fw.text, fw.x, fw.y);
+    ctx.restore();
+  }
+}
+
+function drawWorldIntro(){
+  if (phase !== "WORLDINTRO") return;
+  ctx.save();
+  ctx.fillStyle = "rgba(40,30,70,0.28)"; ctx.fillRect(0,0,W,H);
+  const total = WORLDS.length;
+  const num = (save.worldIndex % total) + 1;
+  const cy = H*0.40;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.lineWidth = 6*S/10; ctx.strokeStyle = "rgba(0,0,0,0.25)";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold " + Math.max(32*S/10, 36) + "px -apple-system, system-ui, sans-serif";
+  ctx.strokeText("World " + num + " of " + total + "!", W/2, cy - 36*S/10);
+  ctx.fillText("World " + num + " of " + total + "!", W/2, cy - 36*S/10);
+  ctx.font = "bold " + Math.max(24*S/10, 28) + "px -apple-system, system-ui, sans-serif";
+  ctx.fillText("✨ " + world().name + " ✨", W/2, cy + 6*S/10);
+  const sr = Math.max(15*S/10, 17), gap = sr*2.6, startX = W/2 - (total-1)*gap/2;
+  for (let i=0;i<total;i++){
+    ctx.globalAlpha = (i <= (save.worldIndex % total)) ? 1 : 0.3;
+    drawEmoji("⭐", startX + i*gap, cy + 52*S/10, sr*2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = Math.max(15*S/10, 16) + "px -apple-system, sans-serif";
+  ctx.fillText("tap to play!", W/2, cy + 96*S/10);
+  ctx.restore();
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+  drawSkyBand();
+  drawObjects();
+  drawTwisty();
+  drawParticles();
+  drawFloatWords();
+  drawSlotMeter();
+  drawIntroPrompt();
+  drawSticker();
+  drawWorldIntro();
+  drawMute();
+}
+
+/* ---------------- Boot ---------------------------------------------- */
+let bootHidden = false;
+function loop(){
+  try {
+    update();
+    render();
+    if (!bootHidden){ var b=document.getElementById('boot'); if(b) b.style.display='none'; bootHidden=true; }
+  } catch(e){
+    showErr((e && e.message ? e.message : e) + (e && e.stack ? "\n"+e.stack.split("\n")[1] : ""));
+    return; // stop the loop so the error stays readable
+  }
+  requestAnimationFrame(loop);
+}
+
+// Boot — guard everything so a failure surfaces on screen, not as a blank canvas.
+try {
+  if (!ctx) throw new Error("Canvas not supported by this browser/opener.");
+  resize();
+  makeTwisty();
+  startRound();
+  // INTRO: silent by design. Twisty wiggles, an object glows, "Tap me!" bounces.
+  loop();
+  // Re-measure after the page fully settles (mobile address-bar / late layout).
+  window.addEventListener('load', function(){ resize(); });
+  setTimeout(resize, 120);
+  setTimeout(resize, 600);
+} catch(e){
+  showErr((e && e.message ? e.message : String(e)));
+}
+</script>
+<script>
+/* Build stamp + service-worker registration.
+   DEPLOY RULE: bump BUILD on every deploy and keep it identical to the BUILD string in sw.js. */
+(function(){
+  var BUILD = '2026-06-09-v2';
+  var b = document.getElementById('build');
+  if (b) b.textContent = BUILD;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(err){
+        // Non-fatal: online play still works; offline caching just won't arm until this succeeds.
+        // Quiet console note — NOT the red on-screen banner — so a working online session never looks broken.
+        console.warn('Twisty: service worker registration failed —', err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -6,14 +6,17 @@
 // browser context OFFLINE so the "runs offline from a local file" gate is exercised on every run.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 function loadPlaywright() {
-  const candidates = ['playwright', '/opt/node22/lib/node_modules/playwright', process.env.PLAYWRIGHT_PATH].filter(Boolean);
-  for (const c of candidates) { try { return require(c); } catch (e) { /* try next */ } }
-  throw new Error('playwright not found; npm i -g playwright');
+  // Local install (npm i playwright next to this file), an explicit PLAYWRIGHT_PATH, or the active npm global root.
+  const candidates = ['playwright', process.env.PLAYWRIGHT_PATH];
+  try { candidates.push(path.join(execSync('npm root -g', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(), 'playwright')); } catch (e) { /* npm not on PATH */ }
+  for (const c of candidates.filter(Boolean)) { try { return require(c); } catch (e) { /* try next */ } }
+  throw new Error('playwright not found: run `npm i playwright` in this directory or `npm i -g playwright`, or set PLAYWRIGHT_PATH');
 }
 const { chromium } = loadPlaywright();
 

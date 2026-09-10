@@ -86,6 +86,8 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     </svg>
   </div>
 </div>
+<noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
+<div id="fail" class="hidden" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;"></div>
 <div id="rotate" aria-label="Rotate the iPad sideways">
   <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="30" y="12" width="40" height="76" rx="6" fill="#f2e9d8" stroke="#8a7a60" stroke-width="4"/><circle cx="50" cy="80" r="3" fill="#8a7a60"/></svg>
 </div>
@@ -1345,7 +1347,8 @@ function boot() {
     app.R.update(G, elapsed); app.audio.update(G); app.R.render();
   }
   function startLive() {
-    if (!app.G || app.G.won) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; }
+    try { if (!app.G || app.G.won) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
+    catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();
@@ -1356,9 +1359,14 @@ function boot() {
   startEl.addEventListener('touchend', e => { e.preventDefault(); if (!app.simMode) startLive(); }, touchOpts);
   startEl.addEventListener('click', () => { if (!app.simMode) startLive(); });
 
-  // First paint (scene visible behind the start disc)
-  newGame(1, {});
-  app.R.render();
+  // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.
+  function showFailure(msg) {
+    const f = document.getElementById('fail'); if (!f) return;
+    f.innerHTML = msg + '<br>Open the game in Safari: <a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a>';
+    f.classList.remove('hidden'); startEl.classList.add('hidden');
+  }
+  try { newGame(1, {}); app.R.render(); }
+  catch (e) { console.error('boot failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); }
 
   // =====================================================================================================
   // SELF-TEST HARNESS — window.__sim(seed, seconds, opts) -> telemetry JSON.

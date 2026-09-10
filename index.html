@@ -62,10 +62,11 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #start .disc { width:34vmin; height:34vmin; max-width:260px; max-height:260px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
   #start svg { width:60%; height:60%; }
   @keyframes pulse { 0%,100% { transform:scale(1);} 50% { transform:scale(1.08);} }
-  #rotate { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:#1c2a36; z-index:5; }
-  #rotate svg { width:40vmin; height:40vmin; animation: rot 2.2s ease-in-out infinite; }
+  /* Landscape hint: a small badge, never a wall. The game runs in any orientation. */
+  #rotate { position:absolute; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); display:none; align-items:center; justify-content:center; padding:8px 14px; border-radius:18px; background:rgba(28,42,54,0.82); pointer-events:none; z-index:5; }
+  #rotate svg { width:44px; height:44px; animation: rot 2.2s ease-in-out infinite; }
   @keyframes rot { 0%,20% { transform:rotate(0deg);} 60%,100% { transform:rotate(90deg);} }
-  @media (orientation: portrait) { #rotate { display:flex; } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate:not(.hidden) { display:flex; } }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -1346,6 +1347,7 @@ function boot() {
   function startLive() {
     if (!app.G || app.G.won) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; }
     startEl.classList.add('hidden');
+    setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();
     try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* not fullscreen */ }
     app.running = true; app.last = performance.now(); app.acc = 0;

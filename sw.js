@@ -9,20 +9,19 @@ self.addEventListener('install', e => {
 });
 
 // On activate: drop every older 'twisty-' cache (prefix-scoped so other apps on the same github.io origin are
-// untouched), take control of open pages, and reload them so a device pinned to the previous build (its old
-// worker served the cached page before this code could run) gets the new page immediately.
+// untouched) and take control of open pages. A device pinned to the previous build gets this worker on its next
+// launch (the browser re-fetches sw.js and sees a byte change), which swaps the cache; the launch after that
+// serves the new page. Pages built from this version also reload themselves once when a new worker takes over.
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k.startsWith('twisty-') && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
-      .then(() => self.clients.matchAll({ type: 'window' }))
-      .then(clients => Promise.all(clients.map(c => c.navigate(c.url).catch(() => null))))
   );
 });
 
 // Cache-first for instant offline launch. New builds are picked up because BUILD changes the cache name and the
-// browser re-fetches sw.js on navigation; skipWaiting + claim + navigate above hand control to the new build.
+// browser re-fetches sw.js on navigation; skipWaiting + claim above hand control to the new build.
 self.addEventListener('fetch', e => {
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });

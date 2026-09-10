@@ -1524,7 +1524,12 @@ return { boot, TUNING, TYPES, generateWorld, createGame, stepGame, screenToGroun
 <script>
 TornadoGame.boot();
 // Offline on the home screen: register the service worker (see sw.js; bump BUILD there on every deploy).
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('./sw.js').catch(function () {});
+  // When a newer worker takes over (a redeploy), reload once so the page matches its cache.
+  var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+}
 </script>
 </body>
 </html>

@@ -59,8 +59,10 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   body { position:fixed; inset:0; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
   canvas#c { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
   #start { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(20,30,40,0.35); touch-action:none; }
-  #start .disc { width:34vmin; height:34vmin; max-width:260px; max-height:260px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
-  #start svg { width:60%; height:60%; }
+  #start .row { display:flex; flex-wrap:wrap; gap:4vmin; justify-content:center; align-items:center; max-width:92vw; }
+  #start .disc { width:22vmin; height:22vmin; max-width:170px; max-height:170px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
+  #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
+  #start svg { width:62%; height:62%; }
   @keyframes pulse { 0%,100% { transform:scale(1);} 50% { transform:scale(1.08);} }
   /* Landscape hint: a small badge, never a wall. The game runs in any orientation. */
   #rotate { position:absolute; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); display:none; align-items:center; justify-content:center; padding:8px 14px; border-radius:18px; background:rgba(28,42,54,0.82); pointer-events:none; z-index:5; }
@@ -72,18 +74,13 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="start" aria-label="Start">
-  <div class="disc">
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <g fill="none" stroke="#7a5230" stroke-width="7" stroke-linecap="round">
-        <path d="M18 22 Q50 8 82 22"/>
-        <path d="M24 36 Q50 26 76 36"/>
-        <path d="M32 50 Q50 43 68 50"/>
-        <path d="M40 63 Q50 58 60 63"/>
-        <path d="M46 76 Q50 74 54 76"/>
-        <path d="M48 88 L50 90"/>
-      </g>
-    </svg>
+<div id="start" aria-label="Pick a tornado color to start">
+  <div class="row">
+    <div class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
+    <div class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
+    <div class="disc" data-color="purple" aria-label="Start with a purple tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
+    <div class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
+    <div class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
   </div>
 </div>
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
@@ -102,10 +99,22 @@ const TornadoGame = (() => {
 const TUNING = {
   // ---- Growth / absorb ladder ----
   START_POWER: 0.62,          // m. Largest object size absorbable at the start (leaves 0.35, paper 0.4, trash 0.6).
-  GROWTH: 0.04,             // Fractional power gain from absorbing an object as big as the current power.
+  GROWTH: 0.055,             // Playtest 1: she wants to get bigger faster.             // Fractional power gain from absorbing an object as big as the current power.
   DUST_FRAC: 0.45,            // Objects smaller than this fraction of power are 'dust': swept up quietly, no growth beat.
   DUST_GROWTH: 0.0,          // Fractional power gain per dust object (0: crumbs do not feed growth).
-  TIER_THRESHOLDS: [1.0, 2.4, 6.5, 12.5, 24.0], // power needed to enter tier 2,3,4,5,6 (tier 6 = water tower).
+  TIER_THRESHOLDS: [1.0, 2.4, 6.5, 12.5, 24.0], // Town: power needed to enter tier 2,3,4,5,6 (tier 6 = water tower).
+  SPACE_THRESHOLDS: [60, 125, 210, 330, 900],   // Space: moons, Earth/Venus, ice giants, gas giants, the Sun.
+  SPACE_START_POWER: 24,     // Power on arrival in space (continues from the tower).
+  SPACE_RADIUS: 2600,        // m. Populated radius of the space stage.
+  SPACE_SCATTER: { rock_s: 2600, rock_m: 1800, rock_l: 900, satellite: 320, rocket: 260, comet: 200, station: 90, pluto: 40, moon: 48, bigmoon: 26, icemoon: 26, gasdwarf: 12, giant: 16, dwarfstar: 8 },
+  SPACE_SPEED_MULT: 8,       // Space is ~10x the town's scale; the tornado moves this much faster there.
+  SPACE_GROWTH_MULT: 1.25,   // Growth per absorb in space (on top of GROWTH).
+  SPACE_START_KIT: { rock_s: 20, rock_m: 12, satellite: 5, rocket: 4 },
+  EARTH_POS: [190, -230],    // The Earth sits right beside her when she arrives: too big, for now.
+  SUN_POS: [120, -2100],     // The Sun is the last thing in the sky.
+  SPIN: 2.6,                 // Playtest 1: 'twirl really fast'. Multiplies funnel twist and debris orbit speed.
+  COLORS: { blue: 0x3a86ff, teal: 0x2ec4b6, purple: 0x8b5cf6, pink: 0xff5fa2, red: 0xe63946 }, // Start discs.
+  COLOR_MIX: 0.6,            // How strongly the chosen color tints the dust funnel (0 = plain dust).
   TIER_GROWTH_MULT: [0.78, 1.35, 1.35, 1.0, 1.0, 1.0], // 'object mass' per tier: scales GROWTH while in that tier (paces time between tier-ups).
   SIZE_JITTER: 0.10,         // +/- per-instance size variation (fraction).
 
@@ -254,8 +263,40 @@ const TYPES = [
   { id: 'elevator',tier: 5, size: 21.8, foot: 6.0, blocks: true,  colors: [0xc9c4b8, 0xbdb6a8] },
   { id: 'tower',   tier: 6, size: 24.0, foot: 6.0, blocks: true,  colors: [0xcfd8de] },
 ];
+// Space stage ladder. size = diameter (m). Planets sit on the same invisible plane the finger projects onto.
+const SPACE_TYPES = [
+  { id: 'rock_s',   tier: 1, size: 10,  foot: 5,   blocks: false, colors: [0x8a8078, 0x6f6660, 0x9c8f80] },
+  { id: 'rock_m',   tier: 1, size: 18,  foot: 9,   blocks: false, colors: [0x8a8078, 0x7a6a5a, 0x6b6b70] },
+  { id: 'satellite',tier: 1, size: 14,  foot: 7,   blocks: false, colors: [0xd8dde2, 0xc0c8d0] },
+  { id: 'rocket',   tier: 1, size: 22,  foot: 6,   blocks: false, colors: [0xf2f2f2, 0xe8e0d0] },
+  { id: 'rock_l',   tier: 1, size: 30,  foot: 15,  blocks: false, colors: [0x7a7068, 0x5f5850, 0x8c7f70] },
+  { id: 'comet',    tier: 1, size: 34,  foot: 12,  blocks: false, colors: [0xbfe8ff, 0xd8f4ff] },
+  { id: 'station',  tier: 1, size: 45,  foot: 22,  blocks: false, colors: [0xe0e4e8, 0xcfd6dc] },
+  { id: 'pluto',    tier: 1, size: 50,  foot: 25,  blocks: true,  colors: [0xc9b8a8, 0xb8a494] },
+  { id: 'moon',     tier: 2, size: 60,  foot: 30,  blocks: true,  colors: [0xb8b8b8, 0xa8a8a8, 0xc4c0b8] },
+  { id: 'mercury',  tier: 2, size: 75,  foot: 37,  blocks: true,  colors: [0x9a948c] },
+  { id: 'mars',     tier: 2, size: 90,  foot: 45,  blocks: true,  colors: [0xd0603a] },
+  { id: 'bigmoon',  tier: 2, size: 90,  foot: 45,  blocks: true,  colors: [0xd9c9a0, 0xe0d8c8, 0xb0a890] },
+  { id: 'venus',    tier: 3, size: 125, foot: 62,  blocks: true,  colors: [0xe6c87a] },
+  { id: 'earth',    tier: 3, size: 130, foot: 65,  blocks: true,  colors: [0x3a7bd5] },
+  { id: 'icemoon',  tier: 3, size: 160, foot: 80,  blocks: true,  colors: [0xcfe6f0, 0xa8d0e0, 0xe8f4f8] },
+  { id: 'neptune',  tier: 4, size: 210, foot: 105, blocks: true,  colors: [0x3b5bdb] },
+  { id: 'gasdwarf', tier: 4, size: 240, foot: 120, blocks: true,  colors: [0x6fc3b0, 0x8fb8d8, 0xb59ad6] },
+  { id: 'uranus',   tier: 4, size: 220, foot: 110, blocks: true,  colors: [0x7fd3e6] },
+  { id: 'saturn',   tier: 5, size: 330, foot: 165, blocks: true,  colors: [0xe3c98a] },
+  { id: 'jupiter',  tier: 5, size: 430, foot: 215, blocks: true,  colors: [0xd9a066] },
+  { id: 'giant',    tier: 5, size: 380, foot: 190, blocks: true,  colors: [0x9b6bd6, 0xd66b9b, 0x6b8fd6] },
+  { id: 'dwarfstar',tier: 5, size: 560, foot: 280, blocks: true,  colors: [0xff7a3a, 0xff9a4a, 0xff5a5a], glow: true },
+  { id: 'sun',      tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xffd94a], glow: true },
+];
 const TYPE_BY_ID = {};
 TYPES.forEach((t, i) => { t.index = i; TYPE_BY_ID[t.id] = t; });
+const SPACE_TYPE_BY_ID = {};
+SPACE_TYPES.forEach((t, i) => { t.index = i; SPACE_TYPE_BY_ID[t.id] = t; });
+const STAGES = {
+  town:  { types: TYPES, byId: TYPE_BY_ID, goal: 'tower', thresholds: () => TUNING.TIER_THRESHOLDS, startPower: () => TUNING.START_POWER, startPos: () => TUNING.START_POS, generate: seed => generateWorld(seed), next: 'space' },
+  space: { types: SPACE_TYPES, byId: SPACE_TYPE_BY_ID, goal: 'sun', thresholds: () => TUNING.SPACE_THRESHOLDS, startPower: () => TUNING.SPACE_START_POWER, startPos: () => [0, 0], generate: seed => generateSpace(seed), next: null },
+};
 
 // =====================================================================================================
 // GEOMETRY BUILDERS (procedural, low-poly, vertex-colored). Origin at ground center, +y up, faces -z = "front".
@@ -307,7 +348,7 @@ function makeGeometryBuilders(THREE) {
   const cyl = (rt, rb, h, seg, color, x, y, z) => push(new THREE.CylinderGeometry(rt, rb, h, seg), color, T(x, y, z));
   const cone = (r, h, seg, color, x, y, z) => push(new THREE.ConeGeometry(r, h, seg), color, T(x, y, z));
   const sphere = (r, color, x, y, z, sx, sy, sz) => {
-    const g = new THREE.SphereGeometry(r, 7, 5);
+    const g = new THREE.SphereGeometry(r, r >= 40 ? 28 : r >= 12 ? 14 : 7, r >= 40 ? 18 : r >= 12 ? 9 : 5); // planets are round, leaves are cheap
     const m = new THREE.Matrix4().makeScale(sx || 1, sy || 1, sz || 1); m.premultiply(T(x, y, z));
     push(g, color, m);
   };
@@ -395,6 +436,30 @@ function makeGeometryBuilders(THREE) {
     },
     elevator() { box(8, 22, 8, W, 0, 11, 0); box(3, 5, 3, 0x8c8880, 0, 24.5, 0); cyl(2.2, 2.2, 20, 12, W, 6.5, 10, 0); cyl(2.2, 2.2, 20, 12, W, -6.5, 10, 0); box(9, 0.6, 2, 0x6f6b66, 0, 17, 0); return merge(); },
     church() { box(10, 6, 16, W, 0, 3, 0); roof(10, 3.5, 16, 0x7a7a76, 0, 6, 0, 0.4); box(3.2, 12, 3.2, W, 0, 6, -8.5); cone(2.4, 6, 4, 0x7a7a76, 0, 15, -8.5); box(1.4, 2.6, 0.15, 0x5a3a2a, 0, 1.3, -10.12); return merge(); },
+    // ---- space ----
+    rock_s() { sphere(5, W, 0, 5, 0, 1.2, 0.8, 1); return merge(); },
+    rock_m() { sphere(9, W, 0, 9, 0, 1.1, 0.75, 1.3); sphere(4, 0x5a524a, 5, 12, 3); return merge(); },
+    rock_l() { sphere(15, W, 0, 15, 0, 1.3, 0.8, 1); sphere(6, 0x5a524a, -8, 20, 6); sphere(4, 0x5a524a, 9, 9, -8); return merge(); },
+    satellite() { box(3, 3, 3, W, 0, 7, 0); box(14, 0.2, 4, 0x2b4f8a, 0, 7, 0); cyl(0.2, 0.2, 5, 6, 0xaaaaaa, 0, 10.5, 0); sphere(1.5, 0xaaaaaa, 0, 13, 0); return merge(); },
+    rocket() { cyl(3, 3, 14, 12, W, 0, 11, 0); cone(3, 6, 12, 0xd8342a, 0, 21, 0); for (const a of [0, 2.09, 4.19]) box(0.8, 5, 4, 0xd8342a, Math.cos(a) * 3.2, 3, Math.sin(a) * 3.2); cyl(2.2, 3, 3, 12, 0x555555, 0, 2, 0); return merge(); },
+    comet() { sphere(6, W, 0, 12, 0); sphere(4, 0xdff6ff, 8, 14, 0, 2.2, 0.6, 0.6); sphere(3, 0xeafaff, 18, 15, 0, 2.6, 0.5, 0.5); return merge(); },
+    station() { box(30, 4, 4, W, 0, 22, 0); box(4, 4, 30, W, 0, 22, 0); sphere(6, 0x9fb7c6, 0, 22, 0); for (const [x, z] of [[14, 0], [-14, 0], [0, 14], [0, -14]]) box(10, 0.3, 6, 0x2b4f8a, x, 22, z); return merge(); },
+    pluto() { sphere(25, W, 0, 25, 0); sphere(10, 0xe8dccc, 8, 40, 6, 1, 0.5, 1); return merge(); },
+    moon() { sphere(30, W, 0, 30, 0); sphere(6, 0x8a8a8a, 14, 42, 10, 1, 0.3, 1); sphere(4, 0x8a8a8a, -12, 48, 8, 1, 0.3, 1); sphere(5, 0x8a8a8a, 6, 22, -22, 1, 0.3, 1); return merge(); },
+    mercury() { sphere(37, W, 0, 37, 0); sphere(7, 0x7a746c, 18, 52, 14, 1, 0.3, 1); sphere(5, 0x7a746c, -20, 40, 20, 1, 0.3, 1); return merge(); },
+    mars() { sphere(45, W, 0, 45, 0); sphere(12, 0xf0e8e0, 0, 88, 0, 1, 0.3, 1); sphere(9, 0x9a3a22, 25, 50, 28, 1, 0.5, 1); return merge(); },
+    bigmoon() { sphere(45, W, 0, 45, 0); sphere(9, 0x8a8070, 20, 62, 18, 1, 0.3, 1); sphere(7, 0x8a8070, -24, 48, 20, 1, 0.3, 1); return merge(); },
+    venus() { sphere(62, W, 0, 62, 0); sphere(30, 0xf2dea0, 20, 90, 30, 1.2, 0.5, 1); return merge(); },
+    earth() { sphere(65, W, 0, 65, 0); sphere(28, 0x4f9a3a, 30, 75, 40, 1, 0.7, 1.3); sphere(22, 0x4f9a3a, -40, 90, -20, 1.4, 0.6, 1); sphere(16, 0x4f9a3a, 20, 40, -45, 1, 0.5, 1.2); sphere(20, 0xf6f6f6, 0, 128, 0, 1.4, 0.3, 1.4); sphere(30, 0xf6f6f6, 10, 52, 30, 1.6, 0.25, 0.8); return merge(); },
+    icemoon() { sphere(80, W, 0, 80, 0); sphere(14, 0xb8dceb, 30, 120, 40, 1, 0.3, 1); sphere(10, 0xb8dceb, -40, 90, 50, 1, 0.3, 1); return merge(); },
+    gasdwarf() { sphere(120, W, 0, 120, 0); sphere(60, 0xffffff, 40, 150, 60, 1.4, 0.3, 1); return merge(); },
+    giant() { sphere(190, W, 0, 190, 0); for (const [y, c] of [[120, 0xffffff], [230, 0x333344]]) sphere(180, c, 0, y, 0, 1.05, 0.1, 1.05); return merge(); },
+    neptune() { sphere(105, W, 0, 105, 0); sphere(30, 0x2c46b8, 50, 120, 60, 1.6, 0.4, 1); return merge(); },
+    uranus() { sphere(110, W, 0, 110, 0); cyl(160, 160, 2, 40, 0xbfe6ee, 0, 110, 0); cyl(135, 135, 3, 40, 0x7fd3e6, 0, 110, 0); return merge(); },
+    saturn() { sphere(165, W, 0, 165, 0); for (const [y, c] of [[120, 0xcfb070], [200, 0xd8bc80]]) sphere(120, c, 0, y, 0, 1.3, 0.12, 1.3); cyl(300, 300, 3, 48, 0xd6c49a, 0, 165, 0); cyl(255, 255, 4, 48, 0xe3c98a, 0, 165, 0); cyl(215, 215, 5, 48, 0xb8a070, 0, 165, 0); return merge(); },
+    jupiter() { sphere(215, W, 0, 215, 0); for (const [y, c] of [[130, 0xb87850], [190, 0xe8c8a0], [250, 0xc08860], [300, 0xe8d0b0]]) sphere(200, c, 0, y, 0, 1.06, 0.12, 1.06); sphere(30, 0xc84a30, 190, 200, 90, 1.4, 0.7, 1); return merge(); },
+    dwarfstar() { sphere(280, W, 0, 280, 0); return merge(); },
+    sun() { sphere(450, W, 0, 450, 0); return merge(); },
     tower() {
       const lc = 0x8b8f94;
       for (const [x, z] of [[-3.2, -3.2], [3.2, -3.2], [-3.2, 3.2], [3.2, 3.2]]) box(0.5, 18, 0.5, lc, x, 9, z);
@@ -552,26 +617,63 @@ function generateWorld(seed) {
 }
 
 // =====================================================================================================
+// SPACE STAGE GENERATION. Same jittered-grid idea, no roads, planets placed by hand.
+// =====================================================================================================
+function generateSpace(seed) {
+  const rnd = mulberry32(seed * 104729 + 7);
+  const objs = [];
+  const R = TUNING.SPACE_RADIUS;
+  function add(typeId, x, z, ry) {
+    const t = SPACE_TYPE_BY_ID[typeId];
+    const jit = t.id === 'sun' ? 1 : 1 + (rnd() * 2 - 1) * TUNING.SIZE_JITTER;
+    const o = { id: objs.length, type: t, x, z, ry: ry || 0, scale: jit, size: t.size * jit, foot: t.foot * jit, colorIndex: Math.floor(rnd() * t.colors.length), state: 0,
+      rattleT: -99, rattledTooBig: false, inRange: false, absorbT: 0, absorbDur: 0, spiralA: 0, spiralR: 0, highlightT: 0, startX: 0, startZ: 0, rattleTick: -99, swayT: -99, rattleAmp: 1, inst: -1, mesh: null };
+    objs.push(o); return o;
+  }
+  const okPoint = (x, z) => x * x + z * z <= R * R && Math.hypot(x, z) >= 70;
+  for (const id in TUNING.SPACE_SCATTER) {
+    const n = TUNING.SPACE_SCATTER[id]; const cell = Math.sqrt(Math.PI * R * R / n); const off = rnd() * cell, off2 = rnd() * cell;
+    for (let gx = -R - cell; gx <= R + cell; gx += cell) for (let gz = -R - cell; gz <= R + cell; gz += cell) { const x = gx + off + rnd() * cell, z = gz + off2 + rnd() * cell; if (okPoint(x, z)) add(id, x, z, rnd() * TAU); }
+  }
+  for (const id in TUNING.SPACE_START_KIT) { const n = TUNING.SPACE_START_KIT[id]; for (let i = 0; i < n; i++) { const a = rnd() * TAU, r = 25 + Math.sqrt(rnd()) * 110; add(id, Math.cos(a) * r, Math.sin(a) * r, rnd() * TAU); } }
+  // the solar system, spread so each is the next 'too big' thing somewhere on the way to the Sun
+  add('earth', TUNING.EARTH_POS[0], TUNING.EARTH_POS[1], 0.4);
+  add('moon', TUNING.EARTH_POS[0] + 150, TUNING.EARTH_POS[1] + 60, 0);
+  add('mars', -520, -380, 0); add('mercury', 480, -520, 0); add('venus', -260, -900, 0);
+  add('neptune', 900, -1100, 0); add('uranus', -1000, -1250, 0);
+  add('saturn', -600, -1700, 0); add('jupiter', 700, -1650, 0);
+  add('sun', TUNING.SUN_POS[0], TUNING.SUN_POS[1], 0);
+  // nothing inside a bigger solid body
+  const solids = objs.filter(o => o.type.blocks).sort((a, b) => b.size - a.size);
+  for (const s of solids) { if (s.state === 2) continue; for (const o of objs) { if (o === s || o.state === 2 || o.size >= s.size) continue; const need = s.foot + o.foot + 5; const dx = o.x - s.x, dz = o.z - s.z; if (dx * dx + dz * dz < need * need) o.state = 2; } }
+  return objs.filter(o => o.state !== 2).map((o, i) => (o.id = i, o));
+}
+
+// =====================================================================================================
 // GAME STATE + SIMULATION STEP (pure logic; no rendering, no wall-clock).
 // =====================================================================================================
-function createGame(seed) {
+function createGame(seed, stageId, colorId) {
+  stageId = stageId || 'town';
+  const ST = STAGES[stageId];
+  const sp = ST.startPos();
   const G = {
     seed, tick: 0, time: 0,       // time = simulated seconds (advances by DT * timeScale per tick; hitstop freezes it)
-    objs: generateWorld(seed),
-    power: TUNING.START_POWER, tier: 1,
-    pos: { x: TUNING.START_POS[0], z: TUNING.START_POS[1] }, vel: { x: 0, z: 0 }, acc: { x: 0, z: 0 }, heading: 0, speed: 0,
+    stage: stageId, stageDef: ST, colorId: colorId || 'blue',
+    objs: ST.generate(seed),
+    power: ST.startPower(), tier: 1,
+    pos: { x: sp[0], z: sp[1] }, vel: { x: 0, z: 0 }, acc: { x: 0, z: 0 }, heading: 0, speed: 0,
     finger: { down: false, x: 0, z: 0 },       // ground-plane target
     intent: { x: 0, z: 0 },                    // unit vector toward the finger (drives the funnel tilt)
     hitstop: 0, slowmo: 0, timeScale: 1, fovPunch: 0, shake: 0, shakeSeed: 0,
     camDist: 0, camDistTarget: 0, camPitch: TUNING.CAM_PITCH, focus: { x: 0, z: 0 }, camPos: { x: 0, y: 0, z: 0 },
     events: [],                                // {t, kind, size, tier, id}
     absorbCount: 0, tierUps: 0, won: false, winT: null, firstAbsorbOfTier: {},
-    distSinceDust: 0, timeSinceDust: 0, lastResponseTick: -1, lastInputTick: -1, stuckT: 0, squeeze: 0, lastBlockT: -99, bestDF: Infinity, prevX: TUNING.START_POS[0], prevZ: TUNING.START_POS[1],
+    distSinceDust: 0, timeSinceDust: 0, lastResponseTick: -1, lastInputTick: -1, stuckT: 0, squeeze: 0, lastBlockT: -99, bestDF: Infinity, prevX: sp[0], prevZ: sp[1],
     grid: null, absorbing: [], rattleQueue: [],
     listeners: [],
   };
   G.camDist = G.camDistTarget = TUNING.CAM_DIST0 + G.power * TUNING.CAM_DIST_K;
-  G.towerRef = G.objs.find(o => o.type.id === 'tower') || null;
+  G.goalId = ST.goal; G.goalRef = G.objs.find(o => o.type.id === ST.goal) || null; G.goalSize = ST.byId[ST.goal].size;
   G.focus.x = G.pos.x; G.focus.z = G.pos.z;
   // spatial hash for neighbor queries
   const CELL = 12;
@@ -591,7 +693,7 @@ function createGame(seed) {
   };
   G.emit = function (kind, data) { const e = Object.assign({ t: G.time, tick: G.tick, kind }, data); G.events.push(e); if (G.events.length > 400) G.events.splice(0, 200); for (const l of G.listeners) l(e); };
   G.funnelR = () => G.power * TUNING.FUNNEL_RADIUS;
-  G.speedScale = () => Math.pow(G.camDist / (TUNING.CAM_DIST0 + TUNING.START_POWER * TUNING.CAM_DIST_K), TUNING.SPEED_SCALE_EXP);
+  G.speedScale = () => Math.pow(G.camDist / (TUNING.CAM_DIST0 + TUNING.START_POWER * TUNING.CAM_DIST_K), TUNING.SPEED_SCALE_EXP) * (stageId === 'space' ? TUNING.SPACE_SPEED_MULT : 1);
   return G;
 }
 
@@ -729,9 +831,9 @@ function finishAbsorb(G, o) {
   const frac = clamp(o.size / G.power, 0, 1);
   const tierOfObj = o.type.tier;
   const conversion = o.rattledTooBig;
-  if (frac < T.DUST_FRAC && o.type.id !== 'tower') { G.power *= 1 + T.DUST_GROWTH; G.emit('dust', { size: o.size, tier: tierOfObj, id: o.id, frac, conversion, x: o.x, z: o.z }); return; }
+  if (frac < T.DUST_FRAC && o.type.id !== G.goalId) { G.power *= 1 + T.DUST_GROWTH; G.emit('dust', { size: o.size, tier: tierOfObj, id: o.id, frac, conversion, x: o.x, z: o.z }); return; }
   const prevPower = G.power;
-  G.power = Math.min(G.power * (1 + T.GROWTH * (T.TIER_GROWTH_MULT[G.tier - 1] || 1) * frac), TYPE_BY_ID.tower.size * 1.05);
+  G.power = Math.min(G.power * (1 + T.GROWTH * (G.stage === 'space' ? T.SPACE_GROWTH_MULT : (T.TIER_GROWTH_MULT[G.tier - 1] || 1)) * frac), G.goalSize * 1.05);
   G.absorbCount++;
   G.shake = Math.min(T.SHAKE_MAX, Math.max(G.shake, T.SHAKE_K * Math.pow(frac, 1.5) * T.SHAKE_MAX / T.SHAKE_MAX));
   if (frac >= T.HITSTOP_MIN_FRAC) G.hitstop = T.HITSTOP_TICKS;
@@ -739,7 +841,7 @@ function finishAbsorb(G, o) {
   if (!G.firstAbsorbOfTier[tierOfObj]) { G.firstAbsorbOfTier[tierOfObj] = true; firstOfTier = true; if (tierOfObj > 1) G.slowmo = T.SLOWMO_S; }
   G.emit('absorb', { size: o.size, tier: tierOfObj, id: o.id, frac, conversion, firstOfTier, x: o.x, z: o.z });
   // tier-up check
-  const th = T.TIER_THRESHOLDS;
+  const th = G.stageDef.thresholds();
   while (G.tier - 1 < th.length && G.power >= th[G.tier - 1]) {
     G.tier++; G.tierUps++; G.fovPunch = T.FOV_PUNCH;
     // highlight the nearest few newly-edible objects so she sees what just opened up
@@ -750,7 +852,7 @@ function finishAbsorb(G, o) {
     for (let i = 0; i < Math.min(3, cands.length); i++) { cands[i].highlightT = T.HIGHLIGHT_S; G.highlighted.push(cands[i]); }
     G.emit('tierup', { tier: G.tier, power: G.power });
   }
-  if (o.type.id === 'tower' && !G.won) { G.won = true; G.winT = G.time; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time }); }
+  if (o.type.id === G.goalId && !G.won) { G.won = true; G.winT = G.time; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time, stage: G.stage, final: !G.stageDef.next }); }
   void prevPower;
 }
 
@@ -807,7 +909,7 @@ function createRenderer(THREE, canvas, opts) {
   const skyColor = new THREE.Color(0xa9c4dd);
   scene.background = skyColor;
   scene.fog = new THREE.Fog(0xb8cbdc, 60, 300);
-  const camera = new THREE.PerspectiveCamera(T.FOV, 1, 0.5, 4000);
+  const camera = new THREE.PerspectiveCamera(T.FOV, 1, 0.5, 60000);
 
   // ---- lights: low warm sun, long shadows ----
   const sun = new THREE.DirectionalLight(0xffe4bd, 2.9);
@@ -828,8 +930,9 @@ function createRenderer(THREE, canvas, opts) {
     for (let i = 0; i < 12; i++) { const x = prng() * 512, y = prng() * 512, r = 20 + prng() * 60; g.fillStyle = 'rgba(130,115,65,0.16)'; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 60); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
   })();
+  const townGroup = new THREE.Group(); scene.add(townGroup);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({ map: gtex, color: 0xe6e6d6, roughness: 1, metalness: 0 }));
-  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; townGroup.add(ground);
   // roads + fields (flat decals)
   {
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x4d4b48, roughness: 1 });
@@ -838,15 +941,15 @@ function createRenderer(THREE, canvas, opts) {
     for (let k = -2; k <= 2; k++) {
       for (const alongX of [true, false]) {
         const r = new THREE.Mesh(new THREE.PlaneGeometry(alongX ? 900 : T.ROAD_WIDTH, alongX ? T.ROAD_WIDTH : 900), roadMat);
-        r.rotation.x = -Math.PI / 2; r.position.set(alongX ? 0 : k * RS, 0.03, alongX ? k * RS : 0); r.receiveShadow = true; scene.add(r);
+        r.rotation.x = -Math.PI / 2; r.position.set(alongX ? 0 : k * RS, 0.03, alongX ? k * RS : 0); r.receiveShadow = true; townGroup.add(r);
         const l = new THREE.Mesh(new THREE.PlaneGeometry(alongX ? 900 : 0.25, alongX ? 0.25 : 900), lineMat);
-        l.rotation.x = -Math.PI / 2; l.position.set(alongX ? 0 : k * RS, 0.04, alongX ? k * RS : 0); scene.add(l);
+        l.rotation.x = -Math.PI / 2; l.position.set(alongX ? 0 : k * RS, 0.04, alongX ? k * RS : 0); townGroup.add(l);
       }
     }
     const fieldMat = new THREE.MeshStandardMaterial({ color: 0xa88f4e, roughness: 1 });
     const fieldMat2 = new THREE.MeshStandardMaterial({ color: 0x86a04a, roughness: 1 });
     const prng = mulberry32(5);
-    for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) { if (prng() < 0.45) continue; const cx = (i + 0.5) * RS, cz = (j + 0.5) * RS; const w = 40 + prng() * 40, h = 40 + prng() * 40; const f = new THREE.Mesh(new THREE.PlaneGeometry(w, h), prng() < 0.5 ? fieldMat : fieldMat2); f.rotation.x = -Math.PI / 2; f.position.set(cx + (prng() - 0.5) * 30, 0.02, cz + (prng() - 0.5) * 30); f.receiveShadow = true; scene.add(f); }
+    for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) { if (prng() < 0.45) continue; const cx = (i + 0.5) * RS, cz = (j + 0.5) * RS; const w = 40 + prng() * 40, h = 40 + prng() * 40; const f = new THREE.Mesh(new THREE.PlaneGeometry(w, h), prng() < 0.5 ? fieldMat : fieldMat2); f.rotation.x = -Math.PI / 2; f.position.set(cx + (prng() - 0.5) * 30, 0.02, cz + (prng() - 0.5) * 30); f.receiveShadow = true; townGroup.add(f); }
   }
 
   // ---- instanced object meshes ----
@@ -857,20 +960,21 @@ function createRenderer(THREE, canvas, opts) {
       .replace('#include <color_vertex>', 'vColor = vec3(1.0); vColor *= color;\n#ifdef USE_INSTANCING_COLOR\n vColor.xyz *= mix(vec3(1.0), instanceColor.xyz, tint);\n#endif');
   };
   objMat.customProgramCacheKey = () => 'tinted';
+  const glowMat = new THREE.MeshBasicMaterial({ vertexColors: true }); // the Sun: unlit, always bright
   const meshes = {};
   const dummy = new THREE.Object3D();
   const M4 = new THREE.Matrix4();
   let objs = [];
-  function buildObjects(list) {
-    for (const id in meshes) { scene.remove(meshes[id]); meshes[id].geometry.dispose(); }
+  function buildObjects(list, types) {
+    for (const id in meshes) { scene.remove(meshes[id]); meshes[id].geometry.dispose(); delete meshes[id]; }
     objs = list;
     const byType = {};
     for (const o of list) (byType[o.type.id] = byType[o.type.id] || []).push(o);
-    for (const t of TYPES) {
+    for (const t of (types || TYPES)) {
       const arr = byType[t.id] || []; if (!arr.length) continue;
       const geo = builders[t.id]();
-      const im = new THREE.InstancedMesh(geo, objMat, arr.length);
-      im.castShadow = t.tier >= T.SHADOW_TIERS_MIN; im.receiveShadow = t.tier >= 3;
+      const im = new THREE.InstancedMesh(geo, t.glow ? glowMat : objMat, arr.length);
+      im.castShadow = !!shadowsOn && t.tier >= T.SHADOW_TIERS_MIN; im.receiveShadow = !!shadowsOn && t.tier >= 3;
       im.frustumCulled = false;
       const c = new THREE.Color();
       arr.forEach((o, i) => {
@@ -895,7 +999,7 @@ function createRenderer(THREE, canvas, opts) {
     const g = new THREE.LatheGeometry(pts, 28);
     return g;
   })();
-  const funnelUniforms = { uTime: { value: 0 }, uLean: { value: new THREE.Vector2(0, 0) }, uSquash: { value: 1 }, uScale: { value: new THREE.Vector2(1, 1) }, uColor: { value: new THREE.Color(0xa99c8a) }, uCore: { value: new THREE.Color(0x6a5f55) }, uAlpha: { value: 0.66 }, uSky: { value: skyColor }, uFog: { value: new THREE.Vector2(60, 300) }, uSeed: { value: 0 } };
+  const funnelUniforms = { uTime: { value: 0 }, uLean: { value: new THREE.Vector2(0, 0) }, uSquash: { value: 1 }, uScale: { value: new THREE.Vector2(1, 1) }, uColor: { value: new THREE.Color(0xa99c8a) }, uCore: { value: new THREE.Color(0x6a5f55) }, uAlpha: { value: 0.66 }, uSky: { value: new THREE.Color(0xb8cbdc) }, uFog: { value: new THREE.Vector2(60, 300) }, uSeed: { value: 0 } };
   const funnelMat = new THREE.ShaderMaterial({
     uniforms: funnelUniforms, transparent: true, depthWrite: false, side: THREE.DoubleSide,
     vertexShader: `
@@ -988,13 +1092,46 @@ function createRenderer(THREE, canvas, opts) {
     void fh;
   }
 
+  // ---- stars (space stage) ----
+  const stars = (() => {
+    const N = 2600; const pos = new Float32Array(N * 3); const prng = mulberry32(31);
+    for (let i = 0; i < N; i++) { const u = prng() * 2 - 1, a = prng() * TAU, r = Math.sqrt(1 - u * u); pos[i * 3] = r * Math.cos(a) * 30000; pos[i * 3 + 1] = Math.abs(u) * 30000 + 200; pos[i * 3 + 2] = r * Math.sin(a) * 30000; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, fog: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
+  })();
+  let shadowsOn = true, stageId = 'town';
+  const dustColor = new THREE.Color(0xa99c8a), dustCore = new THREE.Color(0x6a5f55), tmpC = new THREE.Color();
+  function setColor(colorId) {
+    const hex = (T.COLORS[colorId] !== undefined) ? T.COLORS[colorId] : T.COLORS.blue;
+    tmpC.setHex(hex);
+    funnelUniforms.uColor.value.copy(dustColor).lerp(tmpC, T.COLOR_MIX);
+    funnelUniforms.uCore.value.copy(dustCore).lerp(tmpC, T.COLOR_MIX * 0.6);
+    coreMat.uniforms.uColor.value.copy(dustColor).lerp(tmpC, T.COLOR_MIX * 0.8);
+    coreMat.uniforms.uCore.value.copy(dustCore).lerp(tmpC, T.COLOR_MIX * 0.5);
+    // a share of the orbiting chips take the color too
+    const prng = mulberry32(77 + 1); const c = new THREE.Color();
+    for (let i = 0; i < RN; i++) { const v = prng(); if (v < 0.35) { c.setHex(hex).offsetHSL(0, 0, (prng() - 0.5) * 0.2); ring.setColorAt(i, c); } }
+    ring.instanceColor.needsUpdate = true;
+  }
+  function setEnvironment(stage) {
+    stageId = stage;
+    const space = stage === 'space';
+    townGroup.visible = !space; stars.visible = space; skyDome.visible = !space; skirt.visible = !space; blob.visible = !space;
+    shadowsOn = !space; renderer.shadowMap.enabled = !space; sun.castShadow = !space;
+    scene.background = space ? new THREE.Color(0x05060f) : skyColor;
+    scene.fog.color.setHex(space ? 0x05060f : 0xb8cbdc);
+    funnelUniforms.uSky.value = scene.fog.color; coreMat.uniforms.uSky.value = scene.fog.color;
+    hemi.intensity = space ? 0.35 : 1.1; sun.intensity = space ? 3.2 : 2.9;
+  }
+
   // ---- sky dome (gradient) ----
+  let skyDome;
   {
     const g = new THREE.SphereGeometry(1900, 16, 8);
     const col = new Float32Array(g.attributes.position.count * 3); const top = new THREE.Color(0x6f9ccf), hor = new THREE.Color(0xd9e2ea);
     for (let i = 0; i < g.attributes.position.count; i++) { const y = g.attributes.position.getY(i) / 1900; const c = hor.clone().lerp(top, clamp(y * 1.6, 0, 1)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); sky.renderOrder = -10; scene.add(sky);
+    const sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); sky.renderOrder = -10; scene.add(sky); skyDome = sky;
   }
 
   // ---- per-frame update from game state ----
@@ -1013,7 +1150,7 @@ function createRenderer(THREE, canvas, opts) {
     camera.fov = T.FOV + G.fovPunch; camera.updateProjectionMatrix();
     camera.lookAt(G.focus.x + sx * 0.5, 0, G.focus.z + sz * 0.5);
     camera.rotation.z += (shakeRng() * 2 - 1) * G.shake * 0.6;
-    scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K;
+    if (stageId === 'space') { scene.fog.near = G.camDist * 40; scene.fog.far = G.camDist * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
     funnelUniforms.uFog.value.set(scene.fog.near, scene.fog.far); coreMat.uniforms.uFog.value.set(scene.fog.near, scene.fog.far);
     // sun + shadow frustum follow the tornado, sized to the view
     const sr = Math.max(30, G.camDist * 1.6);
@@ -1029,13 +1166,13 @@ function createRenderer(THREE, canvas, opts) {
     prevLeanX += (leanTx - prevLeanX) * lk; prevLeanZ += (leanTz - prevLeanZ) * lk;
     const accMag = Math.hypot(G.acc.x, G.acc.z) / (T.ACCEL * G.speedScale());
     const squash = 1 - 0.18 * clamp(accMag, 0, 1) + 0.06 * Math.sin(G.tick * 0.35);
-    for (const u of [funnelUniforms, coreMat.uniforms]) { u.uTime.value = G.tick * DT; u.uLean.value.set(prevLeanX, prevLeanZ); u.uSquash.value = squash; u.uScale.value.set(fr, fh); }
+    for (const u of [funnelUniforms, coreMat.uniforms]) { u.uTime.value = G.tick * DT * T.SPIN; u.uLean.value.set(prevLeanX, prevLeanZ); u.uSquash.value = squash; u.uScale.value.set(fr, fh); }
     coreMat.uniforms.uScale.value.set(fr * 0.55, fh * 0.9);
     funnel.position.set(G.pos.x, 0, G.pos.z); core.position.set(G.pos.x, 0, G.pos.z);
-    skirt.position.set(G.pos.x, 0.06, G.pos.z); skirt.scale.setScalar(fr * 7); skirt.rotation.z = G.tick * 0.05;
+    skirt.position.set(G.pos.x, 0.06, G.pos.z); skirt.scale.setScalar(fr * 7); skirt.rotation.z = G.tick * 0.05 * T.SPIN;
     blob.position.set(G.pos.x, 0.05, G.pos.z); blob.scale.setScalar(fr * 1.6);
     // debris ring
-    const rt = G.tick * DT;
+    const rt = G.tick * DT * T.SPIN;
     for (let i = 0; i < RN; i++) {
       const d = ringData[i];
       const a = d.a0 + rt * d.w * (5.5 / (0.6 + d.h * 2)) ;
@@ -1071,6 +1208,8 @@ function createRenderer(THREE, canvas, opts) {
   const o_age = (o, G) => (G.tick * DT) - o.rattleTick;
   function objectVisible(o, G) { sph.center.set(o.x, o.size * 0.4, o.z); sph.radius = Math.max(o.size * 0.6, o.foot); if (!frustum.intersectsSphere(sph)) return false; const d = Math.hypot(o.x - G.camPos.x, o.z - G.camPos.z); return d < scene.fog.far * 0.9; }
 
+  const FURNITURE = [0xf7f2ea, 0xff9ac2, 0x8a2f2f, 0x7a5230, 0x1c1c1c, 0xffffff, 0xf2d34b, 0x3f6fbf, 0x2f8f5a];
+  const FURNISHED = { house: 18, bighouse: 26, barn: 14, church: 22, shed: 6, rv: 8, bus: 10 };
   // react to game events (visual side only)
   function onEvent(e, G) {
     const fr = G.funnelR();
@@ -1078,6 +1217,8 @@ function createRenderer(THREE, canvas, opts) {
       const o = G.objs[e.id]; hideInstance(o);
       const n = Math.round(6 + 26 * e.frac);
       emitParticles(n, G.pos.x, 0.2 + fr * 0.5, G.pos.z, 2 + e.frac * 6 * fr, 3 + 6 * fr * e.frac, 0.08 + 0.12 * e.size, o.type.colors, true, 0.8 + e.frac);
+      // Playtest 1: 'go inside houses' -- buildings burst into their furniture, which spirals up the funnel
+      if (FURNISHED[o.type.id]) emitParticles(FURNISHED[o.type.id], G.pos.x, 0.5, G.pos.z, 3 + fr, 4 + fr * 0.8, 0.045 * e.size + 0.25, FURNITURE, true, 1.4 + e.frac);
       if (e.firstOfTier) emitParticles(90, G.pos.x, 0.5, G.pos.z, 4 + fr * 3, 4 + fr * 2, 0.1 + e.size * 0.08, [0xffd447, 0xffffff, 0xff7a3a, 0x7ad0ff], false, 1.4);
     } else if (e.kind === 'dust') {
       const o = G.objs[e.id]; hideInstance(o);
@@ -1099,8 +1240,8 @@ function createRenderer(THREE, canvas, opts) {
     }
   }
   function render() { renderer.render(scene, camera); }
-  function reset() { funnelUniforms.uColor.value.setHex(0xa99c8a); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; }
-  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, get width() { return width; }, get height() { return height; } };
+  function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; }
+  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, get width() { return width; }, get height() { return height; } };
 }
 
 // =====================================================================================================
@@ -1199,11 +1340,11 @@ function createBot(G, view) {
         retarget = TUNING.BOT_RETARGET_TICKS;
         if (target && target.state !== 0) chaseTicks = 0;
         // nearest edible thing, with bigger (more satisfying) things worth a longer trip; crumbs only if nothing else
-        let best = null, bestD = Infinity, bestAny = null, bestAnyD = Infinity, tower = null; const towerRef = G.towerRef; const cands = [];
+        let best = null, bestD = Infinity, bestAny = null, bestAnyD = Infinity, tower = null; const towerRef = G.goalRef; const cands = [];
         for (const o of G.objs) {
           if (o.state !== 0 || o.size > G.power) continue;
           const bl = blacklist.get(o.id); if (bl !== undefined) { if (bl > G.tick) continue; blacklist.delete(o.id); }
-          if (o.type.id === 'tower') tower = o;
+          if (o.type.id === G.goalId) tower = o;
           const frac = o.size / G.power;
           let dist = Math.hypot(o.x - G.pos.x, o.z - G.pos.z) * (o.rattledTooBig ? TUNING.BOT_GRUDGE : 1);
           if (dist < bestAnyD) { bestAnyD = dist; bestAny = o; }
@@ -1294,17 +1435,28 @@ function boot() {
   }
   function lift() { if (app.G) app.G.finger.down = false; }
 
-  function newGame(seed, opts) {
+  function newGame(seed, opts, stageId) {
     opts = opts || {};
     if (app.R) app.R.reset();
-    app.G = createGame(seed);
+    app.G = createGame(seed, stageId || 'town', app.colorId);
     if (!app.R) { app.R = createRenderer(THREE, canvas, { dpr: opts.dpr, antialias: opts.antialias, shadowMap: opts.shadowMap }); }
-    app.R.buildObjects(app.G.objs);
+    app.R.setEnvironment(app.G.stage);
+    app.R.buildObjects(app.G.objs, app.G.stageDef.types);
+    app.R.setColor(app.colorId);
     app.G.listeners.push(e => app.R.onEvent(e, app.G));
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
+    for (const h of app.stageHooks) h(app.G);
   }
+  // After the water tower: lift off into space with the same color and seed, power carried by the stage.
+  function nextStage() {
+    const G = app.G; if (!G || !G.stageDef.next) return false;
+    newGame(G.seed, {}, G.stageDef.next);
+    app.G.emit('stage', { stage: app.G.stage });
+    return true;
+  }
+  app.colorId = 'blue'; app.stageHooks = [];
   function onResize() {
     if (!app.R) return;
     const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
@@ -1343,11 +1495,11 @@ function boot() {
     let n = 0;
     while (app.acc >= DT && n < 4) { stepGame(G); app.acc -= DT; n++; }
     if (n === 4) app.acc = 0;
-    if (G.won && G.time - G.winT > 6 && !app.winShown) { app.winShown = true; startEl.classList.remove('hidden'); }
+    if (G.won && G.time - G.winT > 6 && !app.winShown) { if (!nextStage()) { app.winShown = true; startEl.classList.remove('hidden'); } else return; }
     app.R.update(G, elapsed); app.audio.update(G); app.R.render();
   }
   function startLive() {
-    try { if (!app.G || app.G.won) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
+    try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
@@ -1356,8 +1508,10 @@ function boot() {
     app.running = true; app.last = performance.now(); app.acc = 0;
     cancelAnimationFrame(app.raf); app.raf = requestAnimationFrame(frame);
   }
-  startEl.addEventListener('touchend', e => { e.preventDefault(); if (!app.simMode) startLive(); }, touchOpts);
-  startEl.addEventListener('click', () => { if (!app.simMode) startLive(); });
+  // Start = pick a color. Five discs; tapping one is the single start tap.
+  function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); }
+  startEl.addEventListener('touchend', e => { e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
+  startEl.addEventListener('click', e => { if (app.simMode) return; pickFrom(e); startLive(); });
 
   // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.
   function showFailure(msg) {
@@ -1380,11 +1534,14 @@ function boot() {
     const errBefore = consoleErrors;
     if (app.R && app.R.renderer.getPixelRatio() !== Math.min(opts.dpr, TUNING.MAX_DPR)) app.R.renderer.setPixelRatio(Math.min(opts.dpr, TUNING.MAX_DPR));
     newGame(seed, opts);
-    const G = app.G, R = app.R;
+    let G = app.G; const R = app.R;
     const _pv = new THREE.Vector3();
     const view = { get width() { return R.width; }, get height() { return R.height; }, project(x, y, z, out) { const v = _pv.set(x, y, z).project(R.camera); out.ok = v.z < 1 && v.z > -1; out.x = (v.x + 1) / 2 * R.width; out.y = (1 - v.y) / 2 * R.height; return out; } };
-    const bot = createBot(G, view);
+    let bot = createBot(G, view);
     app.bot = bot; app.view = view;
+    // space stage accumulators (the gate metrics above are town-only)
+    const space = { started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0 };
+    let townWinTick = null, townSnap = null;
     const maxTicks = Math.round(seconds / DT);
     // telemetry accumulators
     const capTicks = Math.min(maxTicks + 2, 60 * 3600 * 2); // telemetry buffers: at most two hours of ticks
@@ -1398,7 +1555,7 @@ function boot() {
     const heap = () => (performance.memory ? performance.memory.usedJSHeapSize : null);
     let heapStart = null; const heapSeries = [];
     const tierUpTimes = []; const phases = [{ tier: 1, t0: 0, absorbs: 0, rattles: 0, dust: 0, types: {} }]; const rollingAt = [];
-    G.listeners.push(e => {
+    const townListener = e => {
       if (e.kind === 'absorb') { absorbTimes.push(e.t); if (firstAbsorbT === null) firstAbsorbT = e.t; if (e.conversion) conversions++; attempts.push(1); if (G.tier < 6) attemptsPreWin.push(1); }
       if (e.kind === 'rattle') { attempts.push(0); if (G.tier < 6) attemptsPreWin.push(0); }
       if (e.kind === 'tierup') { tierUpTimes.push(e.t); phases.push({ tier: e.tier, t0: e.t, absorbs: 0, rattles: 0, dust: 0, types: {} }); }
@@ -1406,7 +1563,15 @@ function boot() {
       if (attempts.length >= 20 && (e.kind === 'absorb' || e.kind === 'rattle')) { let s = 0; for (let i = attempts.length - 20; i < attempts.length; i++) s += attempts[i]; rollingAll.push(s / 20); rollingAt.push(+e.t.toFixed(0)); if (G.tier < 6) rollingRates.push(s / 20); }
       if (e.kind === 'absorb' || e.kind === 'dust' || e.kind === 'rattle' || e.kind === 'sway' || e.kind === 'tierup' || e.kind === 'win') { lastObjEventT = e.t; }
       if (e.kind !== 'pull') { lastFeedbackT = e.t; }
-    });
+    };
+    G.listeners.push(townListener);
+    const spaceListener = e => {
+      if (e.kind === 'absorb') { space.absorbs++; space.absorbTimes.push(e.t); }
+      if (e.kind === 'rattle') space.rattles++;
+      if (e.kind === 'tierup') space.tierUps++;
+      if (e.kind === 'absorb' || e.kind === 'dust' || e.kind === 'rattle' || e.kind === 'sway' || e.kind === 'tierup' || e.kind === 'win') space.lastObjEventT = e.t;
+      if (e.kind === 'win') space.wonAt = e.t;
+    };
     const isNum = v => typeof v === 'number' && isFinite(v);
     let winTick = null; const _visNear = []; const trace = [];
     const tooBigVisibleSampleEvery = 3;
@@ -1435,21 +1600,33 @@ function boot() {
         if (!opts.render) R.update(G, DT); // camera + frustum only matter here
         let vis = false;
         const cand = G.nearby(G.camPos.x, G.camPos.z, G.camDist * TUNING.FOG_FAR_K, _visNear);
-        for (let i = 0; i < cand.length; i++) { const o = cand[i]; if (o.state === 2 || (o.size <= G.power && !(G.tier >= 6 && o.type.id === 'tower'))) continue; if (R.objectVisible(o, G)) { vis = true; break; } }
-        ticksCounted++; if (vis) ticksTooBigVisible++; const vt = visByTier[G.tier] || (visByTier[G.tier] = [0, 0]); vt[0]++; if (vis) vt[1]++;
+        for (let i = 0; i < cand.length; i++) { const o = cand[i]; if (o.state === 2 || (o.size <= G.power && !(G.tier >= 6 && o.type.id === G.goalId))) continue; if (R.objectVisible(o, G)) { vis = true; break; } }
+        if (G.stage === 'town') { ticksCounted++; if (vis) ticksTooBigVisible++; const vt = visByTier[G.tier] || (visByTier[G.tier] = [0, 0]); vt[0]++; if (vis) vt[1]++; }
+        else { space.visTicks++; if (vis) space.visSeen++; }
       }
-      // feedback gap during active play
-      const active = G.finger.down || G.speed > TUNING.IDLE_SPEED;
-      if (active) { if (lastActiveT < 0) { lastActiveT = G.time; lastFeedbackT = Math.max(lastFeedbackT, G.time); } const gap = G.time - lastFeedbackT; if (gap > maxFeedbackGap) maxFeedbackGap = gap; }
-      else lastActiveT = -1;
-      const dead = G.time - lastObjEventT; if (dead > maxDeadtime) { maxDeadtime = dead; maxDeadAt = G.time; }
+      if (G.stage === 'town') {
+        // feedback gap during active play
+        const active = G.finger.down || G.speed > TUNING.IDLE_SPEED;
+        if (active) { if (lastActiveT < 0) { lastActiveT = G.time; lastFeedbackT = Math.max(lastFeedbackT, G.time); } const gap = G.time - lastFeedbackT; if (gap > maxFeedbackGap) maxFeedbackGap = gap; }
+        else lastActiveT = -1;
+        const dead = G.time - lastObjEventT; if (dead > maxDeadtime) { maxDeadtime = dead; maxDeadAt = G.time; }
+      } else { const dead = G.time - space.lastObjEventT; if (dead > space.maxDead) space.maxDead = dead; }
       if (heapStart === null && G.time > opts.heapWarmupS) { if (window.gc) window.gc(); heapStart = heap(); heapT = G.time; }
       if (G.tick % 3600 === 0) { if (window.gc) window.gc(); const h = heap(); if (h) heapSeries.push(+(h / 1048576).toFixed(2)); }
       if (G.won && winTick === null) winTick = G.tick;
+      // stage transition: 120 ticks after the water tower, lift off into space (unless a one-stage run was asked for)
+      if (G.stage === 'town' && G.won && opts.stages !== 1 && G.tick - winTick > 120 && space.started === null) {
+        townWinTick = winTick; const carryTick = G.tick, carryTime = G.time;
+        townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length };
+        nextStage(); G = app.G; bot = createBot(G, view); app.bot = bot;
+        G.tick = carryTick; G.time = carryTime; // one continuous clock for the session
+        space.started = G.time; space.lastObjEventT = G.time; winTick = null;
+        G.listeners.push(spaceListener);
+      }
     }
     if (opts.render && opts.renderFrom) {
       const saveRender = opts.render; opts.render = false;
-      while (G.tick < opts.renderFrom && G.tick < maxTicks && !G.won) { oneTick(null); if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0)); }
+      while (G.tick < opts.renderFrom && G.tick < maxTicks && !(G.won && !G.stageDef.next)) { oneTick(null); if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0)); }
       opts.render = saveRender; nCpu = 0; nFrame = 0;
     }
     if (opts.render) {
@@ -1458,12 +1635,12 @@ function boot() {
         function f(now) {
           const ms = first ? null : now - last; last = now; first = false;
           oneTick(ms);
-          if (G.tick >= maxTicks || (opts.stopOnWin && G.won && G.tick - winTick > 120)) resolve(); else requestAnimationFrame(f);
+          if (G.tick >= maxTicks || (opts.stopOnWin && G.won && !G.stageDef.next && G.tick - winTick > 120)) resolve(); else requestAnimationFrame(f);
         }
         requestAnimationFrame(f);
       });
     } else {
-      while (G.tick < maxTicks && !(opts.stopOnWin && G.won && G.tick - winTick > 120)) {
+      while (G.tick < maxTicks && !(opts.stopOnWin && G.won && !G.stageDef.next && winTick !== null && G.tick - winTick > 120)) {
         oneTick(null);
         if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0));
       }
@@ -1500,20 +1677,22 @@ function boot() {
       phase_stats: phases.map((p, i) => { const t1 = i + 1 < phases.length ? phases[i + 1].t0 : endT; const dur = t1 - p.t0; return { tier: p.tier, dur_s: +dur.toFixed(0), absorbs: p.absorbs, apm: +(p.absorbs / Math.max(dur, 1) * 60).toFixed(1), rattles: p.rattles, dust: p.dust, types: p.types }; }),
       bot_stats: bot.stats, success_windows_at_100pct: rollingAll.map((r, i) => r >= 1 ? rollingAt[i] : null).filter(x => x !== null),
       counts_by_type: (() => { const c = {}; for (const o of G.objs) c[o.type.id] = (c[o.type.id] || 0) + 1; return c; })(),
-      tier_ups: G.tierUps, tier_up_times_s: tierUpTimes.map(t => +t.toFixed(1)), tier_up_intervals_s: tierUpTimes.map((t, i) => +(t - (i ? tierUpTimes[i - 1] : 0)).toFixed(0)), final_tier: G.tier, final_power_m: +G.power.toFixed(2),
+      tier_ups: townSnap ? townSnap.tierUps : G.tierUps, tier_up_times_s: tierUpTimes.map(t => +t.toFixed(1)), tier_up_intervals_s: tierUpTimes.map((t, i) => +(t - (i ? tierUpTimes[i - 1] : 0)).toFixed(0)), final_tier: townSnap ? townSnap.tier : G.tier, final_power_m: +(townSnap ? townSnap.power : G.power).toFixed(2),
       max_deadtime_s: +maxDeadtime.toFixed(2), max_deadtime_at_s: +maxDeadAt.toFixed(1),
       frames_with_visible_too_big_pct: ticksCounted ? +(ticksTooBigVisible / ticksCounted * 100).toFixed(2) : null, too_big_visible_by_tier: Object.fromEntries(Object.entries(visByTier).map(([k, v]) => [k, +(v[1] / v[0] * 100).toFixed(1)])),
       obstacle_to_food_conversions: conversions,
       max_feedback_gap_s: +maxFeedbackGap.toFixed(2),
-      session_length_to_win_s: G.won ? +G.winT.toFixed(1) : null,
-      won: G.won, trace,
-      objects_total: G.objs.length, objects_left: G.objs.filter(o => o.state === 0).length,
+      session_length_to_win_s: townWinTick !== null ? +(townWinTick * DT).toFixed(1) : (G.stage === 'town' && G.won ? +G.winT.toFixed(1) : null),
+      won: townWinTick !== null || (G.stage === 'town' && G.won), trace,
+      space: space.started === null ? null : (() => { const t0 = space.started, t1 = space.wonAt !== null ? space.wonAt : endT; const apm = []; for (let t = t0 + 60; t <= t1 + 1e-9; t += 15) { let c = 0; for (const a of space.absorbTimes) if (a > t - 60 && a <= t) c++; apm.push(c); } return { won: space.wonAt !== null, length_s: +(t1 - t0).toFixed(1), absorbs: space.absorbs, rattles: space.rattles, tier_ups: space.tierUps, apm_series: apm, max_deadtime_s: +space.maxDead.toFixed(2), too_big_visible_pct: space.visTicks ? +(space.visSeen / space.visTicks * 100).toFixed(1) : null, final_tier: G.tier, final_power: +G.power.toFixed(0) }; })(),
+      objects_total: townSnap ? townSnap.total : G.objs.length, objects_left: townSnap ? townSnap.left : G.objs.filter(o => o.state === 0).length,
     };
     app.simMode = false;
     return result;
   };
-  window.__state = () => ({ tick: app.G.tick, time: app.G.time, power: app.G.power, tier: app.G.tier, pos: app.G.pos, vel: app.G.vel, absorbs: app.G.absorbCount, won: app.G.won, lastInputTick: app.G.lastInputTick, lastResponseTick: app.G.lastResponseTick, errors });
+  window.__state = () => ({ stage: app.G.stage, color: app.G.colorId, tick: app.G.tick, time: app.G.time, power: app.G.power, tier: app.G.tier, pos: app.G.pos, vel: app.G.vel, absorbs: app.G.absorbCount, won: app.G.won, lastInputTick: app.G.lastInputTick, lastResponseTick: app.G.lastResponseTick, errors });
   window.__startLive = startLive;
+  window.__nextStage = nextStage;
   window.__app = app;
   window.__TUNING = TUNING;
 }

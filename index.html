@@ -1541,7 +1541,7 @@ function boot() {
     app.bot = bot; app.view = view;
     // space stage accumulators (the gate metrics above are town-only)
     const space = { started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0 };
-    let townWinTick = null, townSnap = null;
+    let townWinTick = null, townWinT = null, townSnap = null; // townWinT is simulated time (G.time: scaled by slow-mo, paused in hitstop), the clock absorbTimes use
     const maxTicks = Math.round(seconds / DT);
     // telemetry accumulators
     const capTicks = Math.min(maxTicks + 2, 60 * 3600 * 2); // telemetry buffers: at most two hours of ticks
@@ -1616,7 +1616,7 @@ function boot() {
       if (G.won && winTick === null) winTick = G.tick;
       // stage transition: 120 ticks after the water tower, lift off into space (unless a one-stage run was asked for)
       if (G.stage === 'town' && G.won && opts.stages !== 1 && G.tick - winTick > 120 && space.started === null) {
-        townWinTick = winTick; const carryTick = G.tick, carryTime = G.time;
+        townWinTick = winTick; townWinT = G.winT; const carryTick = G.tick, carryTime = G.time;
         townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length };
         if (heapStart) { if (window.gc) window.gc(); const h = heap(); if (h) heapTownGrowth = +((h - heapStart) / heapStart * 100).toFixed(2); } heapStart = null; heapStageT0 = G.time; // new heap window for the space stage (its world is bigger; a one-time step is not a leak)
         nextStage(); G = app.G; bot = createBot(G, view); app.bot = bot;
@@ -1656,7 +1656,7 @@ function boot() {
     const endT = G.time;
     // absorbs per minute: rolling 60 s windows sampled every 15 s once 60 s have elapsed
     const apm = [];
-    const townEndT = townWinTick !== null ? townWinTick * DT : endT; // town rate windows stop at the town win; space has its own series
+    const townEndT = townWinT !== null ? townWinT : endT; // town rate windows stop at the town win (same clock as absorbTimes); space has its own series
     for (let t = 60; t <= townEndT + 1e-9; t += 15) { let c = 0; for (const a of absorbTimes) if (a > t - 60 && a <= t) c++; apm.push({ t: Math.round(t), apm: c }); }
     if (!apm.length) { apm.push({ t: Math.round(townEndT), apm: absorbTimes.length / Math.max(townEndT, 1) * 60 }); }
     const rr = rollingRates;

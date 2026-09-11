@@ -99,7 +99,7 @@ const TornadoGame = (() => {
 const TUNING = {
   // ---- Growth / absorb ladder ----
   START_POWER: 0.62,          // m. Largest object size absorbable at the start (leaves 0.35, paper 0.4, trash 0.6).
-  GROWTH: 0.055,             // Playtest 1: she wants to get bigger faster.             // Fractional power gain from absorbing an object as big as the current power.
+  GROWTH: 0.11,              // Playtest 2: 'bigger faster' -- twice again.             // Fractional power gain from absorbing an object as big as the current power.
   DUST_FRAC: 0.45,            // Objects smaller than this fraction of power are 'dust': swept up quietly, no growth beat.
   DUST_GROWTH: 0.0,          // Fractional power gain per dust object (0: crumbs do not feed growth).
   TIER_THRESHOLDS: [1.0, 2.4, 6.5, 12.5, 24.0], // Town: power needed to enter tier 2,3,4,5,6 (tier 6 = water tower).
@@ -132,12 +132,12 @@ const TUNING = {
   SQUEEZE_S: 1.5,            // Seconds the squeeze-through lasts.
 
   // ---- Movement (chase-the-finger model) ----
-  MAX_SPEED: 5.0,             // m/s at start; scales with camera distance so screen-speed feels constant.
-  ACCEL: 30,                 // m/s^2 at start; scales like MAX_SPEED.
+  MAX_SPEED: 10.0,           // Playtest 2: 'speed it up 2x'.             // m/s at start; scales with camera distance so screen-speed feels constant.
+  ACCEL: 60,                 // m/s^2 at start; scales like MAX_SPEED.
   TURN_RATE: 4.0,            // rad/s the heading may rotate at full speed.
   TURN_SNAP: 4.0,            // Extra turn-rate multiplier when nearly stopped (a slow tornado pivots on the spot).
   CARVE: 0.7,                // Fraction of target speed bled off in a full U-turn (weight in the turn).
-  DECEL: 40,                 // m/s^2 braking at start; scales like ACCEL.
+  DECEL: 80,                 // m/s^2 braking at start; scales like ACCEL.
   ARRIVE_DIST: 1.2,          // m. Inside this distance of the finger the tornado eases to a stop.
   DRAG: 3.5,                 // 1/s velocity decay when the finger is lifted.
   SPEED_SCALE_EXP: 0.36,      // speed *= (camDist / camDist0) ^ this.
@@ -164,12 +164,12 @@ const TUNING = {
   HITSTOP_MIN_FRAC: 0.55,    // objectSize/power at or above which an absorb is "large".
   SLOWMO_SCALE: 0.28,        // Time scale during the first absorb of a new tier.
   SLOWMO_S: 0.55,            // Seconds of slow-mo (real time).
-  SPIRAL_S: 0.5,             // Seconds an object takes to spiral into the funnel (small objects).
-  SPIRAL_S_BIG: 1.8,         // Seconds for objects near the current power.
+  SPIRAL_S: 0.35,             // Seconds an object takes to spiral into the funnel (small objects).
+  SPIRAL_S_BIG: 0.9,         // Seconds for objects near the current power.
   ANCHOR_FRAC: 0.45,         // While pulling in something at least this fraction of power, the tornado digs in ...
   ANCHOR_SPEED: 0.3,         // ... and its top speed drops to this fraction (weight; also paces dense areas).
   SPIRAL_ANTICIPATION: 0.3,  // First fraction of the spiral where the object lifts and shakes before moving in.
-  DUST_PUFF_M: 3.0,          // Meters travelled between ground dust puffs (visual feedback while cruising).
+  DUST_PUFF_M: 6.0,          // Meters travelled between ground dust puffs (visual feedback while cruising).
   DUST_PUFF_S: 0.7,          // ... or at least one puff every this many seconds while moving.
   DEBRIS_RING_N: 220,        // Debris chips orbiting the funnel.
   PARTICLE_POOL: 900,        // Max simultaneous burst particles.
@@ -1528,7 +1528,7 @@ function boot() {
   // logic-only (fast) and reports frame metrics as null.
   // =====================================================================================================
   window.__sim = async function (seed, seconds, opts) {
-    opts = Object.assign({ render: true, dpr: 1.5, stopOnWin: true, warmupS: 2, heapWarmupS: 30, latencyProbes: [400, 2400, 5400], yieldEvery: 900 }, opts || {});
+    opts = Object.assign({ render: true, dpr: 1.5, stopOnWin: true, warmupS: 2, heapWarmupS: 15, latencyProbes: [400, 2400, 5400], yieldEvery: 900 }, opts || {});
     cancelAnimationFrame(app.raf); app.running = false; app.simMode = true; startEl.classList.add('hidden');
     if (opts.tuning) for (const k in opts.tuning) { if (typeof TUNING[k] === 'object' && !Array.isArray(TUNING[k])) Object.assign(TUNING[k], opts.tuning[k]); else TUNING[k] = opts.tuning[k]; }
     const errBefore = consoleErrors;
@@ -1541,7 +1541,7 @@ function boot() {
     app.bot = bot; app.view = view;
     // space stage accumulators (the gate metrics above are town-only)
     const space = { started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0 };
-    let townWinTick = null, townSnap = null;
+    let townWinTick = null, townWinT = null, townSnap = null; // townWinT is simulated time (G.time: scaled by slow-mo, paused in hitstop), the clock absorbTimes use
     const maxTicks = Math.round(seconds / DT);
     // telemetry accumulators
     const capTicks = Math.min(maxTicks + 2, 60 * 3600 * 2); // telemetry buffers: at most two hours of ticks
@@ -1553,7 +1553,7 @@ function boot() {
     const absorbTimes = [], attempts = [], attemptsPreWin = [], rollingRates = [], rollingAll = []; let conversions = 0;
     const latencies = []; let probe = null;
     const heap = () => (performance.memory ? performance.memory.usedJSHeapSize : null);
-    let heapStart = null; const heapSeries = [];
+    let heapStart = null; const heapSeries = []; let heapStageT0 = 0, heapTownGrowth = null;
     const tierUpTimes = []; const phases = [{ tier: 1, t0: 0, absorbs: 0, rattles: 0, dust: 0, types: {} }]; const rollingAt = [];
     const townListener = e => {
       if (e.kind === 'absorb') { absorbTimes.push(e.t); if (firstAbsorbT === null) firstAbsorbT = e.t; if (e.conversion) conversions++; attempts.push(1); if (G.tier < 6) attemptsPreWin.push(1); }
@@ -1611,13 +1611,14 @@ function boot() {
         else lastActiveT = -1;
         const dead = G.time - lastObjEventT; if (dead > maxDeadtime) { maxDeadtime = dead; maxDeadAt = G.time; }
       } else { const dead = G.time - space.lastObjEventT; if (dead > space.maxDead) space.maxDead = dead; }
-      if (heapStart === null && G.time > opts.heapWarmupS) { if (window.gc) window.gc(); heapStart = heap(); heapT = G.time; }
+      if (heapStart === null && G.time > heapStageT0 + opts.heapWarmupS) { if (window.gc) window.gc(); heapStart = heap(); heapT = G.time; }
       if (G.tick % 3600 === 0) { if (window.gc) window.gc(); const h = heap(); if (h) heapSeries.push(+(h / 1048576).toFixed(2)); }
       if (G.won && winTick === null) winTick = G.tick;
       // stage transition: 120 ticks after the water tower, lift off into space (unless a one-stage run was asked for)
       if (G.stage === 'town' && G.won && opts.stages !== 1 && G.tick - winTick > 120 && space.started === null) {
-        townWinTick = winTick; const carryTick = G.tick, carryTime = G.time;
+        townWinTick = winTick; townWinT = G.winT; const carryTick = G.tick, carryTime = G.time;
         townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length };
+        if (heapStart) { if (window.gc) window.gc(); const h = heap(); if (h) heapTownGrowth = +((h - heapStart) / heapStart * 100).toFixed(2); } heapStart = null; heapStageT0 = G.time; // new heap window for the space stage (its world is bigger; a one-time step is not a leak)
         nextStage(); G = app.G; bot = createBot(G, view); app.bot = bot;
         G.tick = carryTick; G.time = carryTime; // one continuous clock for the session
         space.started = G.time; space.lastObjEventT = G.time; winTick = null;
@@ -1655,8 +1656,9 @@ function boot() {
     const endT = G.time;
     // absorbs per minute: rolling 60 s windows sampled every 15 s once 60 s have elapsed
     const apm = [];
-    for (let t = 60; t <= endT + 1e-9; t += 15) { let c = 0; for (const a of absorbTimes) if (a > t - 60 && a <= t) c++; apm.push({ t: Math.round(t), apm: c }); }
-    if (!apm.length) { apm.push({ t: Math.round(endT), apm: absorbTimes.length / Math.max(endT, 1) * 60 }); }
+    const townEndT = townWinT !== null ? townWinT : endT; // town rate windows stop at the town win (same clock as absorbTimes); space has its own series
+    for (let t = 60; t <= townEndT + 1e-9; t += 15) { let c = 0; for (const a of absorbTimes) if (a > t - 60 && a <= t) c++; apm.push({ t: Math.round(t), apm: c }); }
+    if (!apm.length) { apm.push({ t: Math.round(townEndT), apm: absorbTimes.length / Math.max(townEndT, 1) * 60 }); }
     const rr = rollingRates;
     const result = {
       seed, seconds_requested: seconds, ticks: G.tick, sim_seconds: +endT.toFixed(2), rendered: !!opts.render, dpr: R.renderer.getPixelRatio(), viewport: [R.width, R.height],
@@ -1664,7 +1666,7 @@ function boot() {
       fps_p99_frametime_ms: sorted.length ? +pct(sorted, 0.99).toFixed(1) : null,
       cpu_frame_ms_mean: cpuSorted.length ? +mean(cpuSorted).toFixed(2) : null, cpu_frame_ms_p99: cpuSorted.length ? +pct(cpuSorted, 0.99).toFixed(2) : null,
       console_errors: consoleErrors - errBefore, console_error_samples: errors.slice(-5),
-      heap_growth_pct: (heapStart && heapEnd) ? +((heapEnd - heapStart) / heapStart * 100).toFixed(2) : null, heap_start_mb: heapStart ? +(heapStart / 1048576).toFixed(1) : null, heap_end_mb: heapEnd ? +(heapEnd / 1048576).toFixed(1) : null, heap_window_s: heapT != null ? +(endT - heapT).toFixed(0) : null, heap_series_mb: heapSeries,
+      heap_growth_pct: (heapStart && heapEnd) ? +((heapEnd - heapStart) / heapStart * 100).toFixed(2) : null, heap_growth_town_pct: heapTownGrowth, heap_start_mb: heapStart ? +(heapStart / 1048576).toFixed(1) : null, heap_end_mb: heapEnd ? +(heapEnd / 1048576).toFixed(1) : null, heap_window_s: heapT != null ? +(endT - heapT).toFixed(0) : null, heap_series_mb: heapSeries,
       input_latency_frames: latencies.length ? Math.max(...latencies) : null, input_latency_samples: latencies,
       nan_count: nanCount,
       time_to_first_absorb_s: firstAbsorbT === null ? null : +firstAbsorbT.toFixed(2),

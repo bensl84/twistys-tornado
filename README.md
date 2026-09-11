@@ -1,6 +1,6 @@
 # Twister
 
-A one-finger 3D tornado game for a young child on an iPad (Safari). Drag a finger, the tornado chases it, absorbs things, grows, and wins by absorbing the water tower.
+A one-finger 3D tornado game for a young child on an iPad (Safari). Pick a color, drag a finger, the tornado chases it, absorbs things, grows, and takes the water tower. Then it lifts off into space: asteroids, rockets, the Moon, the Earth, the planets, and finally the Sun.
 
 - `index.html` — the whole game. One self-contained file (three.js r158 inlined), no build step, runs offline from a local file or added to the home screen. Every tunable number is in the `TUNING` block at the top.
 - `sw.js` + `manifest.webmanifest` — home-screen install and offline cache. Bump `BUILD` in `sw.js` on every deploy; that is what replaces the cached page on iPads that already installed it.

@@ -25,7 +25,7 @@ const opt = (name, def) => { const i = args.indexOf('--' + name); return i >= 0 
 const has = name => args.includes('--' + name);
 const seedSpec = opt('seeds', '1-5');
 const seeds = seedSpec.includes('-') ? (() => { const [a, b] = seedSpec.split('-').map(Number); const r = []; for (let s = a; s <= b; s++) r.push(s); return r; })() : seedSpec.split(',').map(Number);
-const seconds = Number(opt('seconds', 600));
+const seconds = Number(opt('seconds', 1200));
 const render = opt('render', '1') !== '0';
 const dpr = Number(opt('dpr', 1.5));
 const width = Number(opt('width', 1180)), height = Number(opt('height', 820));
@@ -46,12 +46,13 @@ const GATES = [
   ['absorbs_per_min_max', v => v <= 25, '<= 25'],
   ['attempt_success_rate_rolling', v => v && v.mean >= 0.70 && v.mean <= 0.85 && v.max < 1.0, 'mean 70-85 %, max < 100 %'],
   ['tier_ups', v => v >= 5 && v <= 7, '5-7'],
-  ['tier_up_intervals_s', v => Array.isArray(v) && v.length > 0 && v.every(x => x >= 60 && x <= 100), 'each 60-100 s'],
+  ['tier_up_intervals_s', v => Array.isArray(v) && v.length > 0 && v.every(x => x >= 35 && x <= 75), 'each 35-75 s (playtest 1: faster)'],
   ['max_deadtime_s', v => v < 6, '< 6'],
   ['frames_with_visible_too_big_pct', v => v > 95, '> 95'],
   ['obstacle_to_food_conversions', v => v >= 8, '>= 8'],
   ['max_feedback_gap_s', v => v < 1.0, '< 1.0'],
-  ['session_length_to_win_s', v => v != null && v >= 360 && v <= 600, '360-600'],
+  ['session_length_to_win_s', v => v != null && v >= 240 && v <= 420, '240-420 (playtest 1: faster; space adds ~4 min)'],
+  ['space', v => v && v.won && v.length_s >= 150 && v.length_s <= 420 && v.too_big_visible_pct > 95, 'space won in 150-420 s, too-big visible > 95 %'],
 ];
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', '--disable-background-timer-throttling'] });
@@ -76,13 +77,14 @@ for (const seed of seeds) {
   const fails = GATES.filter(([k, f]) => !f(res[k])).map(([k]) => k);
   console.log(`seed ${seed}: ${res.sim_seconds}s sim, ${res.wall_s}s wall, won=${res.won} at ${res.session_length_to_win_s}s, absorbs=${res.absorbs_total}, tierups=${res.tier_ups} (${res.tier_up_times_s.join(',')}), apm=[${res.absorbs_per_min_series.join(',')}], success=${JSON.stringify(res.attempt_success_rate_rolling)}, dead=${res.max_deadtime_s}, gap=${res.max_feedback_gap_s}, toobig=${res.frames_with_visible_too_big_pct}%, conv=${res.obstacle_to_food_conversions}, first=${res.time_to_first_absorb_s}s, lat=${res.input_latency_frames}, nan=${res.nan_count}, err=${res.console_errors}, fps=${res.fps_mean}/${res.fps_p99_frametime_ms}ms cpu=${res.cpu_frame_ms_mean}/${res.cpu_frame_ms_p99}ms heap=${res.heap_growth_pct}% ${JSON.stringify(res.heap_series_mb)} deadAt=${res.max_deadtime_at_s} phases=${JSON.stringify(res.phase_stats)} visTier=${JSON.stringify(res.too_big_visible_by_tier)} left=${res.objects_left}/${res.objects_total}`);
   if (fails.length) console.log(`   FAIL: ${fails.join(', ')}`); else console.log('   all gates pass');
+  if (res.space) console.log(`   space: ${JSON.stringify(res.space)}`);
   if (pageErrors.length) console.log('   page errors:', pageErrors.slice(0, 5));
   await ctx.close();
 }
 await browser.close();
 console.log(`offline check: ${networkRequests} network requests attempted (must be 0)`);
 {
-  const rows = GATES.map(([k, f, desc]) => [k, desc, ...results.map(r => { const v = r[k]; const s = Array.isArray(v) ? v.join('/') : v && typeof v === 'object' ? `${(v.mean * 100).toFixed(0)}% (${(v.min * 100).toFixed(0)}-${(v.max * 100).toFixed(0)})` : String(v); return (f(v) ? 'PASS ' : 'FAIL ') + s; })]);
+  const rows = GATES.map(([k, f, desc]) => [k, desc, ...results.map(r => { const v = r[k]; const s = Array.isArray(v) ? v.join('/') : v && typeof v === 'object' && 'mean' in v ? `${(v.mean * 100).toFixed(0)}% (${(v.min * 100).toFixed(0)}-${(v.max * 100).toFixed(0)})` : v && typeof v === 'object' && 'length_s' in v ? `${v.won ? 'won' : 'not won'} ${v.length_s}s vis ${v.too_big_visible_pct}%` : String(v); return (f(v) ? 'PASS ' : 'FAIL ') + s; })]);
   const head = ['metric', 'gate', ...results.map(r => 'seed ' + r.seed)];
   const widths = head.map((h, i) => Math.max(h.length, ...rows.map(r => String(r[i]).length)));
   const line = r => '| ' + r.map((c, i) => String(c).padEnd(widths[i])).join(' | ') + ' |';

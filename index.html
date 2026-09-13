@@ -1811,7 +1811,7 @@ function boot() {
     app.bot = bot; app.view = view;
     // later-stage accumulators, one per stage after the town (the gate metrics above are town-only)
     const stagesRes = {}; let space = null; // space = the accumulator of the current non-town stage
-    const newStageAcc = () => ({ started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0, heapGrowthPct: null });
+    const newStageAcc = () => ({ started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0, heapGrowthPct: null, finalTier: null, finalPower: null });
     let townWinTick = null, townWinT = null, townSnap = null; // townWinT is simulated time (G.time: scaled by slow-mo, paused in hitstop), the clock absorbTimes use
     const maxTicks = Math.round(seconds / DT);
     // telemetry accumulators
@@ -1889,6 +1889,7 @@ function boot() {
       if (G.won && !G.stageDef.last && opts.stages !== 1 && G.tick - winTick > 120) {
         if (G.stage === 'town') { townWinTick = winTick; townWinT = G.winT; townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length }; }
         const carryTick = G.tick, carryTime = G.time;
+        if (space) { space.finalTier = G.tier; space.finalPower = G.power; }
         if (heapStart) { if (window.gc) window.gc(); const h = heap(); if (h) { const g = +((h - heapStart) / heapStart * 100).toFixed(2); if (G.stage === 'town') heapTownGrowth = g; heapByStage[G.stage] = g; } } heapStart = null; heapStageT0 = G.time; // a new heap window per stage (each world is a one-time step, not a leak)
         nextStage(); G = app.G; bot = createBot(G, view); app.bot = bot;
         G.tick = carryTick; G.time = carryTime; // one continuous clock for the session
@@ -1957,13 +1958,13 @@ function boot() {
       max_feedback_gap_s: +maxFeedbackGap.toFixed(2),
       session_length_to_win_s: townWinTick !== null ? +(townWinTick * DT).toFixed(1) : (G.stage === 'town' && G.won ? +G.winT.toFixed(1) : null),
       won: townWinTick !== null || (G.stage === 'town' && G.won), trace,
-      stages: Object.fromEntries(Object.entries(stagesRes).map(([id, acc]) => { const t0 = acc.started, t1 = acc.wonAt !== null ? acc.wonAt : endT; const apm = []; for (let t = t0 + 60; t <= t1 + 1e-9; t += 15) { let c = 0; for (const a of acc.absorbTimes) if (a > t - 60 && a <= t) c++; apm.push(c); } return [id, { won: acc.wonAt !== null, length_s: +(t1 - t0).toFixed(1), absorbs: acc.absorbs, rattles: acc.rattles, tier_ups: acc.tierUps, apm_series: apm, max_deadtime_s: +acc.maxDead.toFixed(2), too_big_visible_pct: acc.visTicks ? +(acc.visSeen / acc.visTicks * 100).toFixed(1) : null, heap_growth_pct: heapByStage[id] === undefined ? null : heapByStage[id] }]; })),
-      space: null, // (kept for old scripts; see `stages`)
+      stages: Object.fromEntries(Object.entries(stagesRes).map(([id, acc]) => { const t0 = acc.started, t1 = acc.wonAt !== null ? acc.wonAt : endT; const apm = []; for (let t = t0 + 60; t <= t1 + 1e-9; t += 15) { let c = 0; for (const a of acc.absorbTimes) if (a > t - 60 && a <= t) c++; apm.push(c); } return [id, { won: acc.wonAt !== null, length_s: +(t1 - t0).toFixed(1), absorbs: acc.absorbs, rattles: acc.rattles, tier_ups: acc.tierUps, apm_series: apm, max_deadtime_s: +acc.maxDead.toFixed(2), too_big_visible_pct: acc.visTicks ? +(acc.visSeen / acc.visTicks * 100).toFixed(1) : null, heap_growth_pct: heapByStage[id] === undefined ? null : heapByStage[id], final_tier: acc.finalTier, final_power: acc.finalPower === null ? null : +acc.finalPower.toFixed(0) }]; })),
+      space: null, // filled below: the solar record, same shape as the old space block (kept for old scripts; see `stages`)
       objects_total: townSnap ? townSnap.total : G.objs.length, objects_left: townSnap ? townSnap.left : G.objs.filter(o => o.state === 0).length,
     };
+    // the stage still running at the end: its heap window ends at the run's end, its tier and power are the current ones
+    if (G.stage !== 'town' && result.stages[G.stage]) { const cur = result.stages[G.stage]; if (cur.heap_growth_pct === null) cur.heap_growth_pct = result.heap_growth_pct; if (cur.final_tier === null) { cur.final_tier = G.tier; cur.final_power = +G.power.toFixed(0); } }
     result.space = result.stages.solar || null;
-    // the final stage's heap window ends at the run's end
-    if (G.stage !== 'town' && result.stages[G.stage] && result.stages[G.stage].heap_growth_pct === null) result.stages[G.stage].heap_growth_pct = result.heap_growth_pct;
     app.simMode = false;
     return result;
   };

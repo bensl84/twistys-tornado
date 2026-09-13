@@ -53,7 +53,7 @@ const GATES = [
   ['obstacle_to_food_conversions', v => v >= 3, '>= 3 (playtest 2: an 80 s town leaves fewer rattles to convert)'],
   ['max_feedback_gap_s', v => v < 1.0, '< 1.0'],
   ['session_length_to_win_s', v => v != null && v >= 50 && v <= 150, '50-150 (playtest 2: 2x speed and growth; space adds ~1 min)'],
-  ['space', v => v && v.won && v.length_s >= 30 && v.length_s <= 150 && v.too_big_visible_pct > 95, 'space won in 30-150 s, too-big visible > 95 %'],
+  ['stages', v => v && ['solar', 'galaxy', 'universe'].every(id => v[id] && v[id].won && v[id].length_s >= 30 && v[id].length_s <= 150 && v[id].too_big_visible_pct > 95 && (v[id].heap_growth_pct == null || v[id].heap_growth_pct < 5)), 'solar, galaxy, universe each won in 30-150 s, too-big visible > 95 %, heap < 5 %'],
 ];
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', '--disable-background-timer-throttling'] });
@@ -78,14 +78,14 @@ for (const seed of seeds) {
   const fails = GATES.filter(([k, f]) => !f(res[k])).map(([k]) => k);
   console.log(`seed ${seed}: ${res.sim_seconds}s sim, ${res.wall_s}s wall, won=${res.won} at ${res.session_length_to_win_s}s, absorbs=${res.absorbs_total}, tierups=${res.tier_ups} (${res.tier_up_times_s.join(',')}), apm=[${res.absorbs_per_min_series.join(',')}], success=${JSON.stringify(res.attempt_success_rate_rolling)}, dead=${res.max_deadtime_s}, gap=${res.max_feedback_gap_s}, toobig=${res.frames_with_visible_too_big_pct}%, conv=${res.obstacle_to_food_conversions}, first=${res.time_to_first_absorb_s}s, lat=${res.input_latency_frames}, nan=${res.nan_count}, err=${res.console_errors}, fps=${res.fps_mean}/${res.fps_p99_frametime_ms}ms cpu=${res.cpu_frame_ms_mean}/${res.cpu_frame_ms_p99}ms heap=${res.heap_growth_pct}% ${JSON.stringify(res.heap_series_mb)} deadAt=${res.max_deadtime_at_s} phases=${JSON.stringify(res.phase_stats)} visTier=${JSON.stringify(res.too_big_visible_by_tier)} left=${res.objects_left}/${res.objects_total}`);
   if (fails.length) console.log(`   FAIL: ${fails.join(', ')}`); else console.log('   all gates pass');
-  if (res.space) console.log(`   space: ${JSON.stringify(res.space)}`);
+  if (res.stages) for (const id in res.stages) console.log(`   ${id}: ${JSON.stringify(res.stages[id])}`);
   if (pageErrors.length) console.log('   page errors:', pageErrors.slice(0, 5));
   await ctx.close();
 }
 await browser.close();
 console.log(`offline check: ${networkRequests} network requests attempted (must be 0)`);
 {
-  const rows = GATES.map(([k, f, desc]) => [k, desc, ...results.map(r => { const v = r[k]; const s = Array.isArray(v) ? v.join('/') : v && typeof v === 'object' && 'mean' in v ? `${(v.mean * 100).toFixed(0)}% (${(v.min * 100).toFixed(0)}-${(v.max * 100).toFixed(0)})` : v && typeof v === 'object' && 'length_s' in v ? `${v.won ? 'won' : 'not won'} ${v.length_s}s vis ${v.too_big_visible_pct}%` : String(v); return (f(v) ? 'PASS ' : 'FAIL ') + s; })]);
+  const rows = GATES.map(([k, f, desc]) => [k, desc, ...results.map(r => { const v = r[k]; const s = Array.isArray(v) ? v.join('/') : v && typeof v === 'object' && 'mean' in v ? `${(v.mean * 100).toFixed(0)}% (${(v.min * 100).toFixed(0)}-${(v.max * 100).toFixed(0)})` : v && typeof v === 'object' && 'length_s' in v ? `${v.won ? 'won' : 'not won'} ${v.length_s}s vis ${v.too_big_visible_pct}%` : v && typeof v === 'object' && v.solar ? Object.entries(v).map(([id, x]) => `${id[0]}:${x.won ? '' : 'NOT WON '}${x.length_s}s/${x.too_big_visible_pct}%`).join(' ') : String(v); return (f(v) ? 'PASS ' : 'FAIL ') + s; })]);
   const head = ['metric', 'gate', ...results.map(r => 'seed ' + r.seed)];
   const widths = head.map((h, i) => Math.max(h.length, ...rows.map(r => String(r[i]).length)));
   const line = r => '| ' + r.map((c, i) => String(c).padEnd(widths[i])).join(' | ') + ' |';

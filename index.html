@@ -85,6 +85,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 </div>
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
 <div id="fail" class="hidden" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;"></div>
+<div id="fade" style="position:absolute;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;"></div>
 <div id="rotate" aria-label="Rotate the iPad sideways">
   <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="30" y="12" width="40" height="76" rx="6" fill="#f2e9d8" stroke="#8a7a60" stroke-width="4"/><circle cx="50" cy="80" r="3" fill="#8a7a60"/></svg>
 </div>
@@ -112,6 +113,29 @@ const TUNING = {
   SPACE_START_KIT: { rock_s: 20, rock_m: 12, satellite: 5, rocket: 4 },
   EARTH_POS: [190, -230],    // The Earth sits right beside her when she arrives: too big, for now.
   SUN_POS: [120, -2100],     // The Sun is the last thing in the sky.
+  // ---- Galaxy stage (after the Sun). Same size ladder as the solar system so the camera, speed and pacing carry over. ----
+  GALAXY_THRESHOLDS: [60, 125, 210, 330, 900],
+  GALAXY_START_POWER: 24, GALAXY_RADIUS: 2600,
+  GALAXY_SCATTER: { g_rogue: 2600, g_browndwarf: 1800, g_reddwarf: 900, g_iceworld: 320, g_wisp: 260, g_whitedwarf: 200, g_yellowstar: 90, g_orangestar: 40, g_bluestar: 48, g_orangegiant: 26, g_redgiant: 14, g_cluster: 12, g_nebula: 26, g_supergiant: 8, g_pulsar: 6, g_bigcluster: 12, g_bluesuper: 6, g_bignebula: 6, g_supernova: 6, g_globular: 8, g_minihole: 5, g_hypergiant: 8 },
+  GALAXY_LANDMARKS: [['g_bluestar', 190, -230], ['g_orangegiant', 340, -170], ['g_redgiant', -520, -380], ['g_cluster', 480, -520], ['g_nebula', -260, -900], ['g_supergiant', 900, -1100], ['g_pulsar', -1000, -1250], ['g_bignebula', -600, -1700], ['g_bluesuper', 700, -1650], ['g_hypergiant', -300, -1500]], // the next 'too big' thing is always somewhere on the way to the core
+  GALAXY_START_KIT: { g_rogue: 20, g_browndwarf: 12, g_iceworld: 5, g_wisp: 4 },
+  GALAXY_CORE_POS: [0, -2100],   // The galactic core is the last thing in the galaxy.
+  // ---- Universe stage (after the galactic core). ----
+  UNIVERSE_THRESHOLDS: [60, 125, 210, 330, 900],
+  UNIVERSE_START_POWER: 24, UNIVERSE_RADIUS: 2600,
+  UNIVERSE_SCATTER: { u_speck: 2600, u_dwarf: 1800, u_irregular: 320, u_lenticular: 260, u_smallspiral: 900, u_ringgal: 200, u_barred: 90, u_bulge: 40, u_spiral: 48, u_elliptical: 26, u_bigirregular: 14, u_pair: 12, u_bigspiral: 26, u_giantell: 8, u_quasar: 6, u_group: 12, u_bigquasar: 6, u_giantspiral: 6, u_cluster: 6, u_supercluster: 8, u_wall: 5, u_attractor: 8 },
+  UNIVERSE_LANDMARKS: [['u_spiral', 190, -230], ['u_elliptical', 340, -170], ['u_bigirregular', -520, -380], ['u_pair', 480, -520], ['u_bigspiral', -260, -900], ['u_giantell', 900, -1100], ['u_quasar', -1000, -1250], ['u_giantspiral', -600, -1700], ['u_bigquasar', 700, -1650], ['u_attractor', -300, -1500]],
+  UNIVERSE_START_KIT: { u_speck: 20, u_dwarf: 12, u_irregular: 5, u_lenticular: 4 },
+  EVERYTHING_POS: [0, -2100],    // Everything there is: the last thing in the universe.
+  // ---- Black hole (the tornado's form once it leaves Earth) ----
+  BH_CORE: 0.9,              // Core radius = funnel radius * this.
+  BH_Y: 1.2,                 // Core height above the plane = funnel radius * this.
+  BH_DISK: 3.4,              // Accretion disk outer radius = funnel radius * this.
+  BH_TRANSFORM_S: 1.4,       // Seconds the tornado takes to collapse into the black hole on liftoff.
+  // ---- Finale: dive into the black hole, out the other side, a new universe, back on Earth ----
+  FINALE_ZOOM_S: 3.2,        // Seconds the camera takes to fall into the core.
+  FINALE_DARK_S: 0.7,        // Seconds of black.
+  FINALE_FLASH_S: 1.6,       // Seconds for the white of the new universe to clear.
   SPIN: 2.6,                 // Playtest 1: 'twirl really fast'. Multiplies funnel twist and debris orbit speed.
   COLORS: { blue: 0x3a86ff, teal: 0x2ec4b6, purple: 0x8b5cf6, pink: 0xff5fa2, red: 0xe63946 }, // Start discs.
   COLOR_MIX: 0.6,            // How strongly the chosen color tints the dust funnel (0 = plain dust).
@@ -289,13 +313,72 @@ const SPACE_TYPES = [
   { id: 'dwarfstar',tier: 5, size: 560, foot: 280, blocks: true,  colors: [0xff7a3a, 0xff9a4a, 0xff5a5a], glow: true },
   { id: 'sun',      tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xffd94a], glow: true },
 ];
+// Galaxy ladder: stars, clouds and clusters. Same numbers as the solar ladder so it plays at the same pace.
+const GALAXY_TYPES = [
+  { id: 'g_rogue',       tier: 1, size: 10,  foot: 5,   blocks: false, colors: [0x5a7bd0, 0x7a6fb8, 0x4f8fb8] },
+  { id: 'g_iceworld',    tier: 1, size: 14,  foot: 7,   blocks: false, colors: [0xcfe6f0, 0xe8f4f8] },
+  { id: 'g_browndwarf',  tier: 1, size: 18,  foot: 9,   blocks: false, colors: [0x8a3a2a, 0x6a2a1a, 0x9a4a2a] },
+  { id: 'g_wisp',        tier: 1, size: 22,  foot: 8,   blocks: false, colors: [0xb59ad6, 0x9ad6c8, 0xd69ab8] },
+  { id: 'g_reddwarf',    tier: 1, size: 30,  foot: 15,  blocks: false, colors: [0xff6a4a, 0xff8a5a], glow: true },
+  { id: 'g_whitedwarf',  tier: 1, size: 34,  foot: 14,  blocks: false, colors: [0xf4f8ff, 0xdfe8ff], glow: true },
+  { id: 'g_yellowstar',  tier: 1, size: 45,  foot: 22,  blocks: false, colors: [0xffd94a, 0xffe07a], glow: true },
+  { id: 'g_orangestar',  tier: 1, size: 50,  foot: 25,  blocks: true,  colors: [0xffa040, 0xff9a3a], glow: true },
+  { id: 'g_bluestar',    tier: 2, size: 60,  foot: 30,  blocks: true,  colors: [0x8ab8ff, 0xa0c8ff], glow: true },
+  { id: 'g_orangegiant', tier: 2, size: 75,  foot: 37,  blocks: true,  colors: [0xff9a4a], glow: true },
+  { id: 'g_redgiant',    tier: 2, size: 90,  foot: 45,  blocks: true,  colors: [0xff5a3a, 0xff6a3a], glow: true },
+  { id: 'g_cluster',     tier: 2, size: 90,  foot: 45,  blocks: false, colors: [0xfff0c0, 0xcfe0ff], glow: true },
+  { id: 'g_nebula',      tier: 3, size: 125, foot: 62,  blocks: false, colors: [0xd66b9b, 0x6bd6c8, 0x9b6bd6, 0x6b8fd6] },
+  { id: 'g_supergiant',  tier: 3, size: 130, foot: 65,  blocks: true,  colors: [0xffc070, 0xffd090], glow: true },
+  { id: 'g_pulsar',      tier: 3, size: 160, foot: 80,  blocks: true,  colors: [0xbfe8ff], glow: true },
+  { id: 'g_bigcluster',  tier: 4, size: 210, foot: 105, blocks: false, colors: [0xfff4d6, 0xe0ecff], glow: true },
+  { id: 'g_bluesuper',   tier: 4, size: 220, foot: 110, blocks: true,  colors: [0x9ac8ff, 0xbcdcff], glow: true },
+  { id: 'g_bignebula',   tier: 4, size: 240, foot: 120, blocks: false, colors: [0xd66b9b, 0x6bd6c8, 0x9b6bd6] },
+  { id: 'g_supernova',   tier: 5, size: 330, foot: 165, blocks: false, colors: [0xffffff, 0xfff0a0], glow: true },
+  { id: 'g_minihole',    tier: 5, size: 380, foot: 190, blocks: true,  colors: [0xff9a4a, 0x9ac8ff, 0xd66b9b], glow: true },
+  { id: 'g_globular',    tier: 5, size: 430, foot: 215, blocks: false, colors: [0xfff4d6], glow: true },
+  { id: 'g_hypergiant',  tier: 5, size: 560, foot: 280, blocks: true,  colors: [0xff7a3a, 0xff5a5a], glow: true },
+  { id: 'g_core',        tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xffe6a8], glow: true },
+];
+// Universe ladder: galaxies, clusters, and finally everything.
+const UNIVERSE_TYPES = [
+  { id: 'u_speck',       tier: 1, size: 10,  foot: 5,   blocks: false, colors: [0xcfd8ff, 0xffe0c0, 0xd0ffe0] },
+  { id: 'u_dwarf',       tier: 1, size: 18,  foot: 9,   blocks: false, colors: [0xdfe4ff, 0xffe8d0] },
+  { id: 'u_irregular',   tier: 1, size: 14,  foot: 7,   blocks: false, colors: [0xb8c8ff, 0xffd8b8, 0xc8ffd8] },
+  { id: 'u_lenticular',  tier: 1, size: 22,  foot: 11,  blocks: false, colors: [0xffe6c0, 0xf0e0ff] },
+  { id: 'u_smallspiral', tier: 1, size: 30,  foot: 15,  blocks: false, colors: [0xbfd0ff, 0xd8c8ff, 0xffd0e0] },
+  { id: 'u_ringgal',     tier: 1, size: 34,  foot: 17,  blocks: false, colors: [0x9ad6ff, 0xffb890] },
+  { id: 'u_barred',      tier: 1, size: 45,  foot: 22,  blocks: false, colors: [0xffe0b0, 0xd0d8ff] },
+  { id: 'u_bulge',       tier: 1, size: 50,  foot: 25,  blocks: true,  colors: [0xfff0d0, 0xffe8f0] },
+  { id: 'u_spiral',      tier: 2, size: 60,  foot: 30,  blocks: true, colors: [0xbfd0ff, 0xffd8c0, 0xd0f0ff] },
+  { id: 'u_elliptical',  tier: 2, size: 75,  foot: 37,  blocks: true,  colors: [0xffe8c8, 0xf8f0e0] },
+  { id: 'u_bigirregular',tier: 2, size: 90,  foot: 45,  blocks: true, colors: [0xb8c8ff, 0xffb8d8] },
+  { id: 'u_pair',        tier: 2, size: 90,  foot: 45,  blocks: false, colors: [0xd8e0ff, 0xffe0d0] },
+  { id: 'u_bigspiral',   tier: 3, size: 125, foot: 62,  blocks: true, colors: [0xc0d0ff, 0xffd0c0, 0xd0e8ff] },
+  { id: 'u_giantell',    tier: 3, size: 130, foot: 65,  blocks: true,  colors: [0xfff0d8, 0xf0e8ff] },
+  { id: 'u_quasar',      tier: 3, size: 160, foot: 80,  blocks: true,  colors: [0xbfe8ff, 0xffffff], glow: true },
+  { id: 'u_group',       tier: 4, size: 210, foot: 105, blocks: false, colors: [0xd8e0ff, 0xffe8d8] },
+  { id: 'u_bigquasar',   tier: 4, size: 220, foot: 110, blocks: true,  colors: [0xd0f0ff, 0xffffff], glow: true },
+  { id: 'u_giantspiral', tier: 4, size: 240, foot: 120, blocks: true, colors: [0xc8d8ff, 0xffd8c8] },
+  { id: 'u_cluster',     tier: 5, size: 330, foot: 165, blocks: false, colors: [0xe0e8ff, 0xfff0e0] },
+  { id: 'u_wall',        tier: 5, size: 380, foot: 190, blocks: false, colors: [0xd0d8ff, 0xf0e0ff] },
+  { id: 'u_supercluster',tier: 5, size: 430, foot: 215, blocks: false, colors: [0xe8f0ff, 0xfff4e8] },
+  { id: 'u_attractor',   tier: 5, size: 560, foot: 280, blocks: true,  colors: [0xffffff, 0xfff4d6], glow: true },
+  { id: 'u_everything',  tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xfff4d6], glow: true },
+];
 const TYPE_BY_ID = {};
 TYPES.forEach((t, i) => { t.index = i; TYPE_BY_ID[t.id] = t; });
 const SPACE_TYPE_BY_ID = {};
 SPACE_TYPES.forEach((t, i) => { t.index = i; SPACE_TYPE_BY_ID[t.id] = t; });
+const GALAXY_TYPE_BY_ID = {};
+GALAXY_TYPES.forEach((t, i) => { t.index = i; GALAXY_TYPE_BY_ID[t.id] = t; });
+const UNIVERSE_TYPE_BY_ID = {};
+UNIVERSE_TYPES.forEach((t, i) => { t.index = i; UNIVERSE_TYPE_BY_ID[t.id] = t; });
+// The run: town -> solar system -> galaxy -> universe -> (through the black hole) -> a new town. form: what the player is.
 const STAGES = {
-  town:  { types: TYPES, byId: TYPE_BY_ID, goal: 'tower', thresholds: () => TUNING.TIER_THRESHOLDS, startPower: () => TUNING.START_POWER, startPos: () => TUNING.START_POS, generate: seed => generateWorld(seed), next: 'space' },
-  space: { types: SPACE_TYPES, byId: SPACE_TYPE_BY_ID, goal: 'sun', thresholds: () => TUNING.SPACE_THRESHOLDS, startPower: () => TUNING.SPACE_START_POWER, startPos: () => [0, 0], generate: seed => generateSpace(seed), next: null },
+  town:     { types: TYPES, byId: TYPE_BY_ID, goal: 'tower', thresholds: () => TUNING.TIER_THRESHOLDS, startPower: () => TUNING.START_POWER, startPos: () => TUNING.START_POS, generate: seed => generateWorld(seed), next: 'solar', form: 'tornado', env: 'town', speedMult: () => 1, growthMult: null, last: false },
+  solar:    { types: SPACE_TYPES, byId: SPACE_TYPE_BY_ID, goal: 'sun', thresholds: () => TUNING.SPACE_THRESHOLDS, startPower: () => TUNING.SPACE_START_POWER, startPos: () => [0, 0], generate: seed => generateSpace(seed), next: 'galaxy', form: 'blackhole', env: 'solar', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: false },
+  galaxy:   { types: GALAXY_TYPES, byId: GALAXY_TYPE_BY_ID, goal: 'g_core', thresholds: () => TUNING.GALAXY_THRESHOLDS, startPower: () => TUNING.GALAXY_START_POWER, startPos: () => [0, 0], generate: seed => generateField(seed * 7 + 3, GALAXY_TYPE_BY_ID, TUNING.GALAXY_SCATTER, TUNING.GALAXY_RADIUS, TUNING.GALAXY_START_KIT, TUNING.GALAXY_LANDMARKS.concat([['g_core', TUNING.GALAXY_CORE_POS[0], TUNING.GALAXY_CORE_POS[1]]])), next: 'universe', form: 'blackhole', env: 'galaxy', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: false },
+  universe: { types: UNIVERSE_TYPES, byId: UNIVERSE_TYPE_BY_ID, goal: 'u_everything', thresholds: () => TUNING.UNIVERSE_THRESHOLDS, startPower: () => TUNING.UNIVERSE_START_POWER, startPos: () => [0, 0], generate: seed => generateField(seed * 11 + 5, UNIVERSE_TYPE_BY_ID, TUNING.UNIVERSE_SCATTER, TUNING.UNIVERSE_RADIUS, TUNING.UNIVERSE_START_KIT, TUNING.UNIVERSE_LANDMARKS.concat([['u_everything', TUNING.EVERYTHING_POS[0], TUNING.EVERYTHING_POS[1]]])), next: 'town', form: 'blackhole', env: 'universe', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: true },
 };
 
 // =====================================================================================================
@@ -460,6 +543,54 @@ function makeGeometryBuilders(THREE) {
     jupiter() { sphere(215, W, 0, 215, 0); for (const [y, c] of [[130, 0xb87850], [190, 0xe8c8a0], [250, 0xc08860], [300, 0xe8d0b0]]) sphere(200, c, 0, y, 0, 1.06, 0.12, 1.06); sphere(30, 0xc84a30, 190, 200, 90, 1.4, 0.7, 1); return merge(); },
     dwarfstar() { sphere(280, W, 0, 280, 0); return merge(); },
     sun() { sphere(450, W, 0, 450, 0); return merge(); },
+    // ---- galaxy: stars, clouds, clusters (size = diameter; centered size/2 above the plane like the planets) ----
+    g_rogue() { sphere(5, W, 0, 5, 0); sphere(2, 0x3a4a80, 3, 7, 2, 1, 0.5, 1); return merge(); },
+    g_iceworld() { sphere(7, W, 0, 7, 0); sphere(3, 0xffffff, 2, 12, 2, 1, 0.4, 1); return merge(); },
+    g_browndwarf() { sphere(9, W, 0, 9, 0); sphere(9, 0x5a2a1a, 0, 9, 0, 1.02, 0.15, 1.02); return merge(); },
+    g_wisp() { sphere(9, W, 0, 10, 0, 1.6, 0.5, 0.8); sphere(6, W, 9, 12, 4, 1.2, 0.5, 0.8); sphere(5, W, -8, 9, -3, 1, 0.5, 1); return merge(); },
+    g_reddwarf() { sphere(15, W, 0, 15, 0); return merge(); },
+    g_whitedwarf() { sphere(14, W, 0, 17, 0); sphere(22, 0xdfe8ff, 0, 17, 0, 1, 0.08, 1); return merge(); },
+    g_yellowstar() { sphere(22, W, 0, 22, 0); return merge(); },
+    g_orangestar() { sphere(25, W, 0, 25, 0); sphere(8, 0xffd080, 14, 38, 10, 1, 0.5, 1); return merge(); },
+    g_bluestar() { sphere(30, W, 0, 30, 0); sphere(40, 0xcfe0ff, 0, 30, 0, 1, 0.06, 1); return merge(); },
+    g_orangegiant() { sphere(37, W, 0, 37, 0); sphere(37, 0xffc070, 0, 37, 0, 1.02, 0.2, 1.02); return merge(); },
+    g_redgiant() { sphere(45, W, 0, 45, 0); sphere(45, 0xffa070, 0, 60, 0, 1.02, 0.15, 1.02); return merge(); },
+    g_cluster() { for (const [x, y, z, r] of [[0, 45, 0, 16], [26, 52, 10, 10], [-24, 38, 14, 12], [8, 70, -20, 9], [-14, 62, -18, 8], [30, 30, -14, 7], [-32, 58, -4, 6], [10, 22, 26, 7]]) sphere(r, W, x, y, z); return merge(); },
+    g_nebula() { sphere(45, W, 0, 62, 0, 1.4, 0.7, 1.1); sphere(34, W, 50, 70, 20, 1.2, 0.6, 1); sphere(30, W, -48, 55, -16, 1.1, 0.7, 1.2); sphere(22, 0xffffff, 10, 80, -10, 1, 0.5, 1); sphere(12, 0xfff0c0, -20, 66, 24); sphere(9, 0xfff0c0, 34, 50, -30); return merge(); },
+    g_supergiant() { sphere(65, W, 0, 65, 0); sphere(65, 0xffe0b0, 0, 65, 0, 1.02, 0.18, 1.02); return merge(); },
+    g_pulsar() { sphere(40, W, 0, 80, 0); cyl(6, 22, 150, 8, 0x8fd0ff, 0, 155, 0); cyl(22, 6, 150, 8, 0x8fd0ff, 0, 5, 0); cyl(120, 120, 3, 40, 0xbfe8ff, 0, 80, 0); return merge(); },
+    g_bigcluster() { for (const [x, y, z, r] of [[0, 105, 0, 34], [60, 120, 24, 22], [-56, 90, 30, 26], [20, 160, -46, 20], [-34, 145, -40, 18], [70, 70, -34, 16], [-74, 130, -10, 14], [24, 52, 60, 16], [-20, 190, 10, 12], [90, 150, 10, 10]]) sphere(r, W, x, y, z); return merge(); },
+    g_bluesuper() { sphere(110, W, 0, 110, 0); sphere(150, 0xbcdcff, 0, 110, 0, 1, 0.05, 1); return merge(); },
+    g_bignebula() { sphere(90, W, 0, 120, 0, 1.4, 0.7, 1.1); sphere(70, W, 100, 130, 40, 1.2, 0.6, 1); sphere(60, W, -95, 105, -30, 1.1, 0.7, 1.2); sphere(44, 0xffffff, 20, 160, -20, 1, 0.5, 1); sphere(24, 0xfff0c0, -40, 130, 50); sphere(18, 0xfff0c0, 70, 100, -60); sphere(14, 0xfff0c0, -80, 150, 0); return merge(); },
+    g_supernova() { sphere(70, 0xffffff, 0, 165, 0); sphere(165, W, 0, 165, 0, 1, 0.12, 1); sphere(165, W, 0, 165, 0, 0.12, 1, 1); sphere(165, W, 0, 165, 0, 1, 1, 0.12); sphere(120, W, 0, 165, 0, 0.7, 0.7, 0.7); return merge(); },
+    g_minihole() { sphere(150, 0x000000, 0, 190, 0); cyl(320, 320, 5, 48, W, 0, 190, 0); cyl(250, 250, 8, 48, 0xffffff, 0, 190, 0); return merge(); },
+    g_globular() { sphere(140, W, 0, 215, 0); for (let i = 0; i < 14; i++) { const a = i * 2.4, r = 150 + (i % 4) * 22; sphere(28 + (i % 3) * 10, W, Math.cos(a) * r, 215 + Math.sin(i * 1.7) * 90, Math.sin(a) * r); } return merge(); },
+    g_hypergiant() { sphere(280, W, 0, 280, 0); sphere(280, 0xffb070, 0, 280, 0, 1.02, 0.14, 1.02); return merge(); },
+    g_core() { sphere(450, W, 0, 450, 0); cyl(760, 760, 6, 56, 0xe8c8ff, 0, 450, 0); cyl(620, 620, 10, 56, 0xfff4d6, 0, 450, 0); sphere(120, 0x000000, 0, 905, 0); return merge(); },
+    // ---- universe: galaxies (flat discs with a bulge), groups, quasars, and everything ----
+    u_speck() { cyl(5, 5, 1, 12, W, 0, 5, 0); sphere(2, 0xffffff, 0, 5, 0); return merge(); },
+    u_dwarf() { sphere(9, W, 0, 9, 0, 1, 0.5, 0.8); sphere(4, 0xffffff, 0, 9, 0); return merge(); },
+    u_irregular() { sphere(5, W, 0, 7, 0, 1.4, 0.5, 0.9); sphere(4, W, 6, 8, 3, 1.1, 0.5, 0.8); sphere(3, 0xffffff, -4, 6, -3); return merge(); },
+    u_lenticular() { cyl(11, 11, 1.5, 20, W, 0, 11, 0); sphere(5, 0xfff0c0, 0, 11, 0, 1, 0.7, 1); return merge(); },
+    u_smallspiral() { cyl(15, 15, 1.5, 20, W, 0, 15, 0); sphere(5, 0xfff0c0, 0, 15, 0, 1, 0.6, 1); for (const a of [0, 2.1, 4.2]) sphere(3, 0xffffff, Math.cos(a) * 10, 15, Math.sin(a) * 10, 1.8, 0.6, 1); return merge(); },
+    u_ringgal() { cyl(17, 17, 1.5, 24, W, 0, 17, 0); cyl(12, 12, 2, 24, 0x101020, 0, 17, 0); sphere(5, 0xfff0c0, 0, 17, 0, 1, 0.6, 1); return merge(); },
+    u_bulge() { sphere(25, W, 0, 25, 0, 1, 0.8, 1); cyl(34, 34, 1.5, 24, 0xffe8f0, 0, 25, 0); return merge(); },
+    u_barred() { cyl(22, 22, 1.5, 24, W, 0, 22, 0); box(27, 3, 6, 0xfff0c0, 0, 22, 0, 0.5); sphere(7, 0xfff8e0, 0, 22, 0, 1, 0.6, 1); return merge(); },
+    u_spiral() { cyl(30, 30, 2, 28, W, 0, 30, 0); sphere(10, 0xfff0c0, 0, 30, 0, 1, 0.6, 1); for (const a of [0, 1.6, 3.1, 4.7]) sphere(5, 0xffffff, Math.cos(a) * 19, 30, Math.sin(a) * 19, 2.2, 0.6, 1); return merge(); },
+    u_elliptical() { sphere(37, W, 0, 37, 0, 1, 0.6, 0.8); sphere(14, 0xfff8e0, 0, 37, 0); return merge(); },
+    u_bigirregular() { sphere(30, W, 0, 45, 0, 1.5, 0.5, 0.9); sphere(24, W, 34, 50, 18, 1.1, 0.5, 0.9); sphere(18, 0xffffff, -24, 40, -16); sphere(10, 0xffffff, 20, 60, -20); return merge(); },
+    u_pair() { cyl(28, 28, 2, 24, W, -22, 45, -10); cyl(22, 22, 2, 24, W, 26, 50, 14); sphere(9, 0xfff0c0, -22, 45, -10, 1, 0.6, 1); sphere(7, 0xfff0c0, 26, 50, 14, 1, 0.6, 1); box(40, 2, 6, 0xd8e0ff, 2, 47, 2, 0.5); return merge(); },
+    u_bigspiral() { cyl(62, 62, 3, 32, W, 0, 62, 0); sphere(20, 0xfff0c0, 0, 62, 0, 1, 0.6, 1); for (const a of [0, 1.05, 2.1, 3.15, 4.2, 5.25]) sphere(9, 0xffffff, Math.cos(a) * 40, 62, Math.sin(a) * 40, 2.4, 0.6, 1); return merge(); },
+    u_giantell() { sphere(65, W, 0, 65, 0, 1, 0.65, 0.85); sphere(26, 0xfff8e0, 0, 65, 0); return merge(); },
+    u_quasar() { sphere(40, W, 0, 80, 0); cyl(4, 20, 150, 8, 0xbfe8ff, 0, 155, 0); cyl(20, 4, 150, 8, 0xbfe8ff, 0, 5, 0); cyl(130, 130, 3, 40, 0x9ad6ff, 0, 80, 0); return merge(); },
+    u_group() { for (const [x, z, r] of [[0, 0, 60], [95, 40, 40], [-80, 60, 45], [30, -90, 35], [-60, -70, 30]]) { cyl(r, r, 2, 24, W, x, 105, z); sphere(r * 0.3, 0xfff0c0, x, 105, z, 1, 0.6, 1); } return merge(); },
+    u_bigquasar() { sphere(60, W, 0, 110, 0); cyl(6, 30, 210, 8, 0xd0f0ff, 0, 215, 0); cyl(30, 6, 210, 8, 0xd0f0ff, 0, 5, 0); cyl(180, 180, 4, 40, 0xbfe8ff, 0, 110, 0); return merge(); },
+    u_giantspiral() { cyl(120, 120, 4, 40, W, 0, 120, 0); sphere(38, 0xfff0c0, 0, 120, 0, 1, 0.6, 1); for (let i = 0; i < 8; i++) { const a = i * 0.785; sphere(16, 0xffffff, Math.cos(a) * 78, 120, Math.sin(a) * 78, 2.6, 0.6, 1); } return merge(); },
+    u_cluster() { for (let i = 0; i < 9; i++) { const a = i * 0.7, r = i ? 90 + (i % 3) * 40 : 0; cyl(50 - (i % 3) * 10, 50 - (i % 3) * 10, 3, 24, W, Math.cos(a) * r, 165 + Math.sin(i * 1.3) * 60, Math.sin(a) * r); } sphere(40, 0xfff8e0, 0, 165, 0); return merge(); },
+    u_wall() { for (let i = -3; i <= 3; i++) { cyl(44, 44, 3, 24, W, i * 55, 190 + Math.sin(i) * 40, i * 12); } box(400, 6, 30, 0xd0d8ff, 0, 190, 0, 0.2); return merge(); },
+    u_supercluster() { for (let i = 0; i < 14; i++) { const a = i * 0.9, r = i ? 110 + (i % 4) * 45 : 0; cyl(60 - (i % 3) * 14, 60 - (i % 3) * 14, 3, 24, W, Math.cos(a) * r, 215 + Math.sin(i * 1.1) * 80, Math.sin(a) * r); } sphere(60, 0xfff8e0, 0, 215, 0); return merge(); },
+    u_attractor() { sphere(200, W, 0, 280, 0); sphere(280, 0xfff4d6, 0, 280, 0, 1, 0.08, 1); sphere(280, 0xfff4d6, 0, 280, 0, 0.08, 1, 1); sphere(280, 0xfff4d6, 0, 280, 0, 1, 1, 0.08); return merge(); },
+    u_everything() { sphere(450, W, 0, 450, 0); cyl(780, 780, 8, 64, 0x9b6bd6, 0, 450, 0); cyl(660, 660, 12, 64, 0x47d1ff, 0, 450, 0); cyl(540, 540, 16, 64, 0xff5fa2, 0, 450, 0); for (let i = 0; i < 16; i++) { const a = i * 0.39; sphere(40 + (i % 3) * 20, 0xffffff, Math.cos(a) * 560, 450 + Math.sin(i * 2.3) * 300, Math.sin(a) * 560); } return merge(); },
     tower() {
       const lc = 0x8b8f94;
       for (const [x, z] of [[-3.2, -3.2], [3.2, -3.2], [-3.2, 3.2], [3.2, 3.2]]) box(0.5, 18, 0.5, lc, x, 9, z);
@@ -649,6 +780,29 @@ function generateSpace(seed) {
   return objs.filter(o => o.state !== 2).map((o, i) => (o.id = i, o));
 }
 
+// Open-space field: uniform scatter, a start kit, and a few placed landmarks (the goal among them). Used by the galaxy and universe stages.
+function generateField(seed, byId, scatter, R, kit, placed) {
+  const rnd = mulberry32(seed * 104729 + 7);
+  const objs = [];
+  function add(typeId, x, z, ry) {
+    const t = byId[typeId];
+    const jit = t.tier === 6 ? 1 : 1 + (rnd() * 2 - 1) * TUNING.SIZE_JITTER;
+    const o = { id: objs.length, type: t, x, z, ry: ry || 0, scale: jit, size: t.size * jit, foot: t.foot * jit, colorIndex: Math.floor(rnd() * t.colors.length), state: 0,
+      rattleT: -99, rattledTooBig: false, inRange: false, absorbT: 0, absorbDur: 0, spiralA: 0, spiralR: 0, highlightT: 0, startX: 0, startZ: 0, rattleTick: -99, swayT: -99, rattleAmp: 1, inst: -1, mesh: null };
+    objs.push(o); return o;
+  }
+  const okPoint = (x, z) => x * x + z * z <= R * R && Math.hypot(x, z) >= 70;
+  for (const id in scatter) {
+    const n = scatter[id]; const cell = Math.sqrt(Math.PI * R * R / n); const off = rnd() * cell, off2 = rnd() * cell;
+    for (let gx = -R - cell; gx <= R + cell; gx += cell) for (let gz = -R - cell; gz <= R + cell; gz += cell) { const x = gx + off + rnd() * cell, z = gz + off2 + rnd() * cell; if (okPoint(x, z)) add(id, x, z, rnd() * TAU); }
+  }
+  for (const id in kit) { const n = kit[id]; for (let i = 0; i < n; i++) { const a = rnd() * TAU, r = 25 + Math.sqrt(rnd()) * 110; add(id, Math.cos(a) * r, Math.sin(a) * r, rnd() * TAU); } }
+  for (const [id, x, z] of placed) add(id, x, z, 0);
+  const solids = objs.filter(o => o.type.blocks).sort((a, b) => b.size - a.size);
+  for (const s of solids) { if (s.state === 2) continue; for (const o of objs) { if (o === s || o.state === 2 || o.size >= s.size) continue; const need = s.foot + o.foot + 5; const dx = o.x - s.x, dz = o.z - s.z; if (dx * dx + dz * dz < need * need) o.state = 2; } }
+  return objs.filter(o => o.state !== 2).map((o, i) => (o.id = i, o));
+}
+
 // =====================================================================================================
 // GAME STATE + SIMULATION STEP (pure logic; no rendering, no wall-clock).
 // =====================================================================================================
@@ -693,7 +847,7 @@ function createGame(seed, stageId, colorId) {
   };
   G.emit = function (kind, data) { const e = Object.assign({ t: G.time, tick: G.tick, kind }, data); G.events.push(e); if (G.events.length > 400) G.events.splice(0, 200); for (const l of G.listeners) l(e); };
   G.funnelR = () => G.power * TUNING.FUNNEL_RADIUS;
-  G.speedScale = () => Math.pow(G.camDist / (TUNING.CAM_DIST0 + TUNING.START_POWER * TUNING.CAM_DIST_K), TUNING.SPEED_SCALE_EXP) * (stageId === 'space' ? TUNING.SPACE_SPEED_MULT : 1);
+  G.speedScale = () => Math.pow(G.camDist / (TUNING.CAM_DIST0 + TUNING.START_POWER * TUNING.CAM_DIST_K), TUNING.SPEED_SCALE_EXP) * (ST.speedMult ? ST.speedMult() : 1);
   return G;
 }
 
@@ -833,7 +987,7 @@ function finishAbsorb(G, o) {
   const conversion = o.rattledTooBig;
   if (frac < T.DUST_FRAC && o.type.id !== G.goalId) { G.power *= 1 + T.DUST_GROWTH; G.emit('dust', { size: o.size, tier: tierOfObj, id: o.id, frac, conversion, x: o.x, z: o.z }); return; }
   const prevPower = G.power;
-  G.power = Math.min(G.power * (1 + T.GROWTH * (G.stage === 'space' ? T.SPACE_GROWTH_MULT : (T.TIER_GROWTH_MULT[G.tier - 1] || 1)) * frac), G.goalSize * 1.05);
+  G.power = Math.min(G.power * (1 + T.GROWTH * (G.stageDef.growthMult ? G.stageDef.growthMult() : (T.TIER_GROWTH_MULT[G.tier - 1] || 1)) * frac), G.goalSize * 1.05);
   G.absorbCount++;
   G.shake = Math.min(T.SHAKE_MAX, Math.max(G.shake, T.SHAKE_K * Math.pow(frac, 1.5) * T.SHAKE_MAX / T.SHAKE_MAX));
   if (frac >= T.HITSTOP_MIN_FRAC) G.hitstop = T.HITSTOP_TICKS;
@@ -852,7 +1006,7 @@ function finishAbsorb(G, o) {
     for (let i = 0; i < Math.min(3, cands.length); i++) { cands[i].highlightT = T.HIGHLIGHT_S; G.highlighted.push(cands[i]); }
     G.emit('tierup', { tier: G.tier, power: G.power });
   }
-  if (o.type.id === G.goalId && !G.won) { G.won = true; G.winT = G.time; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time, stage: G.stage, final: !G.stageDef.next }); }
+  if (o.type.id === G.goalId && !G.won) { G.won = true; G.winT = G.time; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time, stage: G.stage, final: !!G.stageDef.last }); }
   void prevPower;
 }
 
@@ -1053,6 +1207,46 @@ function createRenderer(THREE, canvas, opts) {
   const ringData = [];
   { const prng = mulberry32(77); const c = new THREE.Color(); for (let i = 0; i < RN; i++) { const h = Math.pow(prng(), 1.6); ringData.push({ h, a0: prng() * TAU, w: 0.8 + prng() * 1.4, s: 0.05 + prng() * 0.12, r: 0.9 + prng() * 1.0, spin: prng() * TAU }); const v = prng(); c.setHex(v < 0.6 ? 0x7a6a55 : v < 0.8 ? 0x5a5048 : v < 0.9 ? 0xa89a7a : [0xc93a2f, 0xe6e6e6, 0x2f74c0, 0xd8b83a][Math.floor(prng() * 4)]); ring.setColorAt(i, c); } ring.instanceColor.needsUpdate = true; }
 
+  // ---- black hole (the form after Earth): dark core, spinning accretion disk in her color, bright lensing halo ----
+  const bhGroup = new THREE.Group(); bhGroup.visible = false; scene.add(bhGroup);
+  const bhCore = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), new THREE.MeshBasicMaterial({ color: 0x000000, fog: false })); bhCore.renderOrder = 6; bhGroup.add(bhCore);
+  const bhUniforms = { uTime: { value: 0 }, uColor: { value: new THREE.Color(0x3a86ff) }, uHot: { value: new THREE.Color(0xfff2d0) }, uAlpha: { value: 1 } };
+  const bhDiskMat = new THREE.ShaderMaterial({
+    uniforms: bhUniforms, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform float uTime; uniform vec3 uColor; uniform vec3 uHot; uniform float uAlpha; varying vec2 vP;
+      void main(){
+        float r = length(vP); float a = atan(vP.y, vP.x);
+        // unit disk: inner edge 0.3, outer 1.0; swirl bands drift inward with time
+        float inner = smoothstep(0.28, 0.36, r); float outer = 1.0 - smoothstep(0.62, 1.0, r);
+        float band = 0.55 + 0.45 * sin(a * 3.0 - uTime * 2.2 + r * 18.0);
+        float band2 = 0.6 + 0.4 * sin(a * 7.0 + uTime * 3.7 - r * 30.0);
+        float heat = 1.0 - smoothstep(0.3, 0.75, r);
+        vec3 col = mix(uColor, uHot, heat * heat) * (0.55 + 0.6 * band * band2);
+        gl_FragColor = vec4(col, uAlpha * inner * outer * (0.5 + 0.5 * band));
+      }`,
+  });
+  const bhDisk = new THREE.Mesh(new THREE.CircleGeometry(1, 64), bhDiskMat); bhDisk.rotation.x = -Math.PI / 2 + 0.28; bhDisk.renderOrder = 7; bhDisk.frustumCulled = false; bhGroup.add(bhDisk);
+  const bhHaloMat = new THREE.ShaderMaterial({
+    uniforms: bhUniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform vec3 uHot; uniform float uAlpha; varying vec2 vP;
+      void main(){ float r = length(vP); float ring = exp(-pow((r - 0.5) * 9.0, 2.0)); float glow = exp(-pow(r * 2.0, 2.0)) * 0.35; gl_FragColor = vec4(mix(uColor, uHot, ring) * (ring + glow), uAlpha * (ring * 0.9 + glow)); }`,
+  });
+  const bhHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 48), bhHaloMat); bhHalo.renderOrder = 8; bhHalo.frustumCulled = false; bhGroup.add(bhHalo);
+  let form = 'tornado', transformT = 0;
+  const bhCenter = new THREE.Vector3();
+  function setForm(f) {
+    if (f === form) return;
+    const wasTornado = form === 'tornado';
+    form = f;
+    const bh = form === 'blackhole';
+    bhGroup.visible = bh; funnel.visible = !bh; core.visible = !bh;
+    transformT = (bh && wasTornado) ? T.BH_TRANSFORM_S : 0;
+  }
+
   // ---- burst particles (dust, chips, confetti) ----
   const PN = T.PARTICLE_POOL;
   const parts = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 1 }), PN);
@@ -1076,7 +1270,15 @@ function createRenderer(THREE, canvas, opts) {
     for (let i = 0; i < PN; i++) {
       if (P.life[i] <= 0) { M4.makeScale(0, 0, 0); parts.setMatrixAt(i, M4); continue; }
       P.life[i] -= dt;
-      if (P.orbit[i]) {
+      if (P.orbit[i] && form === 'blackhole') {
+        // fall into the disk: fast orbit, steady inward pull, flatten to the disk plane, gone at the horizon
+        const dx = P.x[i] - tx, dz = P.z[i] - tz; const d = Math.hypot(dx, dz) + 1e-4;
+        const tang = 14 * fr / (0.4 + d / fr);
+        P.vx[i] += (-dz / d * tang - dx / d * 6 * fr) * dt * 3; P.vz[i] += (dx / d * tang - dz / d * 6 * fr) * dt * 3;
+        P.vy[i] += (fr * T.BH_Y - P.y[i]) * 6 * dt - P.vy[i] * 3 * dt;
+        P.vx[i] *= 0.97; P.vz[i] *= 0.97;
+        if (d < fr * T.BH_CORE) P.life[i] = 0;
+      } else if (P.orbit[i]) {
         // spiral up the funnel
         const dx = P.x[i] - tx, dz = P.z[i] - tz; const d = Math.hypot(dx, dz) + 1e-4;
         const tang = 9 / (0.5 + d / fr);
@@ -1099,7 +1301,21 @@ function createRenderer(THREE, canvas, opts) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, fog: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
   })();
-  let shadowsOn = true, stageId = 'town';
+  // galaxy: a denser field plus soft nebula haze; universe: sparse far specks
+  const haze = (() => {
+    const N = 90; const pos = new Float32Array(N * 3), col = new Float32Array(N * 3); const prng = mulberry32(53); const c = new THREE.Color(); const pal = [0x9b6bd6, 0x2ec4b6, 0xff5fa2, 0x3a86ff, 0xff9a4a];
+    for (let i = 0; i < N; i++) { const u = prng() * 0.9, a = prng() * TAU, r = Math.sqrt(1 - u * u); pos[i * 3] = r * Math.cos(a) * 30000; pos[i * 3 + 1] = u * 30000 + 800; pos[i * 3 + 2] = r * Math.sin(a) * 30000; c.setHex(pal[i % pal.length]).multiplyScalar(0.35); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const tex = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d'); const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,0.5)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.15)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(cv); return t; })();
+    const m = new THREE.Points(g, new THREE.PointsMaterial({ vertexColors: true, size: 260, sizeAttenuation: false, fog: false, map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
+  })();
+  const stars2 = (() => {
+    const N = 5000; const pos = new Float32Array(N * 3); const prng = mulberry32(37);
+    for (let i = 0; i < N; i++) { const u = prng() * 2 - 1, a = prng() * TAU, r = Math.sqrt(1 - u * u); pos[i * 3] = r * Math.cos(a) * 30000; pos[i * 3 + 1] = Math.abs(u) * 30000 + 200; pos[i * 3 + 2] = r * Math.sin(a) * 30000; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfd8ff, size: 1.4, sizeAttenuation: false, fog: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
+  })();
+  let shadowsOn = true, stageId = 'town', envId = 'town';
   const dustColor = new THREE.Color(0xa99c8a), dustCore = new THREE.Color(0x6a5f55), tmpC = new THREE.Color();
   function setColor(colorId) {
     const hex = (T.COLORS[colorId] !== undefined) ? T.COLORS[colorId] : T.COLORS.blue;
@@ -1108,18 +1324,22 @@ function createRenderer(THREE, canvas, opts) {
     funnelUniforms.uCore.value.copy(dustCore).lerp(tmpC, T.COLOR_MIX * 0.6);
     coreMat.uniforms.uColor.value.copy(dustColor).lerp(tmpC, T.COLOR_MIX * 0.8);
     coreMat.uniforms.uCore.value.copy(dustCore).lerp(tmpC, T.COLOR_MIX * 0.5);
+    bhUniforms.uColor.value.setHex(hex);
     // a share of the orbiting chips take the color too
     const prng = mulberry32(77 + 1); const c = new THREE.Color();
     for (let i = 0; i < RN; i++) { const v = prng(); if (v < 0.35) { c.setHex(hex).offsetHSL(0, 0, (prng() - 0.5) * 0.2); ring.setColorAt(i, c); } }
     ring.instanceColor.needsUpdate = true;
   }
-  function setEnvironment(stage) {
-    stageId = stage;
-    const space = stage === 'space';
-    townGroup.visible = !space; stars.visible = space; skyDome.visible = !space; skirt.visible = !space; blob.visible = !space;
+  const ENVS = { town: { sky: 0xb8cbdc }, solar: { sky: 0x05060f }, galaxy: { sky: 0x08051a }, universe: { sky: 0x020208 } };
+  function setEnvironment(stage, env) {
+    stageId = stage; envId = env || (stage === 'town' ? 'town' : 'solar');
+    const space = envId !== 'town';
+    townGroup.visible = !space; skyDome.visible = !space; skirt.visible = !space; blob.visible = !space;
+    stars.visible = envId === 'solar' || envId === 'galaxy'; stars2.visible = envId === 'galaxy'; haze.visible = envId === 'galaxy';
+    stars.material.size = envId === 'universe' ? 1.2 : 2.2; if (envId === 'universe') stars.visible = true;
     shadowsOn = !space; renderer.shadowMap.enabled = !space; sun.castShadow = !space;
-    scene.background = space ? new THREE.Color(0x05060f) : skyColor;
-    scene.fog.color.setHex(space ? 0x05060f : 0xb8cbdc);
+    scene.background = space ? new THREE.Color(ENVS[envId].sky) : skyColor;
+    scene.fog.color.setHex(ENVS[envId].sky);
     funnelUniforms.uSky.value = scene.fog.color; coreMat.uniforms.uSky.value = scene.fog.color;
     hemi.intensity = space ? 0.35 : 1.1; sun.intensity = space ? 3.2 : 2.9;
   }
@@ -1150,7 +1370,7 @@ function createRenderer(THREE, canvas, opts) {
     camera.fov = T.FOV + G.fovPunch; camera.updateProjectionMatrix();
     camera.lookAt(G.focus.x + sx * 0.5, 0, G.focus.z + sz * 0.5);
     camera.rotation.z += (shakeRng() * 2 - 1) * G.shake * 0.6;
-    if (stageId === 'space') { scene.fog.near = G.camDist * 40; scene.fog.far = G.camDist * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
+    if (envId !== 'town') { scene.fog.near = G.camDist * 40; scene.fog.far = G.camDist * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
     funnelUniforms.uFog.value.set(scene.fog.near, scene.fog.far); coreMat.uniforms.uFog.value.set(scene.fog.near, scene.fog.far);
     // sun + shadow frustum follow the tornado, sized to the view
     const sr = Math.max(30, G.camDist * 1.6);
@@ -1169,16 +1389,42 @@ function createRenderer(THREE, canvas, opts) {
     for (const u of [funnelUniforms, coreMat.uniforms]) { u.uTime.value = G.tick * DT * T.SPIN; u.uLean.value.set(prevLeanX, prevLeanZ); u.uSquash.value = squash; u.uScale.value.set(fr, fh); }
     coreMat.uniforms.uScale.value.set(fr * 0.55, fh * 0.9);
     funnel.position.set(G.pos.x, 0, G.pos.z); core.position.set(G.pos.x, 0, G.pos.z);
+    const isBH = form === 'blackhole';
+    if (isBH) {
+      // collapse-in on liftoff: the funnel shrinks into the core while the disk spins up
+      if (transformT > 0) transformT = Math.max(0, transformT - rdt);
+      const k = 1 - transformT / T.BH_TRANSFORM_S; const grow = easeOut(k);
+      funnel.visible = transformT > 0; core.visible = transformT > 0;
+      if (transformT > 0) { const sq = 1 - k; for (const u of [funnelUniforms, coreMat.uniforms]) { u.uScale.value.set(fr * sq, fh * (0.2 + 0.8 * sq)); u.uAlpha.value = 0.66 * sq; } }
+      bhCenter.set(G.pos.x + prevLeanX * 0.15, fr * T.BH_Y, G.pos.z + prevLeanZ * 0.15);
+      bhCore.position.copy(bhCenter); bhCore.scale.setScalar(Math.max(0.001, fr * T.BH_CORE * grow));
+      bhDisk.position.copy(bhCenter); bhDisk.scale.setScalar(Math.max(0.001, fr * T.BH_DISK * (0.3 + 0.7 * grow)));
+      bhDisk.rotation.z = -G.tick * DT * T.SPIN * 0.9;
+      bhHalo.position.copy(bhCenter); bhHalo.scale.setScalar(Math.max(0.001, fr * T.BH_CORE * 2.6 * grow)); bhHalo.quaternion.copy(camera.quaternion);
+      bhUniforms.uTime.value = G.tick * DT * T.SPIN; bhUniforms.uAlpha.value = 0.6 + 0.4 * grow;
+    } else { funnelUniforms.uAlpha.value = 0.66; coreMat.uniforms.uAlpha.value = 0.92; }
+    // finale: fall into the core
+    if (finaleK > 0) {
+      const k = easeIn(clamp(finaleK, 0, 1));
+      const target = isBH ? bhCenter : funnel.position;
+      camera.position.lerp(target, k * 0.985); camera.fov = T.FOV + 40 * k; camera.updateProjectionMatrix(); camera.lookAt(target);
+    }
     skirt.position.set(G.pos.x, 0.06, G.pos.z); skirt.scale.setScalar(fr * 7); skirt.rotation.z = G.tick * 0.05 * T.SPIN;
     blob.position.set(G.pos.x, 0.05, G.pos.z); blob.scale.setScalar(fr * 1.6);
-    // debris ring
+    // debris ring (tornado: climbs the funnel; black hole: flat streaks circling the disk, fastest at the inner edge)
     const rt = G.tick * DT * T.SPIN;
     for (let i = 0; i < RN; i++) {
       const d = ringData[i];
-      const a = d.a0 + rt * d.w * (5.5 / (0.6 + d.h * 2)) ;
-      const rr = fr * d.r * (0.45 + 1.4 * d.h) * (1 + 0.15 * Math.sin(rt * 3 + d.a0));
-      const y = d.h * fh * 0.85 + 0.2 + Math.sin(rt * 2 + d.spin) * 0.3 * fr;
-      const lx = prevLeanX * d.h * d.h, lz = prevLeanZ * d.h * d.h;
+      let a, rr, y, lx, lz;
+      if (isBH) {
+        const orb = 0.9 + 2.6 * d.h; a = d.a0 - rt * d.w * (6 / (0.4 + orb)); rr = fr * orb * (1 + 0.06 * Math.sin(rt * 4 + d.a0));
+        y = fr * T.BH_Y + Math.sin(rt * 3 + d.spin) * 0.08 * fr - rr * 0.28 * Math.sin(a); lx = 0; lz = 0;
+      } else {
+        a = d.a0 + rt * d.w * (5.5 / (0.6 + d.h * 2));
+        rr = fr * d.r * (0.45 + 1.4 * d.h) * (1 + 0.15 * Math.sin(rt * 3 + d.a0));
+        y = d.h * fh * 0.85 + 0.2 + Math.sin(rt * 2 + d.spin) * 0.3 * fr;
+        lx = prevLeanX * d.h * d.h; lz = prevLeanZ * d.h * d.h;
+      }
       dummy.position.set(G.pos.x + Math.cos(a) * rr + lx, y, G.pos.z + Math.sin(a) * rr + lz);
       dummy.rotation.set(rt * 3 + d.spin, a, d.spin); dummy.scale.setScalar(d.s * (0.5 + Math.pow(fr, 0.8) * 0.8)); dummy.updateMatrix(); ring.setMatrixAt(i, dummy.matrix);
     }
@@ -1191,8 +1437,8 @@ function createRenderer(THREE, canvas, opts) {
       else {
         const k = (t - ant) / (1 - ant);
         const ang = o.spiralA + easeIn(k) * TAU * 1.25 + k * 2;
-        const rad = lerp(o.spiralR, fr * 0.4, easeIn(k));
-        x = G.pos.x + Math.cos(ang) * rad; z = G.pos.z + Math.sin(ang) * rad; y = o.size * 0.35 + easeIn(k) * fh * 0.7; s = o.scale * (1.12 - 1.0 * easeIn(k)); rx = k * 5; rz = k * 3;
+        const rad = lerp(o.spiralR, fr * (isBH ? 0.25 : 0.4), easeIn(k));
+        x = G.pos.x + Math.cos(ang) * rad; z = G.pos.z + Math.sin(ang) * rad; y = isBH ? lerp(o.size * 0.35, fr * T.BH_Y, easeIn(k)) : o.size * 0.35 + easeIn(k) * fh * 0.7; s = o.scale * (1.12 - 1.0 * easeIn(k)); rx = k * 5; rz = k * 3;
       }
       setInstance(o, x, y, z, o.ry + t * 4, rx, rz, Math.max(0.001, s));
     }
@@ -1204,6 +1450,8 @@ function createRenderer(THREE, canvas, opts) {
     // visibility frustum (for telemetry)
     camera.updateMatrixWorld(); projView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(projView);
   }
+  let finaleK = 0; // 0 = normal camera; (0,1] = falling into the core
+  function setFinale(k) { finaleK = k; }
   const rattling = [];
   const o_age = (o, G) => (G.tick * DT) - o.rattleTick;
   function objectVisible(o, G) { sph.center.set(o.x, o.size * 0.4, o.z); sph.radius = Math.max(o.size * 0.6, o.foot); if (!frustum.intersectsSphere(sph)) return false; const d = Math.hypot(o.x - G.camPos.x, o.z - G.camPos.z); return d < scene.fog.far * 0.9; }
@@ -1237,11 +1485,15 @@ function createRenderer(THREE, canvas, opts) {
     } else if (e.kind === 'win') {
       emitParticles(600, G.pos.x, fr * 4, G.pos.z, 30 + fr * 6, 12 + fr * 3, 0.25 + fr * 0.035, [0xff4b6e, 0xffd447, 0x47d1ff, 0x9dff7a, 0xffffff, 0xff8a3a], false, 5);
       funnelUniforms.uColor.value.setHex(0xffd27a); coreMat.uniforms.uColor.value.setHex(0xe0a040);
+      if (form === 'blackhole') bhUniforms.uColor.value.setHex(0xffd27a);
+    } else if (e.kind === 'stage') {
+      // liftoff / new stage: a burst in her color around the player
+      emitParticles(300, G.pos.x, fr * 0.8, G.pos.z, 8 + fr * 3, 4 + fr * 2, 0.12 + fr * 0.1, [T.COLORS[G.colorId] || 0xffffff, 0xffffff, 0xffd447], form === 'blackhole', 2.0);
     }
   }
   function render() { renderer.render(scene, camera); }
-  function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; }
-  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, get width() { return width; }, get height() { return height; } };
+  function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; finaleK = 0; }
+  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, setForm, setFinale, get form() { return form; }, get width() { return width; }, get height() { return height; } };
 }
 
 // =====================================================================================================
@@ -1440,23 +1692,39 @@ function boot() {
     if (app.R) app.R.reset();
     app.G = createGame(seed, stageId || 'town', app.colorId);
     if (!app.R) { app.R = createRenderer(THREE, canvas, { dpr: opts.dpr, antialias: opts.antialias, shadowMap: opts.shadowMap }); }
-    app.R.setEnvironment(app.G.stage);
+    app.R.setEnvironment(app.G.stage, app.G.stageDef.env);
     app.R.buildObjects(app.G.objs, app.G.stageDef.types);
     app.R.setColor(app.colorId);
+    const wasTornado = app.R.form === 'tornado';
+    app.R.setForm(app.G.stageDef.form);
+    if (wasTornado && app.G.stageDef.form === 'blackhole') app.G.slowmo = TUNING.SLOWMO_S * 1.5; // the collapse into a black hole gets a beat
     app.G.listeners.push(e => app.R.onEvent(e, app.G));
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
     for (const h of app.stageHooks) h(app.G);
   }
-  // After the water tower: lift off into space with the same color and seed, power carried by the stage.
+  // After the goal: the next stage with the same color. The last stage loops back to a fresh town (new seed).
   function nextStage() {
     const G = app.G; if (!G || !G.stageDef.next) return false;
-    newGame(G.seed, {}, G.stageDef.next);
+    newGame(G.stageDef.last ? G.seed + 1 : G.seed, {}, G.stageDef.next);
     app.G.emit('stage', { stage: app.G.stage });
     return true;
   }
-  app.colorId = 'blue'; app.stageHooks = [];
+  app.colorId = 'blue'; app.stageHooks = []; app.finale = null;
+  const fadeEl = document.getElementById('fade');
+  function setFade(opacity, white) { if (!fadeEl) return; fadeEl.style.background = white ? '#ffffff' : '#000000'; fadeEl.style.opacity = String(clamp(opacity, 0, 1)); }
+  // The ending: fall into the black hole, black, the white of a new universe, and she is a small tornado on a new Earth.
+  function stepFinale(elapsed) {
+    const F = app.finale, T = TUNING; F.t += elapsed;
+    const tZoom = T.FINALE_ZOOM_S, tDark = tZoom + T.FINALE_DARK_S, tEnd = tDark + T.FINALE_FLASH_S;
+    if (F.t < tZoom) { const k = F.t / tZoom; app.R.setFinale(k); setFade(clamp((k - 0.55) / 0.45, 0, 1), false); return; }
+    if (!F.reborn) { F.reborn = true; app.R.setFinale(0); nextStage(); setFade(1, false); return; }
+    if (F.t < tDark) { setFade(1, false); return; }
+    if (!F.flashed) { F.flashed = true; app.G.emit('stage', { stage: app.G.stage, reborn: true }); }
+    if (F.t < tEnd) { setFade(1 - (F.t - tDark) / T.FINALE_FLASH_S, true); return; }
+    setFade(0, false); app.finale = null;
+  }
   function onResize() {
     if (!app.R) return;
     const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
@@ -1495,10 +1763,12 @@ function boot() {
     let n = 0;
     while (app.acc >= DT && n < 4) { stepGame(G); app.acc -= DT; n++; }
     if (n === 4) app.acc = 0;
-    if (G.won && G.time - G.winT > 6 && !app.winShown) { if (!nextStage()) { app.winShown = true; startEl.classList.remove('hidden'); } else return; }
-    app.R.update(G, elapsed); app.audio.update(G); app.R.render();
+    if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
+    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) app.finale = { t: 0, reborn: false, flashed: false }; else { nextStage(); return; } }
+    const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
   }
   function startLive() {
+    app.finale = null; setFade(0, false); if (app.R) app.R.setFinale(0);
     try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
@@ -1539,8 +1809,9 @@ function boot() {
     const view = { get width() { return R.width; }, get height() { return R.height; }, project(x, y, z, out) { const v = _pv.set(x, y, z).project(R.camera); out.ok = v.z < 1 && v.z > -1; out.x = (v.x + 1) / 2 * R.width; out.y = (1 - v.y) / 2 * R.height; return out; } };
     let bot = createBot(G, view);
     app.bot = bot; app.view = view;
-    // space stage accumulators (the gate metrics above are town-only)
-    const space = { started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0 };
+    // later-stage accumulators, one per stage after the town (the gate metrics above are town-only)
+    const stagesRes = {}; let space = null; // space = the accumulator of the current non-town stage
+    const newStageAcc = () => ({ started: null, wonAt: null, absorbs: 0, tierUps: 0, rattles: 0, absorbTimes: [], lastObjEventT: 0, maxDead: 0, visTicks: 0, visSeen: 0, heapGrowthPct: null, finalTier: null, finalPower: null });
     let townWinTick = null, townWinT = null, townSnap = null; // townWinT is simulated time (G.time: scaled by slow-mo, paused in hitstop), the clock absorbTimes use
     const maxTicks = Math.round(seconds / DT);
     // telemetry accumulators
@@ -1553,7 +1824,7 @@ function boot() {
     const absorbTimes = [], attempts = [], attemptsPreWin = [], rollingRates = [], rollingAll = []; let conversions = 0;
     const latencies = []; let probe = null;
     const heap = () => (performance.memory ? performance.memory.usedJSHeapSize : null);
-    let heapStart = null; const heapSeries = []; let heapStageT0 = 0, heapTownGrowth = null;
+    let heapStart = null; const heapSeries = []; let heapStageT0 = 0, heapTownGrowth = null; const heapByStage = {};
     const tierUpTimes = []; const phases = [{ tier: 1, t0: 0, absorbs: 0, rattles: 0, dust: 0, types: {} }]; const rollingAt = [];
     const townListener = e => {
       if (e.kind === 'absorb') { absorbTimes.push(e.t); if (firstAbsorbT === null) firstAbsorbT = e.t; if (e.conversion) conversions++; attempts.push(1); if (G.tier < 6) attemptsPreWin.push(1); }
@@ -1565,12 +1836,12 @@ function boot() {
       if (e.kind !== 'pull') { lastFeedbackT = e.t; }
     };
     G.listeners.push(townListener);
-    const spaceListener = e => {
-      if (e.kind === 'absorb') { space.absorbs++; space.absorbTimes.push(e.t); }
-      if (e.kind === 'rattle') space.rattles++;
-      if (e.kind === 'tierup') space.tierUps++;
-      if (e.kind === 'absorb' || e.kind === 'dust' || e.kind === 'rattle' || e.kind === 'sway' || e.kind === 'tierup' || e.kind === 'win') space.lastObjEventT = e.t;
-      if (e.kind === 'win') space.wonAt = e.t;
+    const makeStageListener = acc => e => {
+      if (e.kind === 'absorb') { acc.absorbs++; acc.absorbTimes.push(e.t); }
+      if (e.kind === 'rattle') acc.rattles++;
+      if (e.kind === 'tierup') acc.tierUps++;
+      if (e.kind === 'absorb' || e.kind === 'dust' || e.kind === 'rattle' || e.kind === 'sway' || e.kind === 'tierup' || e.kind === 'win') acc.lastObjEventT = e.t;
+      if (e.kind === 'win') acc.wonAt = e.t;
     };
     const isNum = v => typeof v === 'number' && isFinite(v);
     let winTick = null; const _visNear = []; const trace = [];
@@ -1614,20 +1885,21 @@ function boot() {
       if (heapStart === null && G.time > heapStageT0 + opts.heapWarmupS) { if (window.gc) window.gc(); heapStart = heap(); heapT = G.time; }
       if (G.tick % 3600 === 0) { if (window.gc) window.gc(); const h = heap(); if (h) heapSeries.push(+(h / 1048576).toFixed(2)); }
       if (G.won && winTick === null) winTick = G.tick;
-      // stage transition: 120 ticks after the water tower, lift off into space (unless a one-stage run was asked for)
-      if (G.stage === 'town' && G.won && opts.stages !== 1 && G.tick - winTick > 120 && space.started === null) {
-        townWinTick = winTick; townWinT = G.winT; const carryTick = G.tick, carryTime = G.time;
-        townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length };
-        if (heapStart) { if (window.gc) window.gc(); const h = heap(); if (h) heapTownGrowth = +((h - heapStart) / heapStart * 100).toFixed(2); } heapStart = null; heapStageT0 = G.time; // new heap window for the space stage (its world is bigger; a one-time step is not a leak)
+      // stage transition: 120 ticks after the goal, the next stage (unless a one-stage run was asked for). The last stage ends the run.
+      if (G.won && !G.stageDef.last && opts.stages !== 1 && G.tick - winTick > 120) {
+        if (G.stage === 'town') { townWinTick = winTick; townWinT = G.winT; townSnap = { tierUps: G.tierUps, tier: G.tier, power: G.power, left: G.objs.filter(o => o.state === 0).length, total: G.objs.length }; }
+        const carryTick = G.tick, carryTime = G.time;
+        if (space) { space.finalTier = G.tier; space.finalPower = G.power; }
+        if (heapStart) { if (window.gc) window.gc(); const h = heap(); if (h) { const g = +((h - heapStart) / heapStart * 100).toFixed(2); if (G.stage === 'town') heapTownGrowth = g; heapByStage[G.stage] = g; } } heapStart = null; heapStageT0 = G.time; // a new heap window per stage (each world is a one-time step, not a leak)
         nextStage(); G = app.G; bot = createBot(G, view); app.bot = bot;
         G.tick = carryTick; G.time = carryTime; // one continuous clock for the session
-        space.started = G.time; space.lastObjEventT = G.time; winTick = null;
-        G.listeners.push(spaceListener);
+        space = stagesRes[G.stage] = newStageAcc(); space.started = G.time; space.lastObjEventT = G.time; winTick = null;
+        G.listeners.push(makeStageListener(space));
       }
     }
     if (opts.render && opts.renderFrom) {
       const saveRender = opts.render; opts.render = false;
-      while (G.tick < opts.renderFrom && G.tick < maxTicks && !(G.won && !G.stageDef.next)) { oneTick(null); if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0)); }
+      while (G.tick < opts.renderFrom && G.tick < maxTicks && !(G.won && G.stageDef.last)) { oneTick(null); if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0)); }
       opts.render = saveRender; nCpu = 0; nFrame = 0;
     }
     if (opts.render) {
@@ -1636,12 +1908,12 @@ function boot() {
         function f(now) {
           const ms = first ? null : now - last; last = now; first = false;
           oneTick(ms);
-          if (G.tick >= maxTicks || (opts.stopOnWin && G.won && !G.stageDef.next && G.tick - winTick > 120)) resolve(); else requestAnimationFrame(f);
+          if (G.tick >= maxTicks || (opts.stopOnWin && G.won && (G.stageDef.last || opts.stages === 1) && G.tick - winTick > 120)) resolve(); else requestAnimationFrame(f);
         }
         requestAnimationFrame(f);
       });
     } else {
-      while (G.tick < maxTicks && !(opts.stopOnWin && G.won && !G.stageDef.next && winTick !== null && G.tick - winTick > 120)) {
+      while (G.tick < maxTicks && !(opts.stopOnWin && G.won && (G.stageDef.last || opts.stages === 1) && winTick !== null && G.tick - winTick > 120)) {
         oneTick(null);
         if (G.tick % opts.yieldEvery === 0) await new Promise(r => setTimeout(r, 0));
       }
@@ -1686,15 +1958,22 @@ function boot() {
       max_feedback_gap_s: +maxFeedbackGap.toFixed(2),
       session_length_to_win_s: townWinTick !== null ? +(townWinTick * DT).toFixed(1) : (G.stage === 'town' && G.won ? +G.winT.toFixed(1) : null),
       won: townWinTick !== null || (G.stage === 'town' && G.won), trace,
-      space: space.started === null ? null : (() => { const t0 = space.started, t1 = space.wonAt !== null ? space.wonAt : endT; const apm = []; for (let t = t0 + 60; t <= t1 + 1e-9; t += 15) { let c = 0; for (const a of space.absorbTimes) if (a > t - 60 && a <= t) c++; apm.push(c); } return { won: space.wonAt !== null, length_s: +(t1 - t0).toFixed(1), absorbs: space.absorbs, rattles: space.rattles, tier_ups: space.tierUps, apm_series: apm, max_deadtime_s: +space.maxDead.toFixed(2), too_big_visible_pct: space.visTicks ? +(space.visSeen / space.visTicks * 100).toFixed(1) : null, final_tier: G.tier, final_power: +G.power.toFixed(0) }; })(),
+      stages: Object.fromEntries(Object.entries(stagesRes).map(([id, acc]) => { const t0 = acc.started, t1 = acc.wonAt !== null ? acc.wonAt : endT; const apm = []; for (let t = t0 + 60; t <= t1 + 1e-9; t += 15) { let c = 0; for (const a of acc.absorbTimes) if (a > t - 60 && a <= t) c++; apm.push(c); } return [id, { won: acc.wonAt !== null, length_s: +(t1 - t0).toFixed(1), absorbs: acc.absorbs, rattles: acc.rattles, tier_ups: acc.tierUps, apm_series: apm, max_deadtime_s: +acc.maxDead.toFixed(2), too_big_visible_pct: acc.visTicks ? +(acc.visSeen / acc.visTicks * 100).toFixed(1) : null, heap_growth_pct: heapByStage[id] === undefined ? null : heapByStage[id], final_tier: acc.finalTier, final_power: acc.finalPower === null ? null : +acc.finalPower.toFixed(0) }]; })),
+      space: null, // filled below: the solar record, same shape as the old space block (kept for old scripts; see `stages`)
       objects_total: townSnap ? townSnap.total : G.objs.length, objects_left: townSnap ? townSnap.left : G.objs.filter(o => o.state === 0).length,
     };
+    // the stage still running at the end: its heap window ends at the run's end, its tier and power are the current ones
+    if (G.stage !== 'town' && result.stages[G.stage]) { const cur = result.stages[G.stage]; if (cur.heap_growth_pct === null) cur.heap_growth_pct = result.heap_growth_pct; if (cur.final_tier === null) { cur.final_tier = G.tier; cur.final_power = +G.power.toFixed(0); } }
+    result.space = result.stages.solar || null;
     app.simMode = false;
     return result;
   };
   window.__state = () => ({ stage: app.G.stage, color: app.G.colorId, tick: app.G.tick, time: app.G.time, power: app.G.power, tier: app.G.tier, pos: app.G.pos, vel: app.G.vel, absorbs: app.G.absorbCount, won: app.G.won, lastInputTick: app.G.lastInputTick, lastResponseTick: app.G.lastResponseTick, errors });
   window.__startLive = startLive;
   window.__nextStage = nextStage;
+  window.__jumpStage = id => { newGame(app.G ? app.G.seed : 1, {}, id); app.G.emit('stage', { stage: app.G.stage }); };
+  window.__finishStage = () => { const G = app.G; if (G.goalRef && G.goalRef.state !== 2) { G.power = G.goalSize * 1.05; G.tier = 6; finishAbsorb(G, G.goalRef); } };
+  window.__fade = () => (fadeEl ? Number(fadeEl.style.opacity || 0) : null);
   window.__app = app;
   window.__TUNING = TUNING;
 }

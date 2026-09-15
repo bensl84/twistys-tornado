@@ -1,7 +1,8 @@
-max_documents: 3
+max_documents: 4
 maintained_documents:
   - README.md
   - docs/audit.md
   - docs/space-visuals.md
+  - docs/graphics-exit-gate.md
 evidence_roots: []
 excluded_roots: []

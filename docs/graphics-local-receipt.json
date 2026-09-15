@@ -1,0 +1,380 @@
+{
+  "sourceSHA256": "3f044ac37fc41dd822deeb1b4808c6e680f04c9e5a96ba53f92014b67f45f633",
+  "observedAt": "2026-09-15T10:50:31.469Z",
+  "scope": "local-browser",
+  "browserPath": "regular Playwright; Browser plugin not available",
+  "secondsPerStage": 10,
+  "checks": [
+    {
+      "name": "page identity and first meaningful screen",
+      "pass": true,
+      "evidence": "file:///Users/benleonard/Documents/Claude/twistys-tornado/index.html"
+    },
+    {
+      "name": "actual antialiasing and 2x backing resolution",
+      "pass": true,
+      "evidence": {
+        "antialias": true,
+        "dpr": 2,
+        "width": 2360,
+        "height": 1640,
+        "cssWidth": 1180,
+        "cssHeight": 820,
+        "contextLost": false
+      }
+    },
+    {
+      "name": "real touch responds within 2 logic frames and releases",
+      "pass": true,
+      "evidence": {
+        "latency": 1
+      }
+    },
+    {
+      "name": "reference town geometry budget",
+      "pass": true,
+      "evidence": {
+        "frame": 11,
+        "calls": 52,
+        "triangles": 2355860,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    {
+      "name": "portrait backing dimensions and no failure overlay",
+      "pass": true,
+      "evidence": {
+        "antialias": true,
+        "dpr": 2,
+        "width": 1640,
+        "height": 2360,
+        "cssWidth": 820,
+        "cssHeight": 1180,
+        "contextLost": false
+      }
+    },
+    {
+      "name": "GPU resource counts stabilize across stage cycles",
+      "pass": true,
+      "evidence": [
+        {
+          "town": {
+            "geometries": 60,
+            "textures": 29
+          },
+          "solar": {
+            "geometries": 73,
+            "textures": 29
+          },
+          "galaxy": {
+            "geometries": 64,
+            "textures": 46
+          },
+          "universe": {
+            "geometries": 67,
+            "textures": 53
+          }
+        },
+        {
+          "town": {
+            "geometries": 63,
+            "textures": 53
+          },
+          "solar": {
+            "geometries": 73,
+            "textures": 53
+          },
+          "galaxy": {
+            "geometries": 64,
+            "textures": 53
+          },
+          "universe": {
+            "geometries": 67,
+            "textures": 53
+          }
+        },
+        {
+          "town": {
+            "geometries": 63,
+            "textures": 53
+          },
+          "solar": {
+            "geometries": 73,
+            "textures": 53
+          },
+          "galaxy": {
+            "geometries": 64,
+            "textures": 53
+          },
+          "universe": {
+            "geometries": 67,
+            "textures": 53
+          }
+        }
+      ]
+    },
+    {
+      "name": "town stationary grown-scene smoke gate",
+      "pass": true,
+      "evidence": {
+        "fpsMean": 60.0018000540016,
+        "p99FrameMs": 16.80000000000109,
+        "frames": 600,
+        "gameTicks": 601,
+        "renderedFrames": 601,
+        "contextLost": false,
+        "triangles": 2355872,
+        "drawCalls": 58,
+        "actualStage": "town"
+      }
+    },
+    {
+      "name": "solar stationary grown-scene smoke gate",
+      "pass": true,
+      "evidence": {
+        "fpsMean": 60.00240009600385,
+        "p99FrameMs": 16.799999999999272,
+        "frames": 600,
+        "gameTicks": 601,
+        "renderedFrames": 601,
+        "contextLost": false,
+        "triangles": 5174344,
+        "drawCalls": 46,
+        "actualStage": "solar"
+      }
+    },
+    {
+      "name": "galaxy stationary grown-scene smoke gate",
+      "pass": true,
+      "evidence": {
+        "fpsMean": 60.00300015000751,
+        "p99FrameMs": 16.80000000000291,
+        "frames": 600,
+        "gameTicks": 601,
+        "renderedFrames": 601,
+        "contextLost": false,
+        "triangles": 115844,
+        "drawCalls": 55,
+        "actualStage": "galaxy"
+      }
+    },
+    {
+      "name": "universe stationary grown-scene smoke gate",
+      "pass": true,
+      "evidence": {
+        "fpsMean": 60.00300015000751,
+        "p99FrameMs": 16.80000000000291,
+        "frames": 600,
+        "gameTicks": 601,
+        "renderedFrames": 601,
+        "contextLost": false,
+        "triangles": 114860,
+        "drawCalls": 79,
+        "actualStage": "universe"
+      }
+    },
+    {
+      "name": "live finale returns to town with space controls hidden",
+      "pass": true,
+      "evidence": {
+        "stage": "town",
+        "color": "blue",
+        "tick": 0,
+        "time": 0,
+        "power": 0.62,
+        "tier": 1,
+        "pos": {
+          "x": 22,
+          "z": 24
+        },
+        "vel": {
+          "x": 0,
+          "z": 0
+        },
+        "absorbs": 0,
+        "won": false,
+        "lastInputTick": -1,
+        "lastResponseTick": -1,
+        "errors": []
+      }
+    },
+    {
+      "name": "end-of-run summary pauses the new town",
+      "pass": true,
+      "evidence": {
+        "tornadoSeconds": 12.749499999999978,
+        "blackholeSeconds": 42.21499999999994,
+        "totalSeconds": 54.964499999999916,
+        "tornadoPercent": 0.0003486600974462177,
+        "blackholePercent": 12.875827685873745,
+        "totalPercent": 6.438088172985595
+      }
+    },
+    {
+      "name": "Play again starts a fresh run",
+      "pass": true,
+      "evidence": {
+        "tornado": 0.07090000004768081,
+        "blackhole": 0
+      }
+    },
+    {
+      "name": "1x displays retain antialiasing without forced supersampling",
+      "pass": true,
+      "evidence": {
+        "dpr": 1,
+        "width": 1180,
+        "antialias": true
+      }
+    },
+    {
+      "name": "zero runtime errors and offline network requests",
+      "pass": true,
+      "evidence": {
+        "errors": [],
+        "network": 0
+      }
+    }
+  ],
+  "performance": [
+    {
+      "stage": "town",
+      "fpsMean": 60.0018000540016,
+      "p99FrameMs": 16.80000000000109,
+      "frames": 600,
+      "gameTicks": 601,
+      "renderedFrames": 601,
+      "contextLost": false,
+      "triangles": 2355872,
+      "drawCalls": 58,
+      "actualStage": "town"
+    },
+    {
+      "stage": "solar",
+      "fpsMean": 60.00240009600385,
+      "p99FrameMs": 16.799999999999272,
+      "frames": 600,
+      "gameTicks": 601,
+      "renderedFrames": 601,
+      "contextLost": false,
+      "triangles": 5174344,
+      "drawCalls": 46,
+      "actualStage": "solar"
+    },
+    {
+      "stage": "galaxy",
+      "fpsMean": 60.00300015000751,
+      "p99FrameMs": 16.80000000000291,
+      "frames": 600,
+      "gameTicks": 601,
+      "renderedFrames": 601,
+      "contextLost": false,
+      "triangles": 115844,
+      "drawCalls": 55,
+      "actualStage": "galaxy"
+    },
+    {
+      "stage": "universe",
+      "fpsMean": 60.00300015000751,
+      "p99FrameMs": 16.80000000000291,
+      "frames": 600,
+      "gameTicks": 601,
+      "renderedFrames": 601,
+      "contextLost": false,
+      "triangles": 114860,
+      "drawCalls": 79,
+      "actualStage": "universe"
+    }
+  ],
+  "screenshots": [
+    {
+      "view": "town-start",
+      "path": "/private/tmp/twisty-stats-graphics-gate/town-start.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "town-close",
+      "path": "/private/tmp/twisty-stats-graphics-gate/town-close.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "town-wide",
+      "path": "/private/tmp/twisty-stats-graphics-gate/town-wide.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "solar",
+      "path": "/private/tmp/twisty-stats-graphics-gate/solar.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "galaxy",
+      "path": "/private/tmp/twisty-stats-graphics-gate/galaxy.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "universe",
+      "path": "/private/tmp/twisty-stats-graphics-gate/universe.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "seed": 1,
+      "tick": 120
+    },
+    {
+      "view": "town-portrait",
+      "path": "/private/tmp/twisty-stats-graphics-gate/town-portrait.png",
+      "viewport": "820x1180",
+      "dpr": 2,
+      "seed": 1
+    },
+    {
+      "view": "town-play",
+      "path": "/private/tmp/twisty-stats-graphics-gate/town-play.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "fixture": "live stationary grown scene; tick varies"
+    },
+    {
+      "view": "solar-play",
+      "path": "/private/tmp/twisty-stats-graphics-gate/solar-play.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "fixture": "live stationary grown scene; tick varies"
+    },
+    {
+      "view": "galaxy-play",
+      "path": "/private/tmp/twisty-stats-graphics-gate/galaxy-play.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "fixture": "live stationary grown scene; tick varies"
+    },
+    {
+      "view": "universe-play",
+      "path": "/private/tmp/twisty-stats-graphics-gate/universe-play.png",
+      "viewport": "1180x820",
+      "dpr": 2,
+      "fixture": "live stationary grown scene; tick varies"
+    }
+  ],
+  "releaseReady": false,
+  "targetIPad": "NOT_PROVEN",
+  "humanVisualAcceptance": "NOT_PROVEN",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+  "localPassed": true
+}

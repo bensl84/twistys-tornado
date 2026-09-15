@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-15",
+  "repository": "bensl84/twistys-tornado",
+  "branch": "main",
+  "baseCommit": "1e779931b914192a576510fcd2b8b19b56ab4ed1",
+  "localBuild": "2026-09-15-twister-v10-stats",
+  "publication": "Pre-publication snapshot: Ben authorized pushing v10 on 2026-09-15. The release plan is a normal fast-forward push to origin/main, followed by exact Pages build, live asset and cache verification. Consult deployment history for the resulting live revision; this handoff is not a deployment receipt.",
+  "dirtyOwner": "Changes made by Codex for Ben's smoothing, exit-gate and timer/consumption requests; original smoothing worktree was clean and that work was preserved during the stats addition.",
+  "dirtyPaths": [".truth-audit.yml", "README.md", "index.html", "sw.js", "docs/audit.md", "docs/space-visuals.md", "docs/screenshot.png", "docs/solar-system.png", "docs/milky-way.png", "docs/cosmic-web.png", "docs/graphics-before.png", "docs/graphics-exit-gate.md", "docs/graphics-local-receipt.json", "docs/2026-09-15-twistys-tornado-handoff.json", "scripts/graphics.test.mjs", "scripts/graphics-gate.mjs", "scripts/run-stats.test.mjs"],
+  "completed": ["Preserved smooth mesh normals and added rounded edges/denser curved geometry across town and space.", "Smoothed tornado silhouette, particles, black-hole core and shadows; raised DPR cap to 2.", "Added measurable graphics acceptance contract and repeatable geometry/browser tests.", "Added foreground play timer, size-cubed consumed-mass percentages per form and a balanced combined score, persistent results and Play again reset.", "Reconciled documentation, ratings and current-vs-published evidence boundaries; preserved historical test folder."],
+  "verification": {
+    "unit": "20/20 geometry, orbital and statistics tests passed",
+    "progression": "Seeds 1-5: all acceptance gates passed; zero errors, invalid-number events and network requests. Temporary full report: /private/tmp/twisty-stats-logic.json",
+    "statisticsUI": "Local Chrome desktop 1180x820 and mobile 390x844: HUD, mass, form/stage carry, real overview pause, synthetic visibility pause, forced goals through real finale, persistent correct results, fresh paused town, Play again reset and reload passed with zero errors. Temporary script/screenshots under /private/tmp/twisty-run-stats-ui.cjs and /private/tmp/twisty-stats-*.png. Not a full manual playthrough or device receipt.",
+    "graphics": "docs/graphics-local-receipt.json: all local checks passed; four 10-second stationary grown-scene samples about 60 FPS, p99 16.8 ms; real rendering/ticks advanced.",
+    "docs": "Truth audit and its four checker tests passed; git diff --check passed.",
+    "review": "Independent bounded review found test false-greens; added nonzero drawing and active-render/tick assertions, and secondary-page error/network instrumentation. Physical-device and human acceptance remain separate."
+  },
+  "next": "Verify the authorized v10 deployment, then arrange the exact-build physical-iPad acceptance run defined in docs/graphics-exit-gate.md.",
+  "blockers": ["No sustained target-iPad performance receipt or Ben's final moving-gameplay visual signoff. Publication is authorized but does not satisfy these acceptance gates."],
+  "continuationRule": "Recheck branch, dirty files and receipt source hash before adopting these claims. Do not treat this dated handoff as current deployment proof."
+}

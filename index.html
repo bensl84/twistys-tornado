@@ -1,7 +1,8 @@
 <!doctype html>
 <!--
-TWISTER — a one-finger 3D tornado game for a young child on an iPad (Safari).
-Single self-contained file. No build step. No network. Open from a local path or add to home screen.
+TWISTY'S TORNADO — a one-finger 3D tornado game for a young child on an iPad (Safari).
+The game runtime is self-contained in this file: no build step or network request is required to play it.
+The separate manifest, icons, and service worker support web-hosted installation and offline relaunch.
 
 three.js r158 (0.158.0) is inlined at the bottom of this file, byte-identical to the pinned npm/CDN build
 (https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js) minus its one-line deprecation console.warn,
@@ -23,7 +24,7 @@ energy, daily returns.
 P1  Control is the game (Swink). The tornado responds to the finger on the very next frame, but carries
     momentum and a turn rate so it has weight.            -> input_latency_frames, fps_p99_frametime_ms
 P2  Challenge tracks skill (Flow). The world always holds something she can eat AND something she cannot yet.
-    Most attempts succeed, not all.                        -> attempt_success_rate_rolling (70-85 %)
+    Most attempts succeed, not all.                        -> attempt_success_rate_rolling (70-95 %)
 P3  A visible next goal at every moment (Flow: clear proximal goals). At least one too-big object on screen.
                                                            -> frames_with_visible_too_big_pct
 P4  Competence through growth, not score (PENS). Growth is shown by scale, camera distance, sound and what
@@ -37,7 +38,7 @@ P7  Immediate first success (Flow/PENS). First absorb within seconds of the firs
                                                            -> time_to_first_absorb_s
 P8  Steady rhythm (Flow). Absorb rate stays inside a band for the whole session; no grind, no flood.
                                                            -> absorbs_per_min_series
-P9  Autonomy (PENS). Open plain, no walls, no menus, no text, nothing expires, nothing punishes.
+P9  Autonomy (PENS). Open plain, no walls, optional space overview, nothing expires, nothing punishes.
                                                            -> session_length_to_win_s (bounded by design, not timers)
 P10 Reliability is feel (Swink). Dropped frames and errors are the same as bad control.
                                                            -> fps_mean, console_errors, nan_count, heap_growth_pct
@@ -70,10 +71,19 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   @keyframes rot { 0%,20% { transform:rotate(0deg);} 60%,100% { transform:rotate(90deg);} }
   @media (orientation: portrait) and (pointer: coarse) { #rotate:not(.hidden) { display:flex; } }
   .hidden { display:none !important; }
+  #space-map { position:absolute; right:calc(18px + env(safe-area-inset-right)); top:calc(18px + env(safe-area-inset-top)); z-index:12; border:1px solid #a5c9f050; border-radius:50%; width:56px; height:56px; background:#091524c9; color:#d6e6ff; font-size:28px; touch-action:manipulation; }
+  #space-map[aria-pressed="true"] { background:#254a71; border-color:#a9d7ff; }
+  #map-caption { position:absolute; left:calc(26px + env(safe-area-inset-left)); top:calc(25px + env(safe-area-inset-top)); color:#e3eeff; pointer-events:none; }
+  #map-caption h1 { font-size:clamp(19px,3vw,30px); font-weight:500; letter-spacing:.04em; margin:0 70px 8px 0; }
+  #map-caption p { max-width:65vw; font-size:12px; line-height:1.5; color:#96adc7; margin:0; }
+  #map-note { position:absolute; bottom:calc(20px + env(safe-area-inset-bottom)); left:26px; right:26px; color:#91a4bc; font-size:11px; text-align:center; pointer-events:none; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="space-map" class="hidden" aria-label="Show space overview" aria-pressed="false">◎</button>
+<div id="map-caption" class="hidden"><h1></h1><p></p></div>
+<div id="map-note" class="hidden">An illustrated universe • Sizes, distances and orbits are simplified for play • Tap ◎ to return</div>
 <div id="start" aria-label="Pick a tornado color to start">
   <div class="row">
     <div class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
@@ -94,7 +104,7 @@ const TornadoGame = (() => {
 'use strict';
 
 // =====================================================================================================
-// TUNING — every magic number lives here. Hand-tune after watching her play.
+// TUNING — primary gameplay, pacing, camera, effects, and world controls. Renderer geometry also has local constants.
 // Units: meters, seconds, radians unless noted. "power" = the largest object size (m) the tornado can eat.
 // =====================================================================================================
 const TUNING = {
@@ -106,13 +116,12 @@ const TUNING = {
   TIER_THRESHOLDS: [1.0, 2.4, 6.5, 12.5, 24.0], // Town: power needed to enter tier 2,3,4,5,6 (tier 6 = water tower).
   SPACE_THRESHOLDS: [60, 125, 210, 330, 900],   // Space: moons, Earth/Venus, ice giants, gas giants, the Sun.
   SPACE_START_POWER: 24,     // Power on arrival in space (continues from the tower).
-  SPACE_RADIUS: 2600,        // m. Populated radius of the space stage.
+  SPACE_RADIUS: 2600,        // Game units: static pickup field; planet orbits extend beyond it.
   SPACE_SCATTER: { rock_s: 2600, rock_m: 1800, rock_l: 900, satellite: 320, rocket: 260, comet: 200, station: 90, pluto: 40, moon: 48, bigmoon: 26, icemoon: 26, gasdwarf: 12, giant: 16, dwarfstar: 8 },
   SPACE_SPEED_MULT: 8,       // Space is ~10x the town's scale; the tornado moves this much faster there.
   SPACE_GROWTH_MULT: 1.25,   // Growth per absorb in space (on top of GROWTH).
   SPACE_START_KIT: { rock_s: 20, rock_m: 12, satellite: 5, rocket: 4 },
-  EARTH_POS: [190, -230],    // The Earth sits right beside her when she arrives: too big, for now.
-  SUN_POS: [120, -2100],     // The Sun is the last thing in the sky.
+  SUN_POS: [0, -1100],       // Center of the compressed, playable solar system.
   // ---- Galaxy stage (after the Sun). Same size ladder as the solar system so the camera, speed and pacing carry over. ----
   GALAXY_THRESHOLDS: [60, 125, 210, 330, 900],
   GALAXY_START_POWER: 24, GALAXY_RADIUS: 2600,
@@ -287,7 +296,8 @@ const TYPES = [
   { id: 'elevator',tier: 5, size: 21.8, foot: 6.0, blocks: true,  colors: [0xc9c4b8, 0xbdb6a8] },
   { id: 'tower',   tier: 6, size: 24.0, foot: 6.0, blocks: true,  colors: [0xcfd8de] },
 ];
-// Space stage ladder. size = diameter (m). Planets sit on the same invisible plane the finger projects onto.
+// Space stage ladder. Diameters are compressed game units, not physical measurements.
+// Legacy non-planet IDs (gasdwarf/giant/dwarfstar etc.) retain pacing values but render as debris aggregates.
 const SPACE_TYPES = [
   { id: 'rock_s',   tier: 1, size: 10,  foot: 5,   blocks: false, colors: [0x8a8078, 0x6f6660, 0x9c8f80] },
   { id: 'rock_m',   tier: 1, size: 18,  foot: 9,   blocks: false, colors: [0x8a8078, 0x7a6a5a, 0x6b6b70] },
@@ -366,6 +376,17 @@ const UNIVERSE_TYPES = [
   { id: 'u_everything',  tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xfff4d6], glow: true },
 ];
 const TYPE_BY_ID = {};
+// Astronomical identities and order; radii, sizes and periods are compressed for play.
+const SOLAR_ORBITS = [
+  { id: 'mercury', name: 'Mercury', radius: 620, phase: 3.0, speed: 0.010, color: '#aaa39a' },
+  { id: 'venus', name: 'Venus', radius: 820, phase: 0.4, speed: 0.008, color: '#e9d19c' },
+  { id: 'earth', name: 'Earth', radius: 1120, phase: 1.40, speed: 0.006, color: '#69baff' },
+  { id: 'mars', name: 'Mars', radius: 1370, phase: 2.0, speed: 0.0048, color: '#e69872' },
+  { id: 'jupiter', name: 'Jupiter', radius: 1810, phase: -0.65, speed: 0.003, color: '#edc4a0' },
+  { id: 'saturn', name: 'Saturn', radius: 2200, phase: 0.20, speed: 0.0022, color: '#ead8ac' },
+  { id: 'uranus', name: 'Uranus', radius: 2580, phase: 2.60, speed: 0.0016, color: '#a9e5e8' },
+  { id: 'neptune', name: 'Neptune', radius: 2910, phase: -2.0, speed: 0.0012, color: '#6589ef' },
+];
 TYPES.forEach((t, i) => { t.index = i; TYPE_BY_ID[t.id] = t; });
 const SPACE_TYPE_BY_ID = {};
 SPACE_TYPES.forEach((t, i) => { t.index = i; SPACE_TYPE_BY_ID[t.id] = t; });
@@ -524,7 +545,13 @@ function makeGeometryBuilders(THREE) {
     rock_m() { sphere(9, W, 0, 9, 0, 1.1, 0.75, 1.3); sphere(4, 0x5a524a, 5, 12, 3); return merge(); },
     rock_l() { sphere(15, W, 0, 15, 0, 1.3, 0.8, 1); sphere(6, 0x5a524a, -8, 20, 6); sphere(4, 0x5a524a, 9, 9, -8); return merge(); },
     satellite() { box(3, 3, 3, W, 0, 7, 0); box(14, 0.2, 4, 0x2b4f8a, 0, 7, 0); cyl(0.2, 0.2, 5, 6, 0xaaaaaa, 0, 10.5, 0); sphere(1.5, 0xaaaaaa, 0, 13, 0); return merge(); },
-    rocket() { cyl(3, 3, 14, 12, W, 0, 11, 0); cone(3, 6, 12, 0xd8342a, 0, 21, 0); for (const a of [0, 2.09, 4.19]) box(0.8, 5, 4, 0xd8342a, Math.cos(a) * 3.2, 3, Math.sin(a) * 3.2); cyl(2.2, 3, 3, 12, 0x555555, 0, 2, 0); return merge(); },
+    rocket() { // Retired Space Shuttle orbiter: delta wings, black underside, cockpit and three engines.
+      sphere(3, W, 0, 7, 0, 1, 0.85, 3.7); box(4.8, 0.5, 15, 0x182332, 0, 5, 0);
+      const wing = new THREE.BufferGeometry(); wing.setAttribute('position', new THREE.Float32BufferAttribute([-2,6,-5,-11,6,8,2,6,8, 2,6,-5,-2,6,8,11,6,8],3)); wing.computeVertexNormals(); push(wing, W);
+      box(4, 0.4, 3, 0x142a42, 0, 9.2, -6); box(0.6, 5, 5, W, 0, 10, 7);
+      for (const x of [-1.7,0,1.7]) sphere(1.1, 0x28313b, x, 6.5, 10, 1, 1, 1.4);
+      return merge();
+    },
     comet() { sphere(6, W, 0, 12, 0); sphere(4, 0xdff6ff, 8, 14, 0, 2.2, 0.6, 0.6); sphere(3, 0xeafaff, 18, 15, 0, 2.6, 0.5, 0.5); return merge(); },
     station() { box(30, 4, 4, W, 0, 22, 0); box(4, 4, 30, W, 0, 22, 0); sphere(6, 0x9fb7c6, 0, 22, 0); for (const [x, z] of [[14, 0], [-14, 0], [0, 14], [0, -14]]) box(10, 0.3, 6, 0x2b4f8a, x, 22, z); return merge(); },
     pluto() { sphere(25, W, 0, 25, 0); sphere(10, 0xe8dccc, 8, 40, 6, 1, 0.5, 1); return merge(); },
@@ -748,7 +775,7 @@ function generateWorld(seed) {
 }
 
 // =====================================================================================================
-// SPACE STAGE GENERATION. Same jittered-grid idea, no roads, planets placed by hand.
+// SPACE STAGE GENERATION. Jittered-grid pickups and deterministic, animated planet orbits.
 // =====================================================================================================
 function generateSpace(seed) {
   const rnd = mulberry32(seed * 104729 + 7);
@@ -767,16 +794,20 @@ function generateSpace(seed) {
     for (let gx = -R - cell; gx <= R + cell; gx += cell) for (let gz = -R - cell; gz <= R + cell; gz += cell) { const x = gx + off + rnd() * cell, z = gz + off2 + rnd() * cell; if (okPoint(x, z)) add(id, x, z, rnd() * TAU); }
   }
   for (const id in TUNING.SPACE_START_KIT) { const n = TUNING.SPACE_START_KIT[id]; for (let i = 0; i < n; i++) { const a = rnd() * TAU, r = 25 + Math.sqrt(rnd()) * 110; add(id, Math.cos(a) * r, Math.sin(a) * r, rnd() * TAU); } }
-  // the solar system, spread so each is the next 'too big' thing somewhere on the way to the Sun
-  add('earth', TUNING.EARTH_POS[0], TUNING.EARTH_POS[1], 0.4);
-  add('moon', TUNING.EARTH_POS[0] + 150, TUNING.EARTH_POS[1] + 60, 0);
-  add('mars', -520, -380, 0); add('mercury', 480, -520, 0); add('venus', -260, -900, 0);
-  add('neptune', 900, -1100, 0); add('uranus', -1000, -1250, 0);
-  add('saturn', -600, -1700, 0); add('jupiter', 700, -1650, 0);
+  // One of each real planet, in solar order. Moving bodies are indexed separately from the static spatial hash.
+  for (const orbit of SOLAR_ORBITS) {
+    const o = add(orbit.id, TUNING.SUN_POS[0] + Math.cos(orbit.phase) * orbit.radius, TUNING.SUN_POS[1] + Math.sin(orbit.phase) * orbit.radius, 0);
+    o.orbit = {...orbit}; o.scale = 1; o.size = o.type.size; o.foot = o.type.foot;
+  }
+  const earth = objs.find(o => o.type.id === 'earth');
+  for (const [id, radius, phase, speed] of [['moon', 145, 0, 0.025], ['satellite', 94, 2.4, 0.065], ['rocket', 112, 4, 0.05], ['station', 130, 1, 0.035]]) {
+    const o = add(id, earth.x + Math.cos(phase) * radius, earth.z + Math.sin(phase) * radius, 0);
+    o.orbit = { parent: earth, radius, phase, speed };
+  }
   add('sun', TUNING.SUN_POS[0], TUNING.SUN_POS[1], 0);
   // nothing inside a bigger solid body
   const solids = objs.filter(o => o.type.blocks).sort((a, b) => b.size - a.size);
-  for (const s of solids) { if (s.state === 2) continue; for (const o of objs) { if (o === s || o.state === 2 || o.size >= s.size) continue; const need = s.foot + o.foot + 5; const dx = o.x - s.x, dz = o.z - s.z; if (dx * dx + dz * dz < need * need) o.state = 2; } }
+  for (const s of solids) { if (s.state === 2) continue; for (const o of objs) { if (o === s || o.orbit || o.state === 2 || o.size >= s.size) continue; const need = s.foot + o.foot + 5; const dx = o.x - s.x, dz = o.z - s.z; if (dx * dx + dz * dz < need * need) o.state = 2; } }
   return objs.filter(o => o.state !== 2).map((o, i) => (o.id = i, o));
 }
 
@@ -838,11 +869,13 @@ function createGame(seed, stageId, colorId) {
     const k = key(cx, cz); let a = grid.get(k); if (!a) { a = []; grid.set(k, a); } a.push(o);
   }
   G.grid = grid;
+  G.orbiters = G.objs.filter(o => o.orbit);
   G.nearby = function (x, z, r, out) {
     out.length = 0;
     if (r > 90) { for (let i = 0; i < G.objs.length; i++) out.push(G.objs[i]); return out; }
     const c0x = Math.floor((x - r) / CELL), c1x = Math.floor((x + r) / CELL), c0z = Math.floor((z - r) / CELL), c1z = Math.floor((z + r) / CELL);
-    for (let cx = c0x; cx <= c1x; cx++) for (let cz = c0z; cz <= c1z; cz++) { const a = grid.get(key(cx, cz)); if (a) for (let i = 0; i < a.length; i++) out.push(a[i]); }
+    for (let cx = c0x; cx <= c1x; cx++) for (let cz = c0z; cz <= c1z; cz++) { const a = grid.get(key(cx, cz)); if (a) for (let i = 0; i < a.length; i++) if (!a[i].orbit) out.push(a[i]); }
+    for (const o of G.orbiters) out.push(o);
     return out;
   };
   G.emit = function (kind, data) { const e = Object.assign({ t: G.time, tick: G.tick, kind }, data); G.events.push(e); if (G.events.length > 400) G.events.splice(0, 200); for (const l of G.listeners) l(e); };
@@ -852,6 +885,22 @@ function createGame(seed, stageId, colorId) {
 }
 
 const _near = [];
+function updateOrbits(G, dt) {
+  G.orbitTime=(G.orbitTime||0)+dt;
+  for (const o of G.orbiters) {
+    if (o.state !== 0) continue;
+    const orbit = o.orbit;
+    // Once Earth is consumed, its remaining spacecraft keep their last orbital center.
+    if (!orbit.parent || orbit.parent.state === 0) {
+      orbit.cx = orbit.parent ? orbit.parent.x : TUNING.SUN_POS[0];
+      orbit.cz = orbit.parent ? orbit.parent.z : TUNING.SUN_POS[1];
+    }
+    const a = orbit.phase + G.orbitTime * orbit.speed;
+    o.x = (orbit.cx ?? TUNING.SUN_POS[0]) + Math.cos(a) * orbit.radius;
+    o.z = (orbit.cz ?? TUNING.SUN_POS[1]) + Math.sin(a) * orbit.radius;
+    o.ry += dt * 0.12;
+  }
+}
 function stepGame(G) {
   G.tick++;
   const T = TUNING;
@@ -870,6 +919,7 @@ function stepGame(G) {
   if (G.hitstop > 0) { G.hitstop--; updateCamera(G, DT); return; }
   const dt = DT * G.timeScale;
   G.time += dt;
+  updateOrbits(G,dt);
 
   // ---- movement: chase the finger with momentum + turn rate (heading/speed model) ----
   const ss = G.speedScale();
@@ -1048,6 +1098,133 @@ function screenToGround(cam, sx, sy, w, h, out) {
 // =====================================================================================================
 // RENDERER (three.js). Everything visual. Reads game state; never writes logic state.
 // =====================================================================================================
+// Procedural astronomy artwork: embedded/offline, deterministic, shared by all instances.
+// These are artistic representations, not measured surface maps or a physical-scale simulation.
+function createCosmicArt(THREE) {
+  const cache = new Map();
+  function texture(key, draw, size = 512) {
+    if (cache.has(key)) return cache.get(key);
+    const c = document.createElement('canvas'); c.width = size; c.height = size;
+    draw(c.getContext('2d'), size);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 2; cache.set(key, t); return t;
+  }
+  const glow = (c, x, y, r, color, alpha = 1) => {
+    c.save(); c.globalAlpha = alpha;
+    const g = c.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,color); g.addColorStop(1,'transparent');
+    c.fillStyle = g; c.fillRect(x-r,y-r,r*2,r*2); c.restore();
+  };
+  function planet(id) {
+    return texture('planet:'+id, (c,n) => {
+      const rnd = mulberry32([...id].reduce((s,v)=>s+v.charCodeAt(0),0));
+      const colors = {earth:'#125dae',mercury:'#93867c',venus:'#d9b87c',mars:'#b45835',jupiter:'#cbae8a',saturn:'#d8c6a0',uranus:'#8bccd4',neptune:'#356dc0',sun:'#ffb52c',moon:'#999b9d',pluto:'#c8b2a0'};
+      c.fillStyle = colors[id] || '#aeb2c0'; c.fillRect(0,0,n,n);
+      for (let y=0;y<n;y++) {
+        const bands = Math.sin(y*0.12+Math.sin(y*0.034)*2)*0.5+Math.sin(y*0.32)*0.22;
+        c.globalAlpha = (['jupiter','saturn','venus','neptune'].includes(id)?0.21:0.025)*Math.abs(bands);
+        c.fillStyle = bands>0?'#ffefd1':'#653825'; c.fillRect(0,y,n,1);
+      }
+      c.globalAlpha=1;
+      if (id==='earth') {
+        // Hand-drawn equirectangular continent silhouettes, longitude/latitude coordinates.
+        const continents = [
+          [[-168,70],[-140,69],[-126,53],[-124,42],[-114,29],[-96,18],[-82,9],[-77,25],[-66,45],[-82,59],[-110,72]],
+          [[-81,12],[-60,8],[-35,-8],[-45,-23],[-54,-34],[-69,-55],[-77,-18]],
+          [[-17,35],[10,37],[34,30],[51,11],[42,-14],[20,-35],[10,-18],[-1,5],[-17,14]],
+          [[-10,36],[-10,58],[20,71],[57,73],[110,72],[179,65],[150,49],[142,35],[122,20],[105,5],[79,8],[67,25],[40,30],[26,40]],
+          [[112,-12],[137,-10],[154,-25],[145,-39],[116,-33]],
+          [[-54,60],[-28,70],[-23,82],[-55,84],[-72,74]],
+          [[46,-13],[50,-17],[47,-26],[43,-23]],
+        ];
+        const xy = ([lon,lat]) => [(lon+180)/360*n,(90-lat)/180*n];
+        for (const land of continents) {
+          c.beginPath(); land.forEach((p,i)=>{const [x,y]=xy(p); i?c.lineTo(x,y):c.moveTo(x,y);}); c.closePath();
+          c.fillStyle='#698c59'; c.fill(); c.save(); c.clip();
+          for(let i=0;i<170;i++) glow(c,rnd()*n,rnd()*n,3+rnd()*18, i%2?'#b5a36c':'#3f754b',0.5);
+          c.restore();
+        }
+        c.fillStyle='#e8f4f4'; c.fillRect(0,n*0.94,n,n*0.06);
+        for(let i=0;i<140;i++) {c.save();c.translate(rnd()*n,rnd()*n);c.scale(3,0.4);glow(c,0,0,4+rnd()*8,'#ffffff',0.45);c.restore();}
+      } else if (id==='jupiter') {
+        c.save(); c.translate(n*0.68,n*0.61); c.scale(2.1,0.65); glow(c,0,0,n*0.055,'#b75736'); glow(c,0,0,n*0.028,'#d58857'); c.restore();
+      } else if (['mercury','moon','pluto','mars'].includes(id)) {
+        for(let i=0;i<360;i++){const x=rnd()*n,y=rnd()*n,r=1+rnd()*8;c.strokeStyle='rgba(35,26,22,0.24)';c.lineWidth=1.4;c.beginPath();c.arc(x,y,r,0,TAU);c.stroke();glow(c,x+1,y+1,r,'#4d3e34',0.2);}
+        if(id==='mars'){glow(c,n*0.4,n*0.57,n*0.17,'#533b31',0.6);c.fillStyle='#eee3d5';c.fillRect(0,0,n,n*0.045);}
+      }
+      for(let i=0;i<9000;i++){c.globalAlpha=0.03+rnd()*0.08;c.fillStyle=i%2?'#ffffff':'#21150e';c.fillRect(rnd()*n,rnd()*n,1+rnd()*3,1);}
+      c.globalAlpha=1;
+    });
+  }
+  function galaxy(kind='spiral') {
+    return texture('galaxy:'+kind,(c,n)=>{
+      const rnd=mulberry32(872+kind.length*59); const mid=n/2;
+      if(['group','cluster','web','quasar'].includes(kind)) {
+        if(kind==='quasar') {
+          c.drawImage(galaxy('spiral').image,0,0,n,n);
+          c.save();c.translate(mid,mid);c.rotate(-0.65);c.scale(0.09,1);glow(c,0,0,n*0.47,'#87d8ff',0.95);c.restore();
+          glow(c,mid,mid,n*0.09,'#ffffff',1);return;
+        }
+        const count=kind==='group'?5:kind==='cluster'?22:70;
+        for(let i=0;i<count;i++) {
+          const a=rnd()*TAU,r=Math.sqrt(rnd())*n*0.35;
+          const x=kind==='web'?n*0.12+i/count*n*0.76:mid+Math.cos(a)*r;
+          const y=kind==='web'?mid+Math.sin(i/count*8)*n*0.2+(rnd()-0.5)*n*0.12:mid+Math.sin(a)*r*0.8;
+          const s=n*(kind==='group'?0.25:kind==='cluster'?0.12:0.05)*(0.6+rnd()*0.6);
+          c.drawImage(galaxy(i%3?'spiral':'elliptical').image,x-s/2,y-s/2,s,s);
+        }
+        return;
+      }
+      if(kind==='nebula') {
+        for(let i=0;i<95;i++){const a=rnd()*TAU,r=rnd()*n*0.30;glow(c,mid+Math.cos(a)*r,mid+Math.sin(a)*r,15+rnd()*70,['#4272ac','#ab547b','#685ab0'][i%3],0.07);}
+      }
+      const elliptic=kind==='elliptical'||kind==='lenticular';
+      // A diffuse disk and broad, uneven star-forming arms, not four hard lines.
+      c.save();c.translate(mid,mid);c.scale(1,elliptic?0.65:0.85);
+      glow(c,0,0,n*0.45,elliptic?'#bfa889':'#536b94',0.25);c.restore();
+      for(let i=0;i<20000;i++) {
+        const r=Math.pow(rnd(),0.65)*n*0.45;
+        let a=rnd()*TAU, x,y;
+        if(!elliptic && kind!=='irregular' && kind!=='nebula') {
+          const arm=i%4;
+          a=arm*TAU/4+Math.log(1+r/38)*2.65+(rnd()+rnd()+rnd()-1.5)*(0.36+r/n*0.65);
+          // Inter-arm stars prevent an artificial pinwheel silhouette.
+          if(i%7===0)a=rnd()*TAU;
+          if(kind==='ring') a=rnd()*TAU;
+        }
+        const rr=kind==='ring'?n*0.30+(rnd()-0.5)*n*0.06:r;
+        x=mid+Math.cos(a)*rr; y=mid+Math.sin(a)*rr*(elliptic?0.65:0.85);
+        const alpha=(1-r/(n*0.49))*(elliptic?0.22:0.42);
+        c.fillStyle=elliptic?'#ffe3b0':(i%13===0?'#efa3c8':i%3?'#a9cbff':'#edf1ff');
+        c.globalAlpha=alpha; const s=0.5+rnd()*1.6;c.fillRect(x,y,s,s);
+        if(i%18===0) glow(c,x,y,4+rnd()*9,elliptic?'#ffe4be':i%5?'#82aaff':'#e988b5',0.14);
+      }
+      c.globalAlpha=1;
+      if(kind==='barred') {c.save();c.translate(mid,mid);c.rotate(0.25);c.scale(2.8,0.55);glow(c,0,0,n*0.11,'#ffe9c4',0.9);c.restore();}
+      if(kind!=='irregular' && kind!=='nebula'){glow(c,mid,mid,n*0.15,'#eacaa4',0.65);glow(c,mid,mid,n*0.055,'#fff6e1',0.95);}
+    },512);
+  }
+  function galaxyKind(id) {
+    if(/everything|wall|attractor|supercluster/.test(id)) return 'web';
+    if(/quasar/.test(id)) return 'quasar';
+    if(/cluster/.test(id)) return 'cluster';
+    if(/group|pair/.test(id)) return 'group';
+    if(/ell|bulge|dwarf|speck/.test(id)) return 'elliptical';
+    if(/irregular/.test(id)) return 'irregular';
+    if(/ring/.test(id)) return 'ring';
+    if(/barred/.test(id)) return 'barred';
+    if(/lenticular/.test(id)) return 'lenticular';
+    return 'spiral';
+  }
+  function star(id) {
+    return texture('star:'+id,(c,n)=>{
+      const cool=/blue|white|pulsar/.test(id),color=cool?'#98c9ff':/red|hyper|brown/.test(id)?'#f5a779':'#ffe1a0';
+      glow(c,n/2,n/2,n*.48,color,.32);glow(c,n/2,n/2,n*.23,color,.8);glow(c,n/2,n/2,n*.09,'#fff9ed');
+      if(/pulsar/.test(id)){c.save();c.translate(n/2,n/2);c.scale(.035,1);glow(c,0,0,n*.49,'#c1eeff');c.restore();}
+    },256);
+  }
+  return { planet, galaxy, galaxyKind, star, glow, texture };
+}
+
 function createRenderer(THREE, canvas, opts) {
   const T = TUNING;
   const builders = makeGeometryBuilders(THREE);
@@ -1116,18 +1293,55 @@ function createRenderer(THREE, canvas, opts) {
   objMat.customProgramCacheKey = () => 'tinted';
   const glowMat = new THREE.MeshBasicMaterial({ vertexColors: true }); // the Sun: unlit, always bright
   const meshes = {};
+  const art = createCosmicArt(THREE), cosmicMaterials = new Map();
+  const planetIds = new Set([...SOLAR_ORBITS.map(p=>p.id),'moon','pluto','sun']);
+  const companions = [];
+  function debrisGeometry(size) {
+    // Legacy large solar pickups are now loose rocky/icy aggregates, not invented planets or extra suns.
+    const rnd=mulberry32(size*73),positions=[],normals=[],colors=[];
+    for(let i=0;i<32;i++) {
+      const a=rnd()*TAU,r=Math.sqrt(rnd())*size*.40,s=size*(.025+rnd()*.065);
+      let g=new THREE.IcosahedronGeometry(s,0);if(g.index)g=g.toNonIndexed();g.translate(Math.cos(a)*r,s+(rnd()*.1)*size,Math.sin(a)*r);
+      positions.push(...g.attributes.position.array);normals.push(...g.attributes.normal.array);
+      const shade=.35+rnd()*.35;for(let j=0;j<g.attributes.position.count;j++)colors.push(shade,shade*.95,shade*.87);g.dispose();
+    }
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));return g;
+  }
+  function cosmicMaterial(key, map, transparent=false) {
+    if (!cosmicMaterials.has(key)) cosmicMaterials.set(key, transparent
+      ? new THREE.MeshBasicMaterial({ map, transparent:true, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, fog:false })
+      : new THREE.MeshStandardMaterial({ map, roughness:0.92, metalness:0, emissive:key==='sun'?0xffb43c:0x000000, emissiveMap:key==='sun'?map:null, emissiveIntensity:key==='sun'?1.3:0 }));
+    return cosmicMaterials.get(key);
+  }
   const dummy = new THREE.Object3D();
   const M4 = new THREE.Matrix4();
   let objs = [];
   function buildObjects(list, types) {
-    for (const id in meshes) { scene.remove(meshes[id]); meshes[id].geometry.dispose(); delete meshes[id]; }
+    for (const id in meshes) { scene.remove(meshes[id]); meshes[id].geometry.dispose(); meshes[id].dispose(); delete meshes[id]; }
+    for (const entry of companions) {scene.remove(entry.mesh);entry.mesh.geometry.dispose();entry.mesh.material.dispose();}
+    companions.length=0;
     objs = list;
     const byType = {};
     for (const o of list) (byType[o.type.id] = byType[o.type.id] || []).push(o);
     for (const t of (types || TYPES)) {
       const arr = byType[t.id] || []; if (!arr.length) continue;
-      const geo = builders[t.id]();
-      const im = new THREE.InstancedMesh(geo, t.glow ? glowMat : objMat, arr.length);
+      let geo, material=t.glow?glowMat:objMat;
+      const debris=stageId==='solar'&&['pluto','bigmoon','icemoon','gasdwarf','giant','dwarfstar'].includes(t.id);
+      const texturedPlanet=stageId==='solar'&&planetIds.has(t.id)&&!debris;
+      const galaxySprite=t.id.startsWith('u_');
+      const nebulaSprite=/^g_(big)?nebula$|^g_wisp$/.test(t.id);
+      const starSprite=t.id.startsWith('g_')&&!nebulaSprite;
+      if(texturedPlanet) {
+        geo=new THREE.SphereGeometry(t.size/2,40,24);geo.translate(0,t.size/2,0);
+        material=cosmicMaterial(t.id,art.planet(t.id));
+      } else if(debris){geo=debrisGeometry(t.size);material=objMat;
+      } else if(galaxySprite||nebulaSprite||starSprite) {
+        geo=new THREE.PlaneGeometry(t.size*2.2,t.size*2.2);geo.rotateX(-Math.PI/2);geo.translate(0,t.size*0.4,0);
+        const kind=nebulaSprite?'nebula':/g_.*cluster|g_globular|g_core/.test(t.id)?'elliptical':art.galaxyKind(t.id);
+        const isStar=starSprite&&!/cluster|globular|core/.test(t.id);
+        material=cosmicMaterial(isStar?'star:'+t.id:'galaxy:'+kind,isStar?art.star(t.id):art.galaxy(kind),true);
+      } else geo = builders[t.id]();
+      const im = new THREE.InstancedMesh(geo, material, arr.length);
       im.castShadow = !!shadowsOn && t.tier >= T.SHADOW_TIERS_MIN; im.receiveShadow = !!shadowsOn && t.tier >= 3;
       im.frustumCulled = false;
       const c = new THREE.Color();
@@ -1135,12 +1349,21 @@ function createRenderer(THREE, canvas, opts) {
         o.inst = i; o.mesh = im;
         dummy.position.set(o.x, 0, o.z); dummy.rotation.set(0, o.ry, 0); dummy.scale.setScalar(o.scale); dummy.updateMatrix();
         im.setMatrixAt(i, dummy.matrix);
-        c.setHex(t.colors[o.colorIndex]); im.setColorAt(i, c);
+        c.setHex(texturedPlanet||galaxySprite||nebulaSprite||starSprite||debris?0xffffff:t.colors[o.colorIndex]); im.setColorAt(i, c);
+        if(texturedPlanet&&(t.id==='saturn'||t.id==='uranus')) {
+          const r=t.size/2;
+          for(const [inner,outer,opacity] of [[1.35,1.68,0.55],[1.73,2.05,0.75],[2.09,2.22,0.3]]){
+            const ringGeo=new THREE.RingGeometry(r*inner,r*outer,96);ringGeo.rotateX(t.id==='uranus'?-0.15:-Math.PI/2+0.32);ringGeo.translate(0,r,0);
+            const ringMesh=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:t.id==='uranus'?0x8caeb3:0xc8b38b,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false}));
+            ringMesh.matrixAutoUpdate=false;scene.add(ringMesh);companions.push({mesh:ringMesh,o});
+          }
+        }
       });
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
       scene.add(im); meshes[t.id] = im;
     }
+    buildCosmicScene();
   }
   function hideInstance(o) { M4.makeScale(0, 0, 0); o.mesh.setMatrixAt(o.inst, M4); o.mesh.instanceMatrix.needsUpdate = true; }
   function setInstance(o, x, y, z, ry, rx, rz, s) { dummy.position.set(x, y, z); dummy.rotation.set(rx || 0, ry, rz || 0); dummy.scale.setScalar(s); dummy.updateMatrix(); o.mesh.setMatrixAt(o.inst, dummy.matrix); o.mesh.instanceMatrix.needsUpdate = true; }
@@ -1315,6 +1538,70 @@ function createRenderer(THREE, canvas, opts) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfd8ff, size: 1.4, sizeAttenuation: false, fog: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
   })();
+  const cosmicScene = new THREE.Group(); scene.add(cosmicScene);
+  const orbitGuides=[];
+  function clearCosmicScene() {
+    for(const child of [...cosmicScene.children]) {
+      cosmicScene.remove(child); child.geometry?.dispose(); child.material?.dispose();
+    }
+    orbitGuides.length=0;
+  }
+  function pointsCloud(positions, colors, size=2) {
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    const p=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size,sizeAttenuation:false,transparent:true,opacity:0.72,depthWrite:false,fog:false}));p.frustumCulled=false;cosmicScene.add(p);return p;
+  }
+  function guide(radius,cx,cz,color,opacity=0.3) {
+    const pts=[];for(let i=0;i<192;i++){const a=i/192*TAU;pts.push(new THREE.Vector3(cx+Math.cos(a)*radius,0,cz+Math.sin(a)*radius));}
+    const line=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false,fog:false}));cosmicScene.add(line);return line;
+  }
+  function label(text,x,z,color='#a8b8d0',scale=95) {
+    const map=art.texture('label:'+text,(c,n)=>{c.fillStyle=color;c.font='500 23px -apple-system, sans-serif';c.textAlign='center';c.fillText(text,n/2,n/2+8);},256);
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map,transparent:true,depthWrite:false,depthTest:false,fog:false}));s.position.set(x,75,z);s.scale.set(scale*4,scale*4,1);s.userData.labelScale=scale;cosmicScene.add(s);return s;
+  }
+  function buildCosmicScene() {
+    clearCosmicScene();cosmicScene.visible=stageId!=='town';
+    if(stageId==='town')return;
+    const rnd=mulberry32(30491),positions=[],colors=[];const c=new THREE.Color();
+    if(stageId==='solar') {
+      const [cx,cz]=TUNING.SUN_POS;
+      for(const orbit of SOLAR_ORBITS) {
+        const line=guide(orbit.radius,cx,cz,orbit.color);
+        const o=objs.find(o=>o.type.id===orbit.id);
+        const name=label(orbit.name,o.x,o.z,orbit.color,65);name.userData.body=o;orbitGuides.push({line,o,label:name});
+      }
+      const earth=objs.find(o=>o.type.id==='earth');
+      const moonGuide=guide(145,0,0,0x6c8fbb,0.26);orbitGuides.push({line:moonGuide,parent:earth});
+      for(const [inner,outer,count,tint] of [[1480,1580,2400,0xb59b7b],[3150,3650,3900,0x9fb8ca]]) {
+        for(let i=0;i<count;i++){const a=rnd()*TAU,r=inner+rnd()*(outer-inner);positions.push(cx+Math.cos(a)*r,(rnd()-0.5)*35,cz+Math.sin(a)*r);c.setHex(tint).multiplyScalar(0.35+rnd()*0.65);colors.push(c.r,c.g,c.b);}
+      }
+      pointsCloud(positions,colors,1.5);
+      label('ASTEROID BELT',cx-1520,cz,'#a79a89',65);label('KUIPER BELT',cx,cz+3490,'#96b5ca',90);
+      const sunName=label('SUN',cx,cz,'#ffce83',55);sunName.position.y=1100;sunName.userData.body=objs.find(o=>o.type.id==='sun');
+      const corona=new THREE.Mesh(new THREE.PlaneGeometry(1900,1900),new THREE.MeshBasicMaterial({map:art.star('sun'),transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false}));corona.rotation.x=-Math.PI/2;corona.position.set(cx,-3,cz);corona.userData.sun=objs.find(o=>o.type.id==='sun');cosmicScene.add(corona);
+    } else if(stageId==='galaxy') {
+      const [cx,cz]=TUNING.GALAXY_CORE_POS;
+      const disk=new THREE.Mesh(new THREE.PlaneGeometry(10500,10500),new THREE.MeshBasicMaterial({map:art.galaxy('barred'),transparent:true,opacity:1,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));disk.rotation.x=-Math.PI/2;disk.position.set(cx,-70,cz);disk.userData.galaxyBackdrop=true;cosmicScene.add(disk);
+      for(let i=0;i<9500;i++) {
+        const r=Math.pow(rnd(),0.75)*4600,a=(i%4)*TAU/4+Math.log(1+r/780)*2.65+(rnd()+rnd()+rnd()-1.5)*.65;
+        positions.push(cx+Math.cos(a)*r,(rnd()-0.5)*90,cz+Math.sin(a)*r*0.85);
+        c.setHex(i%17===0?0xe798c0:i%3?0x8dbaed:0xffdfab).multiplyScalar(0.1+rnd()*0.35);colors.push(c.r,c.g,c.b);
+      }
+      pointsCloud(positions,colors,1.1);
+      label('GALACTIC CENTER',cx,cz-600,'#eed9b8',90);
+    } else {
+      // Schematic cosmic web: galaxy concentrations along filaments separated by dark voids.
+      const nodes=[];for(let i=0;i<30;i++)nodes.push([Math.cos(i*2.4)*(1200+rnd()*4600),Math.sin(i*2.4)*(1200+rnd()*4600)-1100]);
+      for(let i=0;i<nodes.length;i++) {
+        const a=nodes[i],near=nodes.map((b,j)=>({b,j,d:Math.hypot(a[0]-b[0],a[1]-b[1])})).filter(x=>x.j>i).sort((a,b)=>a.d-b.d).slice(0,2);
+        for(const {b} of near) {
+          const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),bend=(rnd()-.5)*length*.5;
+          for(let k=0;k<700;k++) {const t=rnd(),spread=120+Math.sin(t*Math.PI)*230,curve=Math.sin(t*Math.PI)*bend,offset=(rnd()+rnd()-1)*spread;positions.push(lerp(a[0],b[0],t)-dz/length*(curve+offset),(rnd()-0.5)*160,lerp(a[1],b[1],t)+dx/length*(curve+offset));c.setHex(0x7896c9).multiplyScalar(0.12+rnd()*0.35);colors.push(c.r,c.g,c.b);}
+        }
+        const map=art.galaxy(i%3?'spiral':'elliptical'),size=600+rnd()*700;const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));m.rotation.set(-Math.PI/2,0,rnd()*TAU);m.position.set(a[0],-60,a[1]);cosmicScene.add(m);
+      }
+      pointsCloud(positions,colors,1.3);
+    }
+  }
   let shadowsOn = true, stageId = 'town', envId = 'town';
   const dustColor = new THREE.Color(0xa99c8a), dustCore = new THREE.Color(0x6a5f55), tmpC = new THREE.Color();
   function setColor(colorId) {
@@ -1335,7 +1622,7 @@ function createRenderer(THREE, canvas, opts) {
     stageId = stage; envId = env || (stage === 'town' ? 'town' : 'solar');
     const space = envId !== 'town';
     townGroup.visible = !space; skyDome.visible = !space; skirt.visible = !space; blob.visible = !space;
-    stars.visible = envId === 'solar' || envId === 'galaxy'; stars2.visible = envId === 'galaxy'; haze.visible = envId === 'galaxy';
+    stars.visible = envId === 'solar' || envId === 'galaxy'; stars2.visible = false; haze.visible = false;
     stars.material.size = envId === 'universe' ? 1.2 : 2.2; if (envId === 'universe') stars.visible = true;
     shadowsOn = !space; renderer.shadowMap.enabled = !space; sun.castShadow = !space;
     scene.background = space ? new THREE.Color(ENVS[envId].sky) : skyColor;
@@ -1358,10 +1645,12 @@ function createRenderer(THREE, canvas, opts) {
   const shakeRng = mulberry32(9);
   let prevLeanX = 0, prevLeanZ = 0;
   let width = 1, height = 1;
+  let overview=false;
   const frustum = new THREE.Frustum(); const projView = new THREE.Matrix4(); const sph = new THREE.Sphere();
   function resize(w, h) { width = w; height = h; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 
   function update(G, rdt) {
+    overview=!!G.overview;
     const fr = G.funnelR(), fh = fr * T.FUNNEL_HEIGHT;
     // camera
     const shakeAmp = G.shake * G.camDist;
@@ -1370,7 +1659,22 @@ function createRenderer(THREE, canvas, opts) {
     camera.fov = T.FOV + G.fovPunch; camera.updateProjectionMatrix();
     camera.lookAt(G.focus.x + sx * 0.5, 0, G.focus.z + sz * 0.5);
     camera.rotation.z += (shakeRng() * 2 - 1) * G.shake * 0.6;
-    if (envId !== 'town') { scene.fog.near = G.camDist * 40; scene.fog.far = G.camDist * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
+    if(G.overview&&G.stage!=='town') {
+      const center=G.stage==='solar'?TUNING.SUN_POS:G.stage==='galaxy'?TUNING.GALAXY_CORE_POS:[0,-1100];
+      const distance=(G.stage==='solar'?7900:G.stage==='galaxy'?10600:12500)*Math.max(1,1.2/camera.aspect);
+      camera.position.set(center[0],distance,center[1]+distance*0.65);camera.lookAt(center[0],0,center[1]);camera.fov=50;camera.updateProjectionMatrix();
+    }
+    for(const o of G.orbiters) if(o.state===0)setInstance(o,o.x,0,o.z,o.ry,0,0,o.scale);
+    for(const entry of orbitGuides) {
+      if(entry.parent){entry.line.position.set(entry.parent.x,0,entry.parent.z);entry.line.visible=entry.parent.state===0;}
+      if(entry.o){entry.label.visible=entry.o.state===0;entry.label.position.set(entry.o.x,entry.o.size+45,entry.o.z);}
+    }
+    for(const child of cosmicScene.children){
+      if(child.userData.labelScale){child.visible=overview&&(!child.userData.body||child.userData.body.state===0);child.scale.setScalar((G.stage==='solar'?1250:1850)*Math.max(1,1.2/camera.aspect));}
+      if(child.userData.sun)child.visible=child.userData.sun.state===0;
+      if(child.userData.galaxyBackdrop)child.material.opacity=overview?1:clamp((G.camDist-1000)/5000,0,.55);
+    }
+    if (envId !== 'town') { const fogDistance=overview?camera.position.y:G.camDist;scene.fog.near = fogDistance * 40; scene.fog.far = fogDistance * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
     funnelUniforms.uFog.value.set(scene.fog.near, scene.fog.far); coreMat.uniforms.uFog.value.set(scene.fog.near, scene.fog.far);
     // sun + shadow frustum follow the tornado, sized to the view
     const sr = Math.max(30, G.camDist * 1.6);
@@ -1447,6 +1751,7 @@ function createRenderer(THREE, canvas, opts) {
     for (const o of rattling) { const age = (G.tick * DT) - o.rattleTick; if (o.state !== 0 || age > 0.5) { if (o.state === 0) setInstance(o, o.x, 0, o.z, o.ry, 0, 0, o.scale); continue; } const k = (1 - age / 0.5) * (o.rattleAmp || 1); setInstance(o, o.x + Math.sin(age * 60) * 0.03 * o.size * k, 0, o.z, o.ry + Math.sin(age * 45) * 0.05 * k, Math.sin(age * 50) * 0.06 * k, 0, o.scale); }
     for (let i = rattling.length - 1; i >= 0; i--) if (o_age(rattling[i], G) > 0.5 || rattling[i].state !== 0) rattling.splice(i, 1);
     updateParticles(rdt, G.pos.x, G.pos.z, fr, fh);
+    for(const entry of companions){entry.mesh.visible=entry.o.state!==2;entry.o.mesh.getMatrixAt(entry.o.inst,entry.mesh.matrix);entry.mesh.matrixWorldNeedsUpdate=true;}
     // visibility frustum (for telemetry)
     camera.updateMatrixWorld(); projView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(projView);
   }
@@ -1491,7 +1796,19 @@ function createRenderer(THREE, canvas, opts) {
       emitParticles(300, G.pos.x, fr * 0.8, G.pos.z, 8 + fr * 3, 4 + fr * 2, 0.12 + fr * 0.1, [T.COLORS[G.colorId] || 0xffffff, 0xffffff, 0xffd447], form === 'blackhole', 2.0);
     }
   }
-  function render() { renderer.render(scene, camera); }
+  function render() {
+    // The map shows the astronomical structure; game-sized pickups and the player stay in the playable view.
+    const hidden=[],moonMatrices=[];
+    if(overview&&stageId==='solar')for(const o of objs)if(o.type.id==='moon'&&!o.orbit){const matrix=new THREE.Matrix4();o.mesh.getMatrixAt(o.inst,matrix);moonMatrices.push({o,matrix});hideInstance(o);}
+    if(overview)for(const child of scene.children){
+      const realPlanet=stageId==='solar'&&Object.entries(meshes).some(([id,m])=>m===child&&planetIds.has(id)&&id!=='pluto');
+      const ring=companions.some(e=>e.mesh===child);
+      if(child.visible&&!child.isLight&&child!==cosmicScene&&child!==stars&&child!==skyDome&&!realPlanet&&!ring){hidden.push(child);child.visible=false;}
+    }
+    renderer.render(scene,camera);
+    for(const child of hidden)child.visible=true;
+    for(const {o,matrix} of moonMatrices){o.mesh.setMatrixAt(o.inst,matrix);o.mesh.instanceMatrix.needsUpdate=true;}
+  }
   function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; finaleK = 0; }
   return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, setForm, setFinale, get form() { return form; }, get width() { return width; }, get height() { return height; } };
 }
@@ -1680,6 +1997,7 @@ function boot() {
   function camState() { const G = app.G; cam.x = G.camPos.x; cam.y = G.camPos.y; cam.z = G.camPos.z; cam.pitch = G.camPitch; cam.fov = TUNING.FOV + G.fovPunch; cam.aspect = app.R.width / app.R.height; return cam; }
   function setTouch(sx, sy) {
     const G = app.G; if (!G) return;
+    if(G.overview)return;
     screenToGround(camState(), sx, sy, app.R.width, app.R.height, groundPt);
     const wasDown = G.finger.down;
     G.finger.down = true; G.finger.x = groundPt.x; G.finger.z = groundPt.z;
@@ -1691,6 +2009,9 @@ function boot() {
     opts = opts || {};
     if (app.R) app.R.reset();
     app.G = createGame(seed, stageId || 'town', app.colorId);
+    const mapButton=document.getElementById('space-map');
+    mapButton.classList.toggle('hidden',app.G.stage==='town');mapButton.setAttribute('aria-pressed','false');mapButton.setAttribute('aria-label','Show space overview');
+    document.getElementById('map-caption').classList.add('hidden');document.getElementById('map-note').classList.add('hidden');
     if (!app.R) { app.R = createRenderer(THREE, canvas, { dpr: opts.dpr, antialias: opts.antialias, shadowMap: opts.shadowMap }); }
     app.R.setEnvironment(app.G.stage, app.G.stageDef.env);
     app.R.buildObjects(app.G.objs, app.G.stageDef.types);
@@ -1731,6 +2052,14 @@ function boot() {
     app.R.resize(w, h);
   }
   window.addEventListener('resize', onResize);
+  document.getElementById('space-map').addEventListener('click',()=>{
+    if(!app.G||app.G.stage==='town')return;
+    app.G.overview=!app.G.overview;lift();app.acc=0;
+    const button=document.getElementById('space-map');button.setAttribute('aria-pressed',String(app.G.overview));button.setAttribute('aria-label',app.G.overview?'Return to game':'Show space overview');
+    const caption=document.getElementById('map-caption'),copy={solar:['The Solar System','Eight planets · One star · Worlds in motion'],galaxy:['The Milky Way','Our home galaxy · A barred spiral of stars, gas and dust'],universe:['The Cosmic Web','Galaxies gather in clusters and filaments around immense voids']}[app.G.stage];
+    caption.querySelector('h1').textContent=copy[0];caption.querySelector('p').textContent=copy[1];caption.classList.toggle('hidden',!app.G.overview);document.getElementById('map-note').classList.toggle('hidden',!app.G.overview);
+    app.R.update(app.G,0);app.R.render();
+  });
   window.addEventListener('orientationchange', () => setTimeout(onResize, 50));
 
   // ---- touch input (one finger, always) ----
@@ -1759,6 +2088,7 @@ function boot() {
     if (app.contextLost) return;
     const G = app.G;
     let elapsed = Math.min(0.1, (now - app.last) / 1000); app.last = now;
+    if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();return;}
     app.acc += elapsed;
     let n = 0;
     while (app.acc >= DT && n < 4) { stepGame(G); app.acc -= DT; n++; }

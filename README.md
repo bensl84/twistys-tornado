@@ -8,7 +8,7 @@ Twisty's Tornado is a one-finger 3D tornado game designed for a young child on a
 
 ## Current state
 
-The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. This v11 source adds larger identifiable planets, clearer star-filled spiral arms, and more colorful distant galaxies to the v10 game with run statistics and smoothed graphics. It retains up to 2× display resolution. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. Local test results alone are not proof of deployment or iPad readiness.
+The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. This v12 source refreshes the town with softer tree, vehicle and roof silhouettes, finer grass and less washed-out distance haze. The reference town scene draws about 2.20 million triangles, down from 2.36 million in v11; the game retains up to 2× display resolution. The v11 space visuals and v10 run statistics remain. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. Local test results alone are not proof of deployment or iPad readiness.
 
 The [graphics exit gate](docs/graphics-exit-gate.md) defines measurable smoothness, frame-rate and regression requirements. Local checks are separate from final visual approval and actual-iPad performance proof.
 
@@ -25,7 +25,7 @@ Current limitations are recorded rather than hidden:
 - `test/` is a preserved legacy v3 preview from before the current 3D rebuild. It is not a test suite, release candidate, or source of truth.
 - Most gameplay and pacing values are in the `TUNING` block near the top of `index.html`; renderer geometry and presentation constants also exist elsewhere in that file.
 
-See [the current audit](docs/audit.md) for category ratings, evidence, risks, and the documentation ownership map.
+See [the last full audit (v10)](docs/audit.md) for category ratings, evidence, risks, and the documentation ownership map.
 
 ## Timer and end-of-run results
 
@@ -43,10 +43,10 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 
 - `index.html` — canonical game, renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This release's cache build is `2026-09-16-twister-v11-space-visuals`.
+- `sw.js` — cache-first service worker. This release's cache build is `2026-09-16-twister-v12-town-smooth`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons; present but not currently referenced from `index.html`.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
-- `docs/audit.md` — current repository and product audit.
+- `docs/audit.md` — the last full repository and product audit (v10 baseline).
 - `docs/space-visuals.md` — space-graphics behavior, screenshots, scientific boundaries and local verification.
 - `scripts/space.test.mjs` — dependency-free regression tests for planet order, orbital motion, moving-body pickup lookup and stage isolation.
 - `scripts/graphics.test.mjs` — dependency-free mesh-normal, rounded-edge and resolution regression tests.

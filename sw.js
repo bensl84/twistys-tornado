@@ -1,6 +1,6 @@
 // Twister — service worker (offline cache for the home-screen app)
 // DEPLOY RULE: bump BUILD on every deploy. The cache name derives from it, so one line forces a clean swap.
-const BUILD = '2026-09-16-twister-v11-space-visuals';
+const BUILD = '2026-09-16-twister-v12-town-smooth';
 const CACHE = 'twisty-' + BUILD;
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 

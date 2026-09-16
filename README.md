@@ -8,7 +8,7 @@ Twisty's Tornado is a one-finger 3D tornado game designed for a young child on a
 
 ## Current state
 
-The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. This v10 release adds run statistics on top of the v9 smoothing update: rounded object edges, preserved smooth shading, a smoother tornado and soft shadows, and up to 2× display resolution. The prior published v8 space update is commit `1e779931b914192a576510fcd2b8b19b56ab4ed1`. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. The user authorized v10 publication on 2026-09-15; local test results alone are not proof of deployment or iPad readiness.
+The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. This v11 source adds larger identifiable planets, clearer star-filled spiral arms, and more colorful distant galaxies to the v10 game with run statistics and smoothed graphics. It retains up to 2× display resolution. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. Local test results alone are not proof of deployment or iPad readiness.
 
 The [graphics exit gate](docs/graphics-exit-gate.md) defines measurable smoothness, frame-rate and regression requirements. Local checks are separate from final visual approval and actual-iPad performance proof.
 
@@ -43,7 +43,7 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 
 - `index.html` — canonical game, renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This release's cache build is `2026-09-15-twister-v10-stats`.
+- `sw.js` — cache-first service worker. This release's cache build is `2026-09-16-twister-v11-space-visuals`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons; present but not currently referenced from `index.html`.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — current repository and product audit.

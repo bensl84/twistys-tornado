@@ -428,7 +428,7 @@ const STAGES = {
 // GEOMETRY BUILDERS (procedural, rounded, vertex-colored). Origin at ground center, +y up, faces -z = "front".
 // Built lazily after THREE is available.
 // =====================================================================================================
-const GRAPHICS = Object.freeze({ roundSegments:32, smallSphereSegments:16, rockSegments:12, sphereRows:20, funnelSegments:64, funnelRows:40, bevelSegments:2 });
+const GRAPHICS = Object.freeze({ roundSegments:32, smallSphereSegments:16, rockSegments:20, sphereRows:20, funnelSegments:64, funnelRows:40, bevelSegments:2 });
 function roundedBoxGeometry(THREE,w,h,d) {
   const smallest=Math.min(w,h,d),largest=Math.max(w,h,d);
   // Thin rails, paper and window panes keep their deliberate planar shape; main silhouettes get a bevel.
@@ -497,7 +497,7 @@ function makeGeometryBuilders(THREE) {
   const cone = (r, h, seg, color, x, y, z) => push(new THREE.ConeGeometry(r, h, seg===4?4:Math.max(seg,GRAPHICS.roundSegments)), color, T(x, y, z));
   const sphere = (r, color, x, y, z, sx, sy, sz, segments) => {
     const radial=segments||(r<.8?GRAPHICS.smallSphereSegments:GRAPHICS.roundSegments);
-    const g = new THREE.SphereGeometry(r,radial,radial<=GRAPHICS.rockSegments?8:GRAPHICS.sphereRows);
+    const g = new THREE.SphereGeometry(r,radial,radial<=GRAPHICS.rockSegments?12:GRAPHICS.sphereRows);
     const m = new THREE.Matrix4().makeScale(sx || 1, sy || 1, sz || 1); m.premultiply(T(x, y, z));
     push(g, color, m);
   };

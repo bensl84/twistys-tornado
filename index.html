@@ -428,7 +428,7 @@ const STAGES = {
 // GEOMETRY BUILDERS (procedural, rounded, vertex-colored). Origin at ground center, +y up, faces -z = "front".
 // Built lazily after THREE is available.
 // =====================================================================================================
-const GRAPHICS = Object.freeze({ roundSegments:32, smallSphereSegments:16, rockSegments:20, sphereRows:20, funnelSegments:64, funnelRows:40, bevelSegments:2 });
+const GRAPHICS = Object.freeze({ roundSegments:32, smallSphereSegments:16, rockSegments:12, sphereRows:20, funnelSegments:64, funnelRows:40, bevelSegments:2 });
 function roundedBoxGeometry(THREE,w,h,d) {
   const smallest=Math.min(w,h,d),largest=Math.max(w,h,d);
   // Thin rails, paper and window panes keep their deliberate planar shape; main silhouettes get a bevel.
@@ -497,7 +497,7 @@ function makeGeometryBuilders(THREE) {
   const cone = (r, h, seg, color, x, y, z) => push(new THREE.ConeGeometry(r, h, seg===4?4:Math.max(seg,GRAPHICS.roundSegments)), color, T(x, y, z));
   const sphere = (r, color, x, y, z, sx, sy, sz, segments) => {
     const radial=segments||(r<.8?GRAPHICS.smallSphereSegments:GRAPHICS.roundSegments);
-    const g = new THREE.SphereGeometry(r,radial,radial<=GRAPHICS.rockSegments?12:GRAPHICS.sphereRows);
+    const g = new THREE.SphereGeometry(r,radial,radial<=GRAPHICS.rockSegments?8:GRAPHICS.sphereRows);
     const m = new THREE.Matrix4().makeScale(sx || 1, sy || 1, sz || 1); m.premultiply(T(x, y, z));
     push(g, color, m);
   };
@@ -1219,12 +1219,12 @@ function createCosmicArt(THREE) {
       c.globalAlpha=1;
     });
   }
-  function galaxy(kind='spiral') {
-    return texture('galaxy:'+kind,(c,n)=>{
+  function galaxy(kind='spiral',tone='blue') {
+    return texture('galaxy:'+kind+':'+tone,(c,n)=>{
       const rnd=mulberry32(872+kind.length*59); const mid=n/2;
       if(['group','cluster','web','quasar'].includes(kind)) {
         if(kind==='quasar') {
-          c.drawImage(galaxy('spiral').image,0,0,n,n);
+          c.drawImage(galaxy('spiral',tone).image,0,0,n,n);
           c.save();c.translate(mid,mid);c.rotate(-0.65);c.scale(0.09,1);glow(c,0,0,n*0.47,'#87d8ff',0.95);c.restore();
           glow(c,mid,mid,n*0.09,'#ffffff',1);return;
         }
@@ -1234,7 +1234,7 @@ function createCosmicArt(THREE) {
           const x=kind==='web'?n*0.12+i/count*n*0.76:mid+Math.cos(a)*r;
           const y=kind==='web'?mid+Math.sin(i/count*8)*n*0.2+(rnd()-0.5)*n*0.12:mid+Math.sin(a)*r*0.8;
           const s=n*(kind==='group'?0.25:kind==='cluster'?0.12:0.05)*(0.6+rnd()*0.6);
-          c.drawImage(galaxy(i%3?'spiral':'elliptical').image,x-s/2,y-s/2,s,s);
+          c.drawImage(galaxy(i%3?'spiral':'elliptical',tone).image,x-s/2,y-s/2,s,s);
         }
         return;
       }
@@ -1244,23 +1244,23 @@ function createCosmicArt(THREE) {
       const elliptic=kind==='elliptical'||kind==='lenticular';
       // A diffuse disk and broad, uneven star-forming arms, not four hard lines.
       c.save();c.translate(mid,mid);c.scale(1,elliptic?0.65:0.85);
-      glow(c,0,0,n*0.45,elliptic?'#bfa889':'#536b94',0.25);c.restore();
+      glow(c,0,0,n*0.45,elliptic?'#bfa889':tone==='neutral'?'#bfc7df':'#346eae',0.28);c.restore();
       for(let i=0;i<20000;i++) {
         const r=Math.pow(rnd(),0.65)*n*0.45;
         let a=rnd()*TAU, x,y;
         if(!elliptic && kind!=='irregular' && kind!=='nebula') {
-          const arm=i%4;
-          a=arm*TAU/4+Math.log(1+r/38)*2.65+(rnd()+rnd()+rnd()-1.5)*(0.36+r/n*0.65);
-          // Inter-arm stars prevent an artificial pinwheel silhouette.
-          if(i%7===0)a=rnd()*TAU;
+          const arm=i%2;
+          a=arm*Math.PI+Math.log(1+r/38)*2.25+(rnd()+rnd()+rnd()-1.5)*(0.22+r/n*0.36);
+          // A few inter-arm stars soften the edge without filling the dark lanes.
+          if(i%19===0)a=rnd()*TAU;
           if(kind==='ring') a=rnd()*TAU;
         }
         const rr=kind==='ring'?n*0.30+(rnd()-0.5)*n*0.06:r;
         x=mid+Math.cos(a)*rr; y=mid+Math.sin(a)*rr*(elliptic?0.65:0.85);
-        const alpha=(1-r/(n*0.49))*(elliptic?0.22:0.42);
-        c.fillStyle=elliptic?'#ffe3b0':(i%13===0?'#efa3c8':i%3?'#a9cbff':'#edf1ff');
+        const alpha=(1-r/(n*0.49))*(elliptic?0.22:0.55);
+        c.fillStyle=elliptic?'#ffe3b0':tone==='neutral'?(i%13===0?'#ffe3ed':'#f2f5ff'):(i%13===0?'#ef8dbd':i%3?'#87cfff':'#edf6ff');
         c.globalAlpha=alpha; const s=0.5+rnd()*1.6;c.fillRect(x,y,s,s);
-        if(i%18===0) glow(c,x,y,4+rnd()*9,elliptic?'#ffe4be':i%5?'#82aaff':'#e988b5',0.14);
+        if(i%18===0) glow(c,x,y,4+rnd()*9,elliptic?'#ffe4be':tone==='neutral'?'#e6edff':i%5?'#59c3ff':'#e988b5',0.16);
       }
       c.globalAlpha=1;
       if(kind==='barred') {c.save();c.translate(mid,mid);c.rotate(0.25);c.scale(2.8,0.55);glow(c,0,0,n*0.11,'#ffe9c4',0.9);c.restore();}
@@ -1379,6 +1379,8 @@ function createRenderer(THREE, canvas, opts) {
   }
   const dummy = new THREE.Object3D();
   const M4 = new THREE.Matrix4();
+  const galaxyColors = [0xff91c2,0x80d9ff,0xffd283,0xa793ff,0x8cebd9,0xffa68a,0xc9edff,0xffb8e2];
+  const solarOverviewScale = {mercury:3,venus:2.4,earth:2.8,mars:2.5,jupiter:1.3,saturn:1.15,uranus:1.8,neptune:1.8};
   let objs = [];
   function buildObjects(list, types) {
     for (const id in meshes) { scene.remove(meshes[id]); meshes[id].geometry.dispose(); meshes[id].dispose(); delete meshes[id]; }
@@ -1403,7 +1405,7 @@ function createRenderer(THREE, canvas, opts) {
         geo=new THREE.PlaneGeometry(t.size*2.2,t.size*2.2);geo.rotateX(-Math.PI/2);geo.translate(0,t.size*0.4,0);
         const kind=nebulaSprite?'nebula':/g_.*cluster|g_globular|g_core/.test(t.id)?'elliptical':art.galaxyKind(t.id);
         const isStar=starSprite&&!/cluster|globular|core/.test(t.id);
-        material=cosmicMaterial(isStar?'star:'+t.id:'galaxy:'+kind,isStar?art.star(t.id):art.galaxy(kind),true);
+        material=cosmicMaterial(isStar?'star:'+t.id:'galaxy:'+kind+':'+(galaxySprite?'neutral':'blue'),isStar?art.star(t.id):art.galaxy(kind,galaxySprite?'neutral':'blue'),true);
       } else geo = builders[t.id]();
       const im = new THREE.InstancedMesh(geo, material, arr.length);
       im.castShadow = !!shadowsOn && t.tier >= T.SHADOW_TIERS_MIN; im.receiveShadow = !!shadowsOn && t.tier >= 3;
@@ -1413,7 +1415,7 @@ function createRenderer(THREE, canvas, opts) {
         o.inst = i; o.mesh = im;
         dummy.position.set(o.x, 0, o.z); dummy.rotation.set(0, o.ry, 0); dummy.scale.setScalar(o.scale); dummy.updateMatrix();
         im.setMatrixAt(i, dummy.matrix);
-        c.setHex(texturedPlanet||galaxySprite||nebulaSprite||starSprite||debris?0xffffff:t.colors[o.colorIndex]); im.setColorAt(i, c);
+        c.setHex(galaxySprite?galaxyColors[(o.id*7+o.colorIndex)%galaxyColors.length]:texturedPlanet||nebulaSprite||starSprite||debris?0xffffff:t.colors[o.colorIndex]); im.setColorAt(i, c);
         if(texturedPlanet&&(t.id==='saturn'||t.id==='uranus')) {
           const r=t.size/2;
           for(const [inner,outer,opacity] of [[1.35,1.68,0.55],[1.73,2.05,0.75],[2.09,2.22,0.3]]){
@@ -1605,6 +1607,20 @@ function createRenderer(THREE, canvas, opts) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfd8ff, size: 1.4, sizeAttenuation: false, fog: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return m;
   })();
+  // A distant, non-interactive layer stays behind every space scene, including overviews.
+  const deepStars = (() => {
+    const count=1600,pos=new Float32Array(count*3),col=new Float32Array(count*3);
+    const rnd=mulberry32(9128),color=new THREE.Color();
+    const palette=[0xddeaff,0xa8d9ff,0xffe4bd,0xc9baff];
+    for(let i=0;i<count;i++){
+      pos[i*3]=(rnd()-.5)*18000;pos[i*3+1]=-240-rnd()*50;pos[i*3+2]=(rnd()-.5)*18000;
+      color.setHex(palette[i%palette.length]).multiplyScalar(.2+rnd()*.35);
+      col[i*3]=color.r;col[i*3+1]=color.g;col[i*3+2]=color.b;
+    }
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+    const points=new THREE.Points(geo,new THREE.PointsMaterial({vertexColors:true,size:1.3,sizeAttenuation:false,fog:false,depthWrite:false,transparent:true,opacity:.75}));
+    points.frustumCulled=false;points.visible=false;scene.add(points);return points;
+  })();
   const cosmicScene = new THREE.Group(); scene.add(cosmicScene);
   const orbitGuides=[];
   function clearCosmicScene() {
@@ -1648,23 +1664,37 @@ function createRenderer(THREE, canvas, opts) {
     } else if(stageId==='galaxy') {
       const [cx,cz]=TUNING.GALAXY_CORE_POS;
       const disk=new THREE.Mesh(new THREE.PlaneGeometry(10500,10500),new THREE.MeshBasicMaterial({map:art.galaxy('barred'),transparent:true,opacity:1,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));disk.rotation.x=-Math.PI/2;disk.position.set(cx,-70,cz);disk.userData.galaxyBackdrop=true;cosmicScene.add(disk);
-      for(let i=0;i<9500;i++) {
-        const r=Math.pow(rnd(),0.75)*4600,a=(i%4)*TAU/4+Math.log(1+r/780)*2.65+(rnd()+rnd()+rnd()-1.5)*.65;
-        positions.push(cx+Math.cos(a)*r,(rnd()-0.5)*90,cz+Math.sin(a)*r*0.85);
-        c.setHex(i%17===0?0xe798c0:i%3?0x8dbaed:0xffdfab).multiplyScalar(0.1+rnd()*0.35);colors.push(c.r,c.g,c.b);
+      for(let i=0;i<12500;i++) {
+        const r=Math.pow(rnd(),0.75)*4600,a=(i%2)*Math.PI+Math.log(1+r/780)*2.25+(rnd()+rnd()+rnd()-1.5)*(.25+r/9000);
+        positions.push(Math.cos(a)*r,(rnd()-0.5)*90,Math.sin(a)*r*0.85);
+        c.setHex(i%17===0?0xf08ab9:i%3?0x7ccfff:0xffdfab).multiplyScalar(0.35+rnd()*0.55);colors.push(c.r,c.g,c.b);
       }
-      pointsCloud(positions,colors,1.1);
+      const spiralStars=pointsCloud(positions,colors,1.1);spiralStars.position.set(cx,0,cz);spiralStars.userData.galaxyStars=true;
       label('GALACTIC CENTER',cx,cz-600,'#eed9b8',90);
     } else {
-      // Schematic cosmic web: galaxy concentrations along filaments separated by dark voids.
+      // Many colored, individual galaxies are visible behind the edible galaxies.
+      // The background meshes have no game objects and can never be absorbed.
       const nodes=[];for(let i=0;i<30;i++)nodes.push([Math.cos(i*2.4)*(1200+rnd()*4600),Math.sin(i*2.4)*(1200+rnd()*4600)-1100]);
+      const distant=[];
       for(let i=0;i<nodes.length;i++) {
         const a=nodes[i],near=nodes.map((b,j)=>({b,j,d:Math.hypot(a[0]-b[0],a[1]-b[1])})).filter(x=>x.j>i).sort((a,b)=>a.d-b.d).slice(0,2);
         for(const {b} of near) {
           const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),bend=(rnd()-.5)*length*.5;
-          for(let k=0;k<700;k++) {const t=rnd(),spread=120+Math.sin(t*Math.PI)*230,curve=Math.sin(t*Math.PI)*bend,offset=(rnd()+rnd()-1)*spread;positions.push(lerp(a[0],b[0],t)-dz/length*(curve+offset),(rnd()-0.5)*160,lerp(a[1],b[1],t)+dx/length*(curve+offset));c.setHex(0x7896c9).multiplyScalar(0.12+rnd()*0.35);colors.push(c.r,c.g,c.b);}
+          for(let k=0;k<450;k++) {const t=rnd(),spread=120+Math.sin(t*Math.PI)*230,curve=Math.sin(t*Math.PI)*bend,offset=(rnd()+rnd()-1)*spread;positions.push(lerp(a[0],b[0],t)-dz/length*(curve+offset),(rnd()-0.5)*160,lerp(a[1],b[1],t)+dx/length*(curve+offset));c.setHex(galaxyColors[i%galaxyColors.length]).multiplyScalar(0.12+rnd()*0.28);colors.push(c.r,c.g,c.b);}
         }
-        const map=art.galaxy(i%3?'spiral':'elliptical'),size=600+rnd()*700;const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));m.rotation.set(-Math.PI/2,0,rnd()*TAU);m.position.set(a[0],-60,a[1]);cosmicScene.add(m);
+        distant.push({x:a[0],z:a[1],size:600+rnd()*700,kind:i%4,color:galaxyColors[i%galaxyColors.length],angle:rnd()*TAU});
+      }
+      for(let i=0;i<70;i++){
+        const a=rnd()*TAU,r=500+Math.sqrt(rnd())*4700;
+        distant.push({x:Math.cos(a)*r,z:Math.sin(a)*r-1100,size:320+rnd()*650,kind:i%4,color:galaxyColors[(i*5+2)%galaxyColors.length],angle:rnd()*TAU});
+      }
+      for(let kind=0;kind<4;kind++){
+        const entries=distant.filter(g=>g.kind===kind),name=['spiral','elliptical','barred','irregular'][kind];
+        const geometry=new THREE.PlaneGeometry(1,1);geometry.rotateX(-Math.PI/2);
+        const material=new THREE.MeshBasicMaterial({map:art.galaxy(name,'neutral'),transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false});
+        const mesh=new THREE.InstancedMesh(geometry,material,entries.length);mesh.frustumCulled=false;
+        entries.forEach((g,i)=>{dummy.position.set(g.x,-60,g.z);dummy.rotation.set(0,g.angle,0);dummy.scale.setScalar(g.size);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);mesh.setColorAt(i,c.setHex(g.color));});
+        mesh.instanceMatrix.needsUpdate=true;mesh.instanceColor.needsUpdate=true;cosmicScene.add(mesh);
       }
       pointsCloud(positions,colors,1.3);
     }
@@ -1689,7 +1719,7 @@ function createRenderer(THREE, canvas, opts) {
     stageId = stage; envId = env || (stage === 'town' ? 'town' : 'solar');
     const space = envId !== 'town';
     townGroup.visible = !space; skyDome.visible = !space; skirt.visible = !space; blob.visible = !space;
-    stars.visible = envId === 'solar' || envId === 'galaxy'; stars2.visible = false; haze.visible = false;
+    stars.visible = envId === 'solar' || envId === 'galaxy'; stars2.visible = false; haze.visible = false; deepStars.visible=space;
     stars.material.size = envId === 'universe' ? 1.2 : 2.2; if (envId === 'universe') stars.visible = true;
     shadowsOn = !space; renderer.shadowMap.enabled = !space; sun.castShadow = !space;
     scene.background = space ? new THREE.Color(ENVS[envId].sky) : skyColor;
@@ -1734,12 +1764,13 @@ function createRenderer(THREE, canvas, opts) {
     for(const o of G.orbiters) if(o.state===0)setInstance(o,o.x,0,o.z,o.ry,0,0,o.scale);
     for(const entry of orbitGuides) {
       if(entry.parent){entry.line.position.set(entry.parent.x,0,entry.parent.z);entry.line.visible=entry.parent.state===0;}
-      if(entry.o){entry.label.visible=entry.o.state===0;entry.label.position.set(entry.o.x,entry.o.size+45,entry.o.z);}
+      if(entry.o){entry.label.visible=entry.o.state===0;entry.label.position.set(entry.o.x,entry.o.size*(overview&&stageId==='solar'?(solarOverviewScale[entry.o.type.id]||1):1)+45,entry.o.z);}
     }
     for(const child of cosmicScene.children){
-      if(child.userData.labelScale){child.visible=overview&&(!child.userData.body||child.userData.body.state===0);child.scale.setScalar((G.stage==='solar'?1250:1850)*Math.max(1,1.2/camera.aspect));}
+      if(child.userData.labelScale){child.visible=overview&&(!child.userData.body||child.userData.body.state===0);child.scale.setScalar((G.stage==='solar'?1250:1850)*Math.min(1.2,Math.max(1,1.2/camera.aspect)));}
       if(child.userData.sun)child.visible=child.userData.sun.state===0;
-      if(child.userData.galaxyBackdrop)child.material.opacity=overview?1:clamp((G.camDist-1000)/5000,0,.55);
+      if(child.userData.galaxyBackdrop){child.material.opacity=overview?1:Math.max(.22,clamp((G.camDist-1000)/5000,0,.55));child.rotation.z+=rdt*.025;}
+      if(child.userData.galaxyStars)child.rotation.y+=rdt*.025;
     }
     if (envId !== 'town') { const fogDistance=overview?camera.position.y:G.camDist;scene.fog.near = fogDistance * 40; scene.fog.far = fogDistance * 80; } else { scene.fog.near = G.camDist * T.FOG_NEAR_K; scene.fog.far = G.camDist * T.FOG_FAR_K; }
     funnelUniforms.uFog.value.set(scene.fog.near, scene.fog.far); coreMat.uniforms.uFog.value.set(scene.fog.near, scene.fog.far);
@@ -1865,16 +1896,28 @@ function createRenderer(THREE, canvas, opts) {
   }
   function render() {
     // The map shows the astronomical structure; game-sized pickups and the player stay in the playable view.
-    const hidden=[],moonMatrices=[];
+    const hidden=[],moonMatrices=[],planetMatrices=[],ringMatrices=[];
     if(overview&&stageId==='solar')for(const o of objs)if(o.type.id==='moon'&&!o.orbit){const matrix=new THREE.Matrix4();o.mesh.getMatrixAt(o.inst,matrix);moonMatrices.push({o,matrix});hideInstance(o);}
+    if(overview&&stageId==='solar'){
+      for(const o of objs){const factor=solarOverviewScale[o.type.id];if(!factor||o.state===2)continue;
+        const matrix=new THREE.Matrix4();o.mesh.getMatrixAt(o.inst,matrix);planetMatrices.push({o,matrix});
+        o.mesh.setMatrixAt(o.inst,matrix.clone().scale(new THREE.Vector3(factor,factor,factor)));o.mesh.instanceMatrix.needsUpdate=true;
+      }
+      for(const entry of companions){const factor=solarOverviewScale[entry.o.type.id];if(!factor)continue;
+        ringMatrices.push({mesh:entry.mesh,matrix:entry.mesh.matrix.clone()});
+        entry.mesh.matrix.scale(new THREE.Vector3(factor,factor,factor));entry.mesh.matrixWorldNeedsUpdate=true;
+      }
+    }
     if(overview)for(const child of scene.children){
       const realPlanet=stageId==='solar'&&Object.entries(meshes).some(([id,m])=>m===child&&planetIds.has(id)&&id!=='pluto');
       const ring=companions.some(e=>e.mesh===child);
-      if(child.visible&&!child.isLight&&child!==cosmicScene&&child!==stars&&child!==skyDome&&!realPlanet&&!ring){hidden.push(child);child.visible=false;}
+      if(child.visible&&!child.isLight&&child!==cosmicScene&&child!==stars&&child!==deepStars&&child!==skyDome&&!realPlanet&&!ring){hidden.push(child);child.visible=false;}
     }
     renderer.render(scene,camera);
     for(const child of hidden)child.visible=true;
     for(const {o,matrix} of moonMatrices){o.mesh.setMatrixAt(o.inst,matrix);o.mesh.instanceMatrix.needsUpdate=true;}
+    for(const {o,matrix} of planetMatrices){o.mesh.setMatrixAt(o.inst,matrix);o.mesh.instanceMatrix.needsUpdate=true;}
+    for(const {mesh,matrix} of ringMatrices){mesh.matrix.copy(matrix);mesh.matrixWorldNeedsUpdate=true;}
   }
   function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; finaleK = 0; }
   return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, setForm, setFinale, get form() { return form; }, get width() { return width; }, get height() { return height; } };

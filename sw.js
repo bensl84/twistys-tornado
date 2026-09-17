@@ -1,8 +1,8 @@
 // Twister — service worker (offline cache for the home-screen app)
 // DEPLOY RULE: bump BUILD on every deploy. The cache name derives from it, so one line forces a clean swap.
-const BUILD = '2026-09-16-twister-v12-town-smooth';
+const BUILD = '2026-09-17-twister-v13-metrics-local';
 const CACHE = 'twisty-' + BUILD;
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const ASSETS = ['./', './index.html', './metrics-config.js', './metrics-client.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -23,5 +23,6 @@ self.addEventListener('activate', e => {
 // Cache-first for instant offline launch. New builds are picked up because BUILD changes the cache name and the
 // browser re-fetches sw.js on navigation; skipWaiting + claim above hand control to the new build.
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });

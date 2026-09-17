@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Twisty's metrics</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#e8f0fb;background:#0c1625}body{max-width:1120px;margin:0 auto;padding:24px}h1{margin:0 0 8px}h2{font-size:1.2rem}p{color:#a8bdd5;line-height:1.5}.filters{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}select,button{font:inherit;background:#182c47;color:#fff;border:1px solid #557399;border-radius:8px;padding:8px 12px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.card{background:#14243a;border:1px solid #35506e;border-radius:14px;padding:18px}.card strong{display:block;font-size:2rem;white-space:nowrap}.card strong.ratio{font-size:1.3rem}.card small{color:#a8bdd5}table{border-collapse:collapse;width:100%;min-width:720px}th,td{text-align:left;padding:10px;border-bottom:1px solid #35506e}th{color:#bcd4ed}.scroller{overflow:auto}#status{font-size:.9rem}#notice{border-left:3px solid #e7bb6a;padding-left:12px}button{cursor:pointer}
+</style></head><body>
+<h1>Twisty's Tornado</h1><p>Private web play metrics · <strong id="dataset">Local preview</strong></p><p id="notice"></p><p id="status">Loading…</p>
+<div class="filters"><label>Build <select id="build"><option value="">All builds</option></select></label><label>From <input id="from" type="date"></label><label>Through <input id="through" type="date"></label><button id="refresh">Refresh</button></div>
+<div class="cards" id="cards"></div>
+<h2>Last observed stage</h2><div class="cards" id="last"></div><p>These runs have no observed final goal. Closing the game, going offline, and choosing to stop can look the same here.</p>
+<h2>Daily milestones</h2><div class="scroller"><table><thead><tr><th>Run start day</th><th>Build</th><th>Eligible loads</th><th>Starts</th><th>First absorption</th><th>Town goal</th><th>Final goal</th><th>Results</th><th>Actual replays</th></tr></thead><tbody id="days"></tbody></table></div>
+<p>Counts reflect participating sessions. One device can host more than one player. Offline records can arrive up to seven days late; recent days are provisional. “Last observed” does not identify why a player stopped.</p>
+<script>
+let data;
+const $=id=>document.getElementById(id);
+const card=(name,count)=>{const el=document.createElement('div');el.className='card';const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=String(count);if(typeof count==='string')strong.className='ratio';small.textContent=name;el.append(strong,small);return el;};
+const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td);};
+function draw(){
+  if(!data)return;
+  const build=$('build').value,from=$('from').value,through=$('through').value;
+  const rows=data.daily.filter(x=>(!build||x.build===build)&&(!from||x.day>=from)&&(!through||x.day<=through));
+  const sums=Object.fromEntries(['load','run_start','first_absorb','stage_solar','stage_galaxy','stage_universe','goal_town','goal_universe','results','replay_click','replay_start','last_town','last_solar','last_galaxy','last_universe'].map(k=>[k,rows.reduce((n,r)=>n+(r[k]||0),0)]));
+  const pct=(n,d)=>d?`${n} / ${d} (${Math.round(n/d*100)}%)`:`${n} / 0 (—)`;
+  const cards=$('cards');cards.replaceChildren(...[['Eligible loads',sums.load],['Started runs',sums.run_start],['First absorption · of starts',pct(sums.first_absorb,sums.run_start)],['Town goal · of starts',pct(sums.goal_town,sums.run_start)],['Reached solar · of starts',pct(sums.stage_solar,sums.run_start)],['Reached galaxy · of starts',pct(sums.stage_galaxy,sums.run_start)],['Reached universe · of starts',pct(sums.stage_universe,sums.run_start)],['Final goal · of starts',pct(sums.goal_universe,sums.run_start)],['Results shown · of starts',pct(sums.results,sums.run_start)],['Replay selected · of results',pct(sums.replay_click,sums.results)],['Actual replay starts · of results',pct(sums.replay_start,sums.results)]].map(x=>card(...x)));
+  $('last').replaceChildren(...[['Town',sums.last_town],['Solar system',sums.last_solar],['Galaxy',sums.last_galaxy],['Universe',sums.last_universe]].map(x=>card(...x)));
+  const body=$('days');body.replaceChildren();for(const r of [...rows].reverse()){const tr=document.createElement('tr');for(const k of ['day','build','load','run_start','first_absorb','goal_town','goal_universe','results','replay_start'])cell(tr,r[k]??0);body.append(tr);}
+}
+async function load(){try{const res=await fetch('/api/summary',{cache:'no-store'});if(!res.ok)throw Error('Dashboard unavailable');data=await res.json();$('dataset').textContent=data.dataLabel;$('notice').textContent=data.notice;$('status').textContent='Updated '+new Date(data.asOf).toLocaleString();const old=$('build').value,builds=[...new Set(data.daily.map(x=>x.build))].sort();$('build').replaceChildren(new Option('All builds',''),...builds.map(x=>new Option(x,x)));$('build').value=old;draw();}catch(e){$('status').textContent=e.message;}}
+for(const id of ['build','from','through'])$(id).addEventListener('change',draw);$('refresh').addEventListener('click',load);load();setInterval(load,30000);
+</script></body></html>

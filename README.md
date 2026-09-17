@@ -43,7 +43,7 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 
 - `index.html` — canonical game, renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This release's cache build is `2026-09-16-twister-v12-town-smooth`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-17-twister-v13-metrics-local`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons; present but not currently referenced from `index.html`.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).
@@ -54,6 +54,42 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
 - `test/` — historical v3 preview retained for reference only.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.
+- `metrics-client.js` and `metrics-config.js` — optional first-party web play milestones. The published-site endpoint is empty, so this branch does not send public play data.
+- `metrics/` — local SQL collector, private dashboard, synthetic demo generator and integration checks. The server deliberately binds only to loopback and has no production deployment adapter yet.
+
+## Web metrics local preview
+
+The first metrics release measures participating **runs**, not unique children. It records a page load when an existing metrics preference is present, actual first gameplay input, first completed absorption, stage/tier milestones, stage goals, results and actual replay starts. The finale rebuilds a new town before results; that rebuild does not count as a new run. Dashboard percentages use run starts for their denominator, group later milestones by the original run-start day/build and mark recent counts provisional while offline events may still arrive. A new player preference chosen during a visit does not retroactively create an eligible load. This cannot measure overall traffic, opt-in rate or return visits across days.
+
+The public GitHub Pages endpoint in `metrics-config.js` is intentionally unset. To inspect the working local preview, use Node.js 24, two terminals and a locally generated admin password. Keep the password out of source files. The demo generator refuses to overwrite an existing demo database.
+
+```powershell
+node metrics/demo.mjs
+$env:METRICS_LOCAL_ONLY='1'
+$env:METRICS_DB_PATH="$PWD\metrics\demo.sqlite"
+$env:METRICS_DATA_LABEL='SYNTHETIC DEMO — NOT REAL PLAYERS'
+$env:METRICS_ADMIN_USER='ben'
+$env:METRICS_ADMIN_PASSWORD='<choose-a-local-password>'
+node metrics/server.mjs
+```
+
+In the second terminal, from the repository root:
+
+```powershell
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:8787/` for the private dashboard and `http://127.0.0.1:8000/` for the game. On the start screen, **Local test metrics** can opt into collection on this computer. Turning it off clears pending browser records. The game continues if the collector is unavailable. The dashboard uses Basic authentication on loopback for local preview; this client rejects non-loopback endpoints. A public pilot requires a separately reviewed parent participation flow, HTTPS host and authentication method.
+
+Tests: `node --test scripts/*.test.mjs metrics/server.test.mjs`. To run the actual browser test and existing simulation/graphics gates, set `PLAYWRIGHT_PATH` to an installed Playwright package. If its bundled browser is unavailable, set `BROWSER_EXECUTABLE` to a local Chrome executable. The browser test uses ports 8000 and 8787 and keeps its synthetic database temporary.
+
+```powershell
+node --test metrics/browser.test.mjs
+node sim.mjs --seeds 1-5 --render 0 --gates
+node scripts/graphics-gate.mjs --seconds 5
+```
+
+The local collector stores validated milestone records for 14 days and daily totals for 90 days. It accepts only the configured game origin, has a server-side collection stop control, and never places a database/admin secret in the public game. A live rollout additionally needs an exact hosting owner, logging and backup retention review, cost controls, privacy notice/collection basis, administrator access, and a target-iPad read-back before enabling real child play data. Do not reuse a shared project whose ownership or existing data is unclear. These implementation notes do not establish legal compliance or production readiness.
 
 ## Run locally
 

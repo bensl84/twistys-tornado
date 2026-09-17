@@ -56,7 +56,7 @@ const GATES = [
   ['stages', v => v && ['solar', 'galaxy', 'universe'].every(id => v[id] && v[id].won && v[id].length_s >= 30 && v[id].length_s <= 150 && v[id].too_big_visible_pct > 95 && (v[id].heap_growth_pct == null || v[id].heap_growth_pct < 5)), 'solar, galaxy, universe each won in 30-150 s, too-big visible > 95 %, heap < 5 %'],
 ];
 
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', '--disable-background-timer-throttling'] });
+const browser = await chromium.launch({ ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', '--disable-background-timer-throttling'] });
 const results = [];
 let networkRequests = 0;
 for (const seed of seeds) {

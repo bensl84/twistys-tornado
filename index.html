@@ -50,6 +50,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <head>
 <meta charset="utf-8">
 <title>Twister</title>
+<meta name="twisty-build" content="2026-09-17-twister-v13-metrics-local">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -65,6 +66,11 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #start .disc { width:22vmin; height:22vmin; max-width:170px; max-height:170px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
   #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
   #start svg { width:62%; height:62%; }
+  #metrics-parent { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:20; color:#fff; font-size:14px; touch-action:manipulation; }
+  #metrics-parent button { font:inherit; color:#fff; background:#162c40e8; border:1px solid #ffffff80; border-radius:10px; padding:8px 12px; }
+  #metrics-parent-panel { max-width:290px; padding:12px; margin-bottom:8px; background:#162c40f5; border-radius:12px; line-height:1.4; }
+  #metrics-parent-panel label { display:flex; gap:8px; align-items:start; }
+  #metrics-parent-panel input { margin-top:4px; }
   @keyframes pulse { 0%,100% { transform:scale(1);} 50% { transform:scale(1.08);} }
   /* Landscape hint: a small badge, never a wall. The game runs in any orientation. */
   #rotate { position:absolute; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); display:none; align-items:center; justify-content:center; padding:8px 14px; border-radius:18px; background:rgba(28,42,54,0.82); pointer-events:none; z-index:5; }
@@ -107,6 +113,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <div id="map-caption" class="hidden"><h1></h1><p></p></div>
 <div id="map-note" class="hidden">An illustrated universe • Sizes, distances and orbits are simplified for play • Tap ◎ to return</div>
 <div id="start" aria-label="Pick a tornado color to start">
+  <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
   <div class="row">
     <div class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
     <div class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
@@ -121,6 +128,8 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <div id="rotate" aria-label="Rotate the iPad sideways">
   <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="30" y="12" width="40" height="76" rx="6" fill="#f2e9d8" stroke="#8a7a60" stroke-width="4"/><circle cx="50" cy="80" r="3" fill="#8a7a60"/></svg>
 </div>
+<script src="metrics-config.js"></script>
+<script src="metrics-client.js"></script>
 <script>
 const TornadoGame = (() => {
 'use strict';
@@ -2120,7 +2129,7 @@ function boot() {
     screenToGround(camState(), sx, sy, app.R.width, app.R.height, groundPt);
     const wasDown = G.finger.down;
     G.finger.down = true; G.finger.x = groundPt.x; G.finger.z = groundPt.z;
-    G.lastInputTick = G.tick; if (!wasDown) { G.lastResponseTick = -1; G.bestDF = Infinity; }
+    G.lastInputTick = G.tick; if (!wasDown) { G.lastResponseTick = -1; G.bestDF = Infinity; if (!app.simMode && app.running) window.TwistyMetrics?.start(G.stage,G.tier); }
   }
   function lift() { if (app.G) app.G.finger.down = false; }
 
@@ -2142,6 +2151,7 @@ function boot() {
     if (wasTornado && app.G.stageDef.form === 'blackhole') app.G.slowmo = TUNING.SLOWMO_S * 1.5; // the collapse into a black hole gets a beat
     app.G.listeners.push(e => app.R.onEvent(e, app.G));
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
+    app.G.listeners.push(e => { if (!app.simMode && !(app.finale && app.finale.reborn)) window.TwistyMetrics?.gameEvent(e,app.G); });
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
     for (const h of app.stageHooks) h(app.G);
@@ -2168,10 +2178,12 @@ function boot() {
   }
   function showResults() {
     const s=app.completedRun;lift();app.resultsOpen=true;app.acc=0;
+    if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
     results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
   }
   document.getElementById('play-again').addEventListener('click',()=>{
+    if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');app.audio.setPaused(false);lift();app.last=performance.now();app.acc=0;updateRunHud();
   });
   const fadeEl = document.getElementById('fade');
@@ -2234,7 +2246,7 @@ function boot() {
     const activeSeconds=Math.max(0,(now-app.last)/1000);
     let elapsed = Math.min(0.1, activeSeconds); app.last = now;
     if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();updateRunHud();return;}
-    if(!app.finale)advanceRunTime(app.run,G.stage,activeSeconds);
+    if(!app.finale){advanceRunTime(app.run,G.stage,activeSeconds);if(!app.simMode)window.TwistyMetrics?.tick(activeSeconds,G.stage,G.tier);}
     if(!app.finale){
       app.acc += elapsed;
       let n = 0;
@@ -2261,8 +2273,9 @@ function boot() {
   }
   // Start = pick a color. Five discs; tapping one is the single start tap.
   function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); }
-  startEl.addEventListener('touchend', e => { e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
-  startEl.addEventListener('click', e => { if (app.simMode) return; pickFrom(e); startLive(); });
+  startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent')) return; e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
+  startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent') || app.simMode) return; pickFrom(e); startLive(); });
+  window.TwistyMetrics?.initUI();
 
   // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.
   function showFailure(msg) {

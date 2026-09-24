@@ -48,3 +48,15 @@ test('a themed town adds its things; space stages and the plain town ignore them
   assert.equal(game.createGame(4,'solar',null,'normal','candy').theme,null);
   assert.equal(game.createGame(4,'town',null,'normal','bogus').theme,null);
 });
+
+test('in the mixed town, no two kinds of themed thing share a spot (each kind has its own random stream)',()=>{
+  for(const seed of [1,2,3]){
+    const w=game.generateWorld(seed,'all'),byType=new Map();
+    for(const o of w)if(o.type.theme){if(!byType.has(o.type.id))byType.set(o.type.id,new Set());byType.get(o.type.id).add(`${o.x.toFixed(3)},${o.z.toFixed(3)}`);}
+    const ids=[...byType.keys()];
+    for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
+      const a=byType.get(ids[i]),b=byType.get(ids[j]);let shared=0;for(const k of a)if(b.has(k))shared++;
+      assert.equal(shared,0,`seed ${seed}: ${ids[i]} and ${ids[j]} share ${shared} spots`);
+    }
+  }
+});

@@ -214,7 +214,7 @@ function stepGame(G) {
   G.distSinceDust += G.speed * dt; G.timeSinceDust += dt;
   if ((G.speed > T.IDLE_SPEED && G.distSinceDust > T.DUST_PUFF_M * ss) || G.timeSinceDust > T.DUST_PUFF_S) { G.distSinceDust = 0; G.timeSinceDust = 0; G.emit('puff', { size: fr }); }
   // highlight timers
-  for (let i = G.highlighted ? G.highlighted.length - 1 : -1; i >= 0; i--) { const o = G.highlighted[i]; o.highlightT -= dt; if (o.highlightT <= 0 || o.state !== 0) G.highlighted.splice(i, 1); }
+  for (let i = G.highlighted ? G.highlighted.length - 1 : -1; i >= 0; i--) { const o = G.highlighted[i]; if (G.superSized && o === G.goalRef) o.highlightT = T.HIGHLIGHT_S; else o.highlightT -= dt; if (o.highlightT <= 0 || o.state !== 0) G.highlighted.splice(i, 1); }
   updateCamera(G, dt);
 }
 
@@ -271,7 +271,8 @@ function startSuperSize(G) {
   G.superT = G.superTo > G.superFrom ? T.SUPER_GROW_S : 0;
   G.fovPunch = T.FOV_PUNCH * 1.6; G.slowmo = Math.max(G.slowmo, T.SLOWMO_S);
   const g = G.goalRef;
-  if (g && g.state === 0) { g.highlightT = 1e9; G.highlighted = G.highlighted || []; if (!G.highlighted.includes(g)) G.highlighted.push(g); }
+  // the goal keeps a normal-sized bob for the whole countdown (the highlight loop re-pins it while super-sized)
+  if (g && g.state === 0) { g.highlightT = T.HIGHLIGHT_S; G.highlighted = G.highlighted || []; if (!G.highlighted.includes(g)) G.highlighted.push(g); }
   G.emit('supersize', { left: G.levelLimit - G.levelT, power: G.superTo });
 }
 

@@ -174,17 +174,18 @@ function boot() {
     const mode = (levels.town && levels.town.mode) || app.timerMode;
     document.getElementById('result-levels-title').textContent = 'Level times · ' + (TIMER_NAMES[mode] || mode);
     const row = (name, now, best, star) => { const tr = document.createElement('tr'); for (const [txt, cls] of [[name], [now], [best, star ? 'star' : '']]) { const td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.appendChild(td); } body.appendChild(tr); };
-    let total = 0, complete = true;
+    let total = 0, complete = true, clean = true;
     for (const [id, name] of LEVEL_NAMES) {
       const L = levels[id], b = bestFor(mode, id), fb = b === null ? '–' : formatDuration(b); if (!L) { complete = false; row(name, '–', fb, false); continue; }
-      total += L.t;
+      total += L.t; if (L.timedOut) clean = false;
       row(name, formatDuration(L.t) + (L.timedOut ? ' ⏱' : ''), fb + (L.newBest ? ' ★' : ''), L.newBest);
     }
     const stars = document.getElementById('result-stars'); stars.textContent = '';
     for (const [id, name] of LEVEL_NAMES) { const L = levels[id], on = !!L && !L.timedOut, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
     { const sm = document.createElement('small'); sm.textContent = 'beat the clock'; stars.appendChild(sm); }
     const next = themeInfo(app.G.theme); document.getElementById('next-world').textContent = next ? 'Next world: ' + next.icon + ' ' + next.name : '';
-    if (complete) { const prev = bestFor(mode, 'run'), nb = prev === null || total < prev - 1e-6; if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), formatDuration(nb ? total : prev) + (nb ? ' ★' : ''), nb); }
+    // a run the clock had to finish still shows its total, but only a run that beat every clock can set the best
+    if (complete) { const prev = bestFor(mode, 'run'), nb = clean && (prev === null || total < prev - 1e-6); if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), nb ? formatDuration(total) + ' ★' : prev === null ? '–' : formatDuration(prev), nb); }
   }
   document.getElementById('play-again').addEventListener('click',()=>{
     setTimeout(() => showWorldCard(app.G.theme), 250);
@@ -279,9 +280,9 @@ function boot() {
     cancelAnimationFrame(app.raf); app.raf = requestAnimationFrame(frame);
   }
   // Start = pick a color. Five discs; tapping one is the single start tap.
-  function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); }
-  startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent,#timer-pick')) return; e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
-  startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent,#timer-pick') || app.simMode) return; pickFrom(e); startLive(); });
+  function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); return !!d; }
+  startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent,#timer-pick')) return; e.preventDefault(); if (app.simMode || !pickFrom(e)) return; startLive(); }, touchOpts);
+  startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent,#timer-pick') || app.simMode || !pickFrom(e)) return; startLive(); });
   window.TwistyMetrics?.initUI();
 
   // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.

@@ -114,7 +114,8 @@ function generateWorld(seed, theme) {
 
   // ---- Discovery world: this trip's themed things, scattered the same way (a separate RNG keeps the base town identical) ----
   for (const [id, n] of themeScatter(theme)) {
-    const trnd = mulberry32(seed * 104723 + id.length * 7 + n); const cell = Math.sqrt(Math.PI * R * R / n);
+    const idHash = [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261); // FNV-1a: every kind gets its own stream
+    const trnd = mulberry32((seed * 104723 + idHash + n) >>> 0); const cell = Math.sqrt(Math.PI * R * R / n);
     const off = trnd() * cell, off2 = trnd() * cell;
     for (let gx = -R - cell; gx <= R + cell; gx += cell) for (let gz = -R - cell; gz <= R + cell; gz += cell) {
       const x = gx + off + trnd() * cell, z = gz + off2 + trnd() * cell;

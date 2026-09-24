@@ -50,7 +50,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <head>
 <meta charset="utf-8">
 <title>Twister</title>
-<meta name="twisty-build" content="2026-09-24-twister-v16-engineering">
+<meta name="twisty-build" content="2026-09-24-twister-v17-wispy">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1684,12 +1684,22 @@ function createRenderer(THREE, canvas, opts) {
       varying float vY; varying vec2 vRing; varying float vFacing; varying float vFogDepth;
       void main(){
         float vA = atan(vRing.y,vRing.x); // interpolate direction, not the angle across its wrap seam
-        float band = 0.55 + 0.45 * sin(vA * 4.0 + vY * 26.0 - uTime * 9.0);
-        float band2 = 0.5 + 0.5 * sin(vA * 7.0 - vY * 40.0 + uTime * 13.0);
-        float dens = mix(0.55, 1.0, band) * mix(0.7, 1.0, band2);
+        // Horizontal streaks that spin around the funnel (not stripes running up it). The rings are broken into long dashes
+        // that travel sideways with the spin, which is what reads as rotation; a spinning helix would look like climbing.
+        // Angles only appear as whole-number multiples, so the pattern is continuous around the funnel.
+        float spin = vA + uTime * 2.6; // same direction as the funnel's twist, a little faster
+        float ringArg = vY * 36.0 + sin(spin * 2.0) * 0.5;
+        float rings = 0.5 + 0.5 * sin(ringArg);
+        // each ring gets its own dash offset (ring index changes at the dark trough), so gaps never line up vertically
+        float ringId = floor((ringArg + 1.5707963) / 6.2831853);
+        float offs = fract(sin(ringId * 12.9898) * 43758.5453) * 6.2831853;
+        float dash = 0.5 + 0.5 * sin(spin * 2.0 + offs);
+        float dash2 = 0.5 + 0.5 * sin(spin * 5.0 - offs * 1.7);
+        float dust = rings * mix(0.25, 1.0, dash) * mix(0.7, 1.0, dash2);
+        float dens = mix(0.12, 1.0, smoothstep(0.05, 0.6, dust));
         float edge = 1.0 - smoothstep(0.75, 1.0, vY);
         float base = smoothstep(0.0, 0.06, vY);
-        vec3 col = mix(uCore, uColor, band * 0.8 + 0.2);
+        vec3 col = mix(uCore, uColor, 0.48 + dust * 0.32);
         col = mix(col, uColor * 1.15, pow(vY, 2.0) * 0.5);
         float f = clamp((vFogDepth - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
         col = mix(col, uSky, f);

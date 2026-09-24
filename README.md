@@ -69,7 +69,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
 - `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-24-twister-v16-engineering`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-24-twister-v17-wispy`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).

@@ -53,6 +53,15 @@ After the universe finale, the summary stays open with three rows: **Tornado**, 
 
 Each object's mass proxy is its generated size cubed. Dust counts, but shaking or partially absorbed objects do not; each completed absorption counts once. Roads, terrain and decorative backgrounds are excluded. Percentages are clamped to 0–100, show one decimal, and show `<0.1%` for tiny positive amounts. Finishing a stage does not automatically set its consumption to 100%. These are game estimates, not kilograms or a measured fraction of the real universe.
 
+## Discovery worlds, sound and helpers
+
+Every trip through the black hole lands in a town with one new kind of thing mixed in. The first visit is the plain farm city; then Animal Farm 🐄, Dino Valley 🦖, Candy Town 🍭, Snow Town ⛄ and Castle Town 🏰; from the sixth trip on, Everything Town 🌈 mixes them all at reduced density. Each world adds things at every tier (for example chicks up to giraffes, gumdrops up to a gingerbread house), snow and candy towns get their own ground colour, and a picture card names the world when she lands in it. The trip count is kept in this browser's local storage (`twisty-loop-v1`); clearing site data returns to the plain town. The results card shows a star for every level finished before its clock and names the next world.
+
+- **Sound:** a quiet generated tune (bright in town, slow in space), an extra sound layer by material on every absorb (rustle, clank, knock, animal boop, dino growl, candy chime, snow crunch, stone thud, star shimmer), a low hum as a black hole, and a rate limit so a super-size feast never starts more than ten sounds in 0.2 s. The 🔊 button in the bottom-right corner mutes everything and is remembered on the device.
+- **Goal beacon:** a soft column of light stands over each level's goal and brightens once the clock super-sizes her.
+- **Adaptive quality:** if frames run longer than 25 ms for about two seconds, the backing resolution steps down (to 80, 66, then 55 % of the start value) and steps back up after about ten seconds of headroom. `?quality=fixed` pins full quality; the graphics gate uses it.
+- **Start buttons:** the colour discs are real buttons, so they work with a keyboard and assistive tech as well as touch.
+
 ## Repository map
 
 - `index.html` — canonical game, renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness.
@@ -66,6 +75,7 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 - `scripts/graphics.test.mjs` — dependency-free mesh-normal, rounded-edge and resolution regression tests.
 - `scripts/run-stats.test.mjs` — mass denominators, exactly-once absorption, phase totals, reset and formatting tests.
 - `scripts/level-timer.test.mjs` — level-clock presets, super size at 10 s left, the goal fly-in at 0 and the clock stopping at the win.
+- `scripts/worlds.test.mjs` — trip order, themed generation, a finite mesh for every themed thing, and tiers that match sizes.
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
 - `test/` — historical v3 preview retained for reference only.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.
@@ -131,6 +141,15 @@ The runner requires Node.js plus Playwright with Chromium. This repository does 
 ```sh
 node sim.mjs --seeds 1-5 --render 0 --gates
 node sim.mjs --seeds 1 --seconds 60 --render 1
+```
+
+Timer settings, a slow child and discovery worlds each have their own run; these apply the safety and `levels` gates only, because the pacing gates assume the regular bot in the plain town on Normal:
+
+```sh
+node sim.mjs --seeds 1-5 --render 0 --gates --timer quick
+node sim.mjs --seeds 1-5 --render 0 --gates --slow
+node sim.mjs --seeds 1-5 --render 0 --gates --timer adult --slow
+node sim.mjs --seeds 1-5 --render 0 --gates --theme all
 ```
 
 The first command is the fast logic and progression gate. The second is a rendered benchmark, but `sim.mjs` forces software rendering; its result is environment-specific and does not replace testing on the target iPad. Use `node scripts/graphics-gate.mjs --seconds 10` for the separate normal-browser graphics smoke gate and fixed reference screenshots.

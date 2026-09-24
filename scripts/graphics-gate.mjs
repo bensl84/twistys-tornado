@@ -23,7 +23,7 @@ try{
  const page=await context.newPage(),errors=[];let network=0;
  await context.route('**/*',route=>{if(route.request().url().startsWith('file:'))return route.continue();network++;return route.abort();});
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto(pathToFileURL(join(root,'index.html')).href);await page.waitForFunction(()=>window.__app?.R);
+ await page.goto(pathToFileURL(join(root,'index.html')).href+'?quality=fixed');await page.waitForFunction(()=>window.__app?.R);
  check('page identity and first meaningful screen',await page.title()==='Twister'&&await page.locator('[data-color]').count()===5,page.url());
  report.userAgent=await page.evaluate(()=>navigator.userAgent);
  const settings=()=>page.evaluate(()=>({antialias:__app.R.renderer.getContext().getContextAttributes().antialias,dpr:__app.R.renderer.getPixelRatio(),width:document.getElementById('c').width,height:document.getElementById('c').height,cssWidth:innerWidth,cssHeight:innerHeight,contextLost:__app.R.renderer.getContext().isContextLost()}));
@@ -82,7 +82,7 @@ try{
  check('Play again starts a fresh run',await page.evaluate(()=>__app.run.seconds.blackhole===0&&__app.run.stages.town.consumedMass===0),await page.evaluate(()=>__app.run.seconds));
  const context1=await browser.newContext({viewport:{width:1180,height:820},deviceScaleFactor:1,offline:true});
  await context1.route('**/*',route=>{if(route.request().url().startsWith('file:'))return route.continue();network++;return route.abort();});
- const page1=await context1.newPage();page1.on('pageerror',e=>errors.push(e.message));page1.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page1.goto(pathToFileURL(join(root,'index.html')).href);await page1.waitForFunction(()=>window.__app?.R);
+ const page1=await context1.newPage();page1.on('pageerror',e=>errors.push(e.message));page1.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page1.goto(pathToFileURL(join(root,'index.html')).href+'?quality=fixed');await page1.waitForFunction(()=>window.__app?.R);
  const low=await page1.evaluate(()=>({dpr:__app.R.renderer.getPixelRatio(),width:document.getElementById('c').width,antialias:__app.R.renderer.getContext().getContextAttributes().antialias}));check('1x displays retain antialiasing without forced supersampling',low.dpr===1&&low.width===1180&&low.antialias,low);await context1.close();
  check('zero runtime errors and offline network requests',errors.length===0&&network===0,{errors,network});
 }catch(error){check('gate execution completed',false,String(error.stack||error));}

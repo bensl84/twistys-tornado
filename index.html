@@ -50,7 +50,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <head>
 <meta charset="utf-8">
 <title>Twister</title>
-<meta name="twisty-build" content="2026-09-24-twister-v14-level-timer">
+<meta name="twisty-build" content="2026-09-24-twister-v15-worlds">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -76,12 +76,24 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   @keyframes beat { 0% { transform:scale(1.35); } 100% { transform:scale(1); } }
   #goal-arrow { position:absolute; left:0; top:0; z-index:7; width:64px; height:64px; margin:-32px 0 0 -32px; pointer-events:none; filter:drop-shadow(0 3px 8px #000a); }
   #hud-clock.low { color:#ffd447; }
+  #world-card { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:16; text-align:center; pointer-events:none; color:#fff; text-shadow:0 4px 18px #000b; animation:card 3.2s ease-out forwards; }
+  #world-card .icon { font-size:clamp(90px,20vmin,160px); line-height:1.1; } #world-card .name { font:800 clamp(28px,6vmin,46px) -apple-system,"Helvetica Neue",Arial,sans-serif; }
+  @keyframes card { 0% { opacity:0; transform:translate(-50%,-50%) scale(.6); } 15% { opacity:1; transform:translate(-50%,-50%) scale(1.08); } 25% { transform:translate(-50%,-50%) scale(1); } 80% { opacity:1; } 100% { opacity:0; } }
+  #toast { position:absolute; left:50%; top:calc(118px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:8; pointer-events:none; padding:10px 18px; border-radius:22px; background:#ffd447; color:#12232d; font:800 18px -apple-system,"Helvetica Neue",Arial,sans-serif; box-shadow:0 6px 22px #0006; animation:toast 2.6s ease-out forwards; }
+  @keyframes toast { 0% { opacity:0; transform:translate(-50%,-12px); } 12% { opacity:1; transform:translate(-50%,0); } 80% { opacity:1; } 100% { opacity:0; } }
+  #result-stars { display:flex; gap:10px; align-items:center; margin:0 0 14px; font-size:30px; line-height:1; }
+  #result-stars .on { color:#ffd447; text-shadow:0 0 12px #ffd44780; } #result-stars .off { color:#ffffff38; } #result-stars small { font-size:13px; color:#c0d3d9; margin-left:6px; }
+  #next-world { margin:14px 0 0; font-size:16px; color:#f6f2e7; } #next-world:empty { display:none; }
   #result-levels { margin:6px 0 4px; border-top:1px solid #ffffff22; padding-top:12px; }
   #result-levels h2 { margin:0 0 8px; font-size:15px; color:#c0d3d9; font-weight:600; }
   #result-levels table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:15px; }
   #result-levels td, #result-levels th { padding:5px 0; text-align:left; } #result-levels th { color:#b7cdd6; font-weight:500; font-size:12px; }
   #result-levels td:nth-child(n+2), #result-levels th:nth-child(n+2) { text-align:right; }
   #result-levels .star { color:#ffd447; font-weight:700; }
+  #start .disc { border:0; padding:0; cursor:pointer; font:inherit; -webkit-tap-highlight-color:transparent; }
+  #start .disc:focus-visible { outline:4px solid #ffd447; outline-offset:4px; }
+  #mute { position:absolute; right:calc(14px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:19; width:48px; height:48px; border-radius:50%; border:1px solid #ffffff50; background:#12232dcc; color:#fff; font-size:22px; line-height:1; touch-action:manipulation; cursor:pointer; }
+  #mute[aria-pressed="true"] { background:#3a2a2acc; }
   #start .row { display:flex; flex-wrap:wrap; gap:4vmin; justify-content:center; align-items:center; max-width:92vw; }
   #start .disc { width:22vmin; height:22vmin; max-width:170px; max-height:170px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
   #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
@@ -122,10 +134,12 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
   <div class="card">
     <h1 id="results-title">What a whirlwind!</h1><p class="subtitle">Your journey from farm city to universe</p>
+    <div id="result-stars" aria-label="Levels finished before the clock"></div>
     <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
     <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
     <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
     <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
+    <p id="next-world"></p>
     <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
     <button id="play-again" type="button">Play again</button>
   </div>
@@ -136,11 +150,11 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <div id="start" aria-label="Pick a tornado color to start">
   <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
   <div class="row">
-    <div class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
-    <div class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
-    <div class="disc" data-color="purple" aria-label="Start with a purple tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
-    <div class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
-    <div class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
+    <button type="button" class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="purple" aria-label="Start with a purple tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
   </div>
   <div id="timer-pick" role="group" aria-label="Time for each level">
     <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
@@ -148,6 +162,9 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
   </div>
 </div>
+<button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
+<div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>
+<div id="toast" class="hidden" aria-live="polite"></div>
 <div id="countdown" class="hidden" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#12232dcc" stroke="#ffffff30" stroke-width="8"/><circle id="countdown-ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd447" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><span id="countdown-n">10</span></div>
 <svg id="goal-arrow" class="hidden" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 L56 40 L40 40 L40 58 L24 58 L24 40 L8 40 Z" fill="#ffd447" stroke="#12232d" stroke-width="3" stroke-linejoin="round"/></svg>
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
@@ -209,6 +226,18 @@ const TUNING = {
   // Seconds per level for each start-screen setting. 'space' covers solar, galaxy and universe.
   LEVEL_TIMERS: { quick: { town: 45, space: 30 }, normal: { town: 90, space: 60 }, adult: { town: 300, space: 300 } },
   LEVEL_TIMER_DEFAULT: 'normal',
+  // ---- Discovery worlds: every trip through the black hole lands in a town with one new kind of thing in it. ----
+  // Scatter counts per theme type (whole plain). Trip 6 and later mix every theme at THEME_MIX_SCALE of these counts.
+  THEME_ORDER: ['animals', 'dinos', 'candy', 'snow', 'castle'],
+  THEMES: {
+    animals: { name: 'Animal Farm', icon: '🐄', ground: null, scatter: { chick: 360, puppy: 120, sheep: 110, pig: 40, cow: 34, horse: 26, elephant: 16, giraffe: 14 } },
+    dinos:   { name: 'Dino Valley', icon: '🦖', ground: null, scatter: { dinoegg: 360, babydino: 220, raptor: 90, stego: 30, trex: 8, bronto: 6 } },
+    candy:   { name: 'Candy Town', icon: '🍭', ground: 'candy', scatter: { gumdrop: 360, lollipop: 220, cupcake: 55, donut: 40, candycane: 30, gingerhouse: 12 } },
+    snow:    { name: 'Snow Town', icon: '⛄', ground: 'snow', scatter: { snowball: 380, penguin: 220, snowman: 95, igloo: 30, icecastle: 10 } },
+    castle:  { name: 'Castle Town', icon: '🏰', ground: null, scatter: { helmet: 360, knight: 220, catapult: 90, dragon: 28, castle: 10 } },
+  },
+  THEME_MIX: { name: 'Everything Town', icon: '🌈' },
+  THEME_MIX_SCALE: 0.45,
   SUPER_SIZE_AT_S: 10,       // Seconds left on the level clock when the player becomes the biggest size.
   SUPER_GROW_S: 1.0,         // Seconds the super-size grow takes (log-space ease, so it reads as one big whoosh).
   TIMEOUT_PULL_S: 1.8,       // Seconds the goal takes to fly in when the clock reaches 0.
@@ -292,6 +321,8 @@ const TUNING = {
 
   // ---- Audio ----
   MASTER_GAIN: 0.7,
+  MUSIC_GAIN: 0.07,          // Background tune, well under the effects.
+  HUM_GAIN: 0.09,            // Black-hole drone in space.
   WIND_GAIN_MIN: 0.10, WIND_GAIN_MAX: 0.45,
   WIND_CUTOFF_MAX: 700, WIND_CUTOFF_MIN: 80, // Hz. Rumble deepens as power grows.
 
@@ -361,6 +392,37 @@ const TYPES = [
   { id: 'silo',    tier: 5, size: 18.5, foot: 3.6, blocks: true,  colors: [0xd8dde2, 0xc9ccd0] },
   { id: 'church',  tier: 5, size: 20.5, foot: 8.0, blocks: true,  colors: [0xf5f2ea] },
   { id: 'elevator',tier: 5, size: 21.8, foot: 6.0, blocks: true,  colors: [0xc9c4b8, 0xbdb6a8] },
+  // ---- discovery-world things (only generated in their theme's town) ----
+  { id: 'chick',      tier: 1, size: 0.45, foot: 0.2,  blocks: false, colors: [0xffd84a, 0xffe27a], theme: 'animals' },
+  { id: 'puppy',      tier: 2, size: 1.1,  foot: 0.45, blocks: false, colors: [0xc8925a, 0xf2e6d0, 0x6e4a2a], theme: 'animals' },
+  { id: 'sheep',      tier: 2, size: 1.4,  foot: 0.6,  blocks: false, colors: [0xf6f4ee, 0xe6e2da], theme: 'animals' },
+  { id: 'pig',        tier: 3, size: 2.5,  foot: 1.1,  blocks: false, colors: [0xf5a8b8, 0xf2b8c4], theme: 'animals' },
+  { id: 'cow',        tier: 3, size: 3.2,  foot: 1.4,  blocks: false, colors: [0xf8f8f4, 0x8a5a3a], theme: 'animals' },
+  { id: 'horse',      tier: 3, size: 3.6,  foot: 1.5,  blocks: false, colors: [0x8a5a34, 0x3a2a1e, 0xe8dcc8], theme: 'animals' },
+  { id: 'elephant',   tier: 4, size: 7.5,  foot: 3.2,  blocks: true,  colors: [0x9aa0a6, 0x8c9096], theme: 'animals' },
+  { id: 'giraffe',    tier: 4, size: 10,   foot: 2.0,  blocks: true,  colors: [0xe8b04a, 0xf0c060], theme: 'animals' },
+  { id: 'dinoegg',    tier: 1, size: 0.55, foot: 0.2,  blocks: false, colors: [0xf4ecd8, 0xd8f0d0, 0xe8e0f8], theme: 'dinos' },
+  { id: 'babydino',   tier: 2, size: 1.3,  foot: 0.55, blocks: false, colors: [0x6ac06a, 0x5ab0c8, 0xe8a040], theme: 'dinos' },
+  { id: 'raptor',     tier: 3, size: 3.5,  foot: 1.3,  blocks: false, colors: [0x6a8a3a, 0xa87a3a], theme: 'dinos' },
+  { id: 'stego',      tier: 4, size: 8,    foot: 3.2,  blocks: true,  colors: [0x5a9a5a, 0x8aa84a], theme: 'dinos' },
+  { id: 'trex',       tier: 5, size: 14,   foot: 5.0,  blocks: true,  colors: [0x4a7a3a, 0x7a6a4a], theme: 'dinos' },
+  { id: 'bronto',     tier: 5, size: 20,   foot: 6.5,  blocks: true,  colors: [0x6a8aa8, 0x7a9a6a], theme: 'dinos' },
+  { id: 'gumdrop',    tier: 1, size: 0.45, foot: 0.2,  blocks: false, colors: [0xff5f8a, 0x5fd0ff, 0xffd447, 0x9dff7a, 0xc07aff], theme: 'candy' },
+  { id: 'lollipop',   tier: 2, size: 1.3,  foot: 0.35, blocks: false, colors: [0xff4f7a, 0x4fb0ff, 0xffb84f, 0xb86aff], theme: 'candy' },
+  { id: 'cupcake',    tier: 3, size: 2.6,  foot: 1.1,  blocks: false, colors: [0xfff4f8, 0xffc8e0, 0xd8f0ff], theme: 'candy' },
+  { id: 'donut',      tier: 3, size: 3.8,  foot: 1.9,  blocks: false, colors: [0xff8ac0, 0x8a5a3a, 0xfff0f4], theme: 'candy' },
+  { id: 'candycane',  tier: 4, size: 8,    foot: 1.4,  blocks: true,  colors: [0xffffff], theme: 'candy' },
+  { id: 'gingerhouse',tier: 5, size: 14,   foot: 6.0,  blocks: true,  colors: [0xb8793a, 0xa86a30], theme: 'candy' },
+  { id: 'snowball',   tier: 1, size: 0.5,  foot: 0.22, blocks: false, colors: [0xf8fbff], theme: 'snow' },
+  { id: 'penguin',    tier: 2, size: 1.2,  foot: 0.45, blocks: false, colors: [0x1e2228], theme: 'snow' },
+  { id: 'snowman',    tier: 3, size: 2.8,  foot: 0.9,  blocks: false, colors: [0xf8fbff], theme: 'snow' },
+  { id: 'igloo',      tier: 4, size: 7.5,  foot: 3.3,  blocks: true,  colors: [0xeaf4fb, 0xdcecf6], theme: 'snow' },
+  { id: 'icecastle',  tier: 5, size: 17,   foot: 7.0,  blocks: true,  colors: [0xcfe8f6, 0xbfe0f4], theme: 'snow' },
+  { id: 'helmet',     tier: 1, size: 0.5,  foot: 0.2,  blocks: false, colors: [0xb8c0c8, 0xd8c070], theme: 'castle' },
+  { id: 'knight',     tier: 2, size: 1.6,  foot: 0.45, blocks: false, colors: [0xc0c8d0, 0xa8b0b8], theme: 'castle' },
+  { id: 'catapult',   tier: 3, size: 3.8,  foot: 1.6,  blocks: false, colors: [0x8a6a48, 0x7a5a3a], theme: 'castle' },
+  { id: 'dragon',     tier: 4, size: 11,   foot: 3.6,  blocks: true,  colors: [0x3aa05a, 0xc0403a, 0x7a4ac0], theme: 'castle' },
+  { id: 'castle',     tier: 5, size: 19,   foot: 8.0,  blocks: true,  colors: [0xb8b4ac, 0xc8c2b8], theme: 'castle' },
   { id: 'tower',   tier: 6, size: 24.0, foot: 6.0, blocks: true,  colors: [0xcfd8de] },
 ];
 // Space stage ladder. Diameters are compressed game units, not physical measurements.
@@ -463,7 +525,7 @@ const UNIVERSE_TYPE_BY_ID = {};
 UNIVERSE_TYPES.forEach((t, i) => { t.index = i; UNIVERSE_TYPE_BY_ID[t.id] = t; });
 // The run: town -> solar system -> galaxy -> universe -> (through the black hole) -> a new town. form: what the player is.
 const STAGES = {
-  town:     { types: TYPES, byId: TYPE_BY_ID, goal: 'tower', thresholds: () => TUNING.TIER_THRESHOLDS, startPower: () => TUNING.START_POWER, startPos: () => TUNING.START_POS, generate: seed => generateWorld(seed), next: 'solar', form: 'tornado', env: 'town', speedMult: () => 1, growthMult: null, last: false },
+  town:     { types: TYPES, byId: TYPE_BY_ID, goal: 'tower', thresholds: () => TUNING.TIER_THRESHOLDS, startPower: () => TUNING.START_POWER, startPos: () => TUNING.START_POS, generate: (seed, theme) => generateWorld(seed, theme), next: 'solar', form: 'tornado', env: 'town', speedMult: () => 1, growthMult: null, last: false },
   solar:    { types: SPACE_TYPES, byId: SPACE_TYPE_BY_ID, goal: 'sun', thresholds: () => TUNING.SPACE_THRESHOLDS, startPower: () => TUNING.SPACE_START_POWER, startPos: () => [0, 0], generate: seed => generateSpace(seed), next: 'galaxy', form: 'blackhole', env: 'solar', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: false },
   galaxy:   { types: GALAXY_TYPES, byId: GALAXY_TYPE_BY_ID, goal: 'g_core', thresholds: () => TUNING.GALAXY_THRESHOLDS, startPower: () => TUNING.GALAXY_START_POWER, startPos: () => [0, 0], generate: seed => generateField(seed * 7 + 3, GALAXY_TYPE_BY_ID, TUNING.GALAXY_SCATTER, TUNING.GALAXY_RADIUS, TUNING.GALAXY_START_KIT, TUNING.GALAXY_LANDMARKS.concat([['g_core', TUNING.GALAXY_CORE_POS[0], TUNING.GALAXY_CORE_POS[1]]])), next: 'universe', form: 'blackhole', env: 'galaxy', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: false },
   universe: { types: UNIVERSE_TYPES, byId: UNIVERSE_TYPE_BY_ID, goal: 'u_everything', thresholds: () => TUNING.UNIVERSE_THRESHOLDS, startPower: () => TUNING.UNIVERSE_START_POWER, startPos: () => [0, 0], generate: seed => generateField(seed * 11 + 5, UNIVERSE_TYPE_BY_ID, TUNING.UNIVERSE_SCATTER, TUNING.UNIVERSE_RADIUS, TUNING.UNIVERSE_START_KIT, TUNING.UNIVERSE_LANDMARKS.concat([['u_everything', TUNING.EVERYTHING_POS[0], TUNING.EVERYTHING_POS[1]]])), next: 'town', form: 'blackhole', env: 'universe', speedMult: () => TUNING.SPACE_SPEED_MULT, growthMult: () => TUNING.SPACE_GROWTH_MULT, last: true },
@@ -638,6 +700,37 @@ function makeGeometryBuilders(THREE) {
     elevator() { box(8, 22, 8, W, 0, 11, 0); box(3, 5, 3, 0x8c8880, 0, 24.5, 0); cyl(2.2, 2.2, 20, 12, W, 6.5, 10, 0); cyl(2.2, 2.2, 20, 12, W, -6.5, 10, 0); box(9, 0.6, 2, 0x6f6b66, 0, 17, 0); return merge(); },
     church() { box(10, 6, 16, W, 0, 3, 0); roof(10, 3.5, 16, 0x7a7a76, 0, 6, 0, 0.4); box(3.2, 12, 3.2, W, 0, 6, -8.5); cone(2.4, 6, 4, 0x7a7a76, 0, 15, -8.5); box(1.4, 2.6, 0.15, 0x5a3a2a, 0, 1.3, -10.12); return merge(); },
     // ---- space ----
+    // ---- discovery worlds (origin at ground centre, +y up, the front faces -x for animals) ----
+    chick() { sphere(0.16, W, 0, 0.17, 0, 1.1, 1, 1); sphere(0.11, W, -0.1, 0.36, 0); cone(0.035, 0.08, 8, 0xff9a2a, -0.2, 0.36, 0); sphere(0.02, 0x222222, -0.17, 0.4, 0.05); sphere(0.02, 0x222222, -0.17, 0.4, -0.05); return merge(); },
+    puppy() { sphere(0.28, W, 0, 0.45, 0, 1.5, 0.9, 0.9); sphere(0.22, W, -0.42, 0.7, 0); sphere(0.1, 0x3a2a1e, -0.62, 0.66, 0, 1, 0.8, 0.9); for (const z of [-0.2, 0.2]) sphere(0.09, 0x6e4a2a, -0.38, 0.86, z, 0.6, 1.4, 0.6); for (const [x, z] of [[-0.25, -0.14], [0.25, -0.14], [-0.25, 0.14], [0.25, 0.14]]) cyl(0.06, 0.06, 0.3, 12, W, x, 0.15, z); sphere(0.07, W, 0.45, 0.62, 0, 1.6, 0.6, 0.6); return merge(); },
+    sheep() { sphere(0.45, W, 0, 0.72, 0, 1.3, 0.9, 1); for (const [x, y, z] of [[0.3, 0.95, 0.2], [-0.2, 0.98, -0.25], [0.35, 0.8, -0.3], [-0.1, 1.0, 0.25]]) sphere(0.22, W, x, y, z); sphere(0.2, 0x2a2a2a, -0.62, 0.82, 0, 1.2, 1, 0.9); for (const [x, z] of [[-0.3, -0.2], [0.3, -0.2], [-0.3, 0.2], [0.3, 0.2]]) cyl(0.06, 0.06, 0.45, 12, 0x2a2a2a, x, 0.22, z); return merge(); },
+    pig() { sphere(0.8, W, 0, 0.95, 0, 1.4, 0.9, 0.95); sphere(0.5, W, -1.05, 1.15, 0); cyl(0.2, 0.22, 0.2, 16, 0xe88a9a, -1.55, 1.1, 0); for (const z of [-0.28, 0.28]) cone(0.14, 0.3, 4, W, -0.95, 1.6, z); for (const [x, z] of [[-0.6, -0.4], [0.6, -0.4], [-0.6, 0.4], [0.6, 0.4]]) cyl(0.16, 0.16, 0.5, 12, W, x, 0.25, z); return merge(); },
+    cow() { box(2.2, 1.1, 1.05, W, 0, 1.5, 0, 0, 1.5); box(0.7, 0.7, 0.65, W, -1.35, 1.95, 0, 0, 1.2); box(0.35, 0.3, 0.55, 0xe8b0a8, -1.72, 1.75, 0); for (const z of [-0.3, 0.3]) cone(0.07, 0.35, 8, 0xe8e0c8, -1.3, 2.45, z); for (const [x, y, z] of [[0.3, 1.9, 0.53], [-0.4, 1.4, -0.53], [0.7, 1.3, 0.53]]) sphere(0.3, 0x2a2a2a, x, y, z, 1, 1, 0.15); for (const [x, z] of [[-0.8, -0.35], [0.8, -0.35], [-0.8, 0.35], [0.8, 0.35]]) cyl(0.14, 0.14, 1.0, 12, 0x3a3a3a, x, 0.5, z); return merge(); },
+    horse() { box(2.3, 0.95, 0.8, W, 0, 1.95, 0, 0, 1.5); box(0.55, 1.2, 0.5, W, -1.15, 2.6, 0, 0, 1.2); box(0.9, 0.45, 0.45, W, -1.55, 3.15, 0, 0, 1.2); box(0.18, 1.1, 0.12, 0x3a2a1e, -1.0, 2.9, 0); for (const [x, z] of [[-0.9, -0.28], [0.9, -0.28], [-0.9, 0.28], [0.9, 0.28]]) cyl(0.12, 0.1, 1.5, 12, W, x, 0.75, z); sphere(0.18, 0x3a2a1e, 1.3, 1.8, 0, 2.2, 0.6, 0.6); return merge(); },
+    elephant() { sphere(2.1, W, 0, 3.1, 0, 1.45, 1, 1); sphere(1.35, W, -3.0, 3.8, 0); cyl(0.35, 0.5, 2.8, 16, W, -3.9, 2.4, 0); for (const z of [-1.1, 1.1]) sphere(1.1, W, -2.6, 3.9, z, 0.3, 1, 0.9); for (const z of [-0.5, 0.5]) cone(0.14, 0.9, 12, 0xf4f0e6, -3.8, 2.8, z); for (const [x, z] of [[-1.6, -0.9], [1.6, -0.9], [-1.6, 0.9], [1.6, 0.9]]) cyl(0.55, 0.55, 1.8, 16, W, x, 0.9, z); return merge(); },
+    giraffe() { sphere(1.3, W, 0, 4.1, 0, 1.55, 0.9, 0.8); cyl(0.3, 0.42, 5.2, 16, W, -1.7, 7.0, 0); box(1.1, 0.55, 0.55, W, -2.1, 9.7, 0, 0, 1.2); for (const z of [-0.15, 0.15]) cyl(0.05, 0.05, 0.4, 8, 0x6e4a2a, -1.8, 10.15, z); for (const [x, y, z] of [[0.4, 4.6, 0.72], [-0.6, 4.0, -0.72], [-1.6, 6.2, 0.3], [-1.7, 7.8, -0.3], [0.9, 3.9, -0.7]]) sphere(0.28, 0x8a5a2a, x, y, z, 1, 1, 0.2); for (const [x, z] of [[-1.1, -0.45], [1.1, -0.45], [-1.1, 0.45], [1.1, 0.45]]) cyl(0.17, 0.14, 3.4, 12, W, x, 1.7, z); return merge(); },
+    dinoegg() { sphere(0.2, W, 0, 0.27, 0, 1, 1.35, 1); for (const [x, y, z] of [[0.12, 0.3, 0.12], [-0.1, 0.4, 0.1], [0.05, 0.18, -0.17]]) sphere(0.05, 0x7aa05a, x, y, z, 1, 1, 0.4); return merge(); },
+    babydino() { sphere(0.35, W, 0, 0.55, 0, 1.4, 1, 1); sphere(0.25, W, -0.5, 0.85, 0, 1.2, 1, 1); sphere(0.18, W, 0.62, 0.5, 0, 2.4, 0.6, 0.6); for (const x of [-0.3, 0, 0.3]) cone(0.08, 0.2, 4, 0xffd447, x, 0.95, 0); for (const [x, z] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) cyl(0.08, 0.08, 0.3, 12, W, x, 0.15, z); return merge(); },
+    raptor() { sphere(0.6, W, 0, 1.45, 0, 1.6, 0.8, 0.7); sphere(0.35, W, -1.05, 2.05, 0, 1.5, 0.8, 0.75); sphere(0.3, W, 1.35, 1.35, 0, 3.2, 0.5, 0.5); for (const z of [-0.22, 0.22]) cyl(0.13, 0.08, 1.2, 12, W, 0.1, 0.6, z); for (const z of [-0.25, 0.25]) sphere(0.08, W, -0.65, 1.3, z, 1, 2, 1); return merge(); },
+    stego() { sphere(1.8, W, 0, 2.4, 0, 1.8, 1, 1); sphere(0.6, W, -3.2, 1.8, 0, 1.3, 0.9, 0.9); sphere(0.7, W, 3.3, 1.9, 0, 2.6, 0.6, 0.6); for (let i = -2; i <= 2; i++) cone(0.55, 1.3, 4, 0xd0603a, i * 1.0, 4.2 - Math.abs(i) * 0.3, 0); for (const z of [-0.2, 0.2]) cone(0.15, 0.8, 8, 0xe8dcc8, 4.6, 2.3, z); for (const [x, z] of [[-1.6, -0.8], [1.6, -0.8], [-1.6, 0.8], [1.6, 0.8]]) cyl(0.45, 0.45, 1.4, 16, W, x, 0.7, z); return merge(); },
+    trex() { sphere(2.8, W, 0, 6.0, 0, 1.45, 1.1, 1); box(3.2, 2.2, 2.0, W, -4.4, 9.0, 0, 0, 1.3); box(2.6, 0.5, 1.8, 0xf4f0e6, -4.7, 7.95, 0, 0, 1); sphere(1.2, W, 4.8, 5.4, 0, 3.4, 0.6, 0.6); for (const z of [-1.1, 1.1]) cyl(0.75, 0.55, 4.4, 16, W, 0.4, 2.2, z); for (const z of [-1.0, 1.0]) cyl(0.18, 0.18, 1.2, 8, W, -2.5, 6.3, z); sphere(0.2, 0x111111, -5.3, 9.6, 1.0); sphere(0.2, 0x111111, -5.3, 9.6, -1.0); return merge(); },
+    bronto() { sphere(3.6, W, 0, 5.8, 0, 1.6, 1, 1); cyl(0.8, 1.3, 9.5, 20, W, -5.0, 10.8, 0); sphere(1.1, W, -5.6, 15.8, 0, 1.6, 0.9, 1); sphere(1.4, W, 6.5, 5.0, 0, 4.2, 0.55, 0.55); for (const [x, z] of [[-3, -1.8], [3, -1.8], [-3, 1.8], [3, 1.8]]) cyl(1.0, 1.0, 3.6, 16, W, x, 1.8, z); return merge(); },
+    gumdrop() { cone(0.2, 0.34, 20, W, 0, 0.17, 0); sphere(0.2, W, 0, 0.04, 0, 1, 0.3, 1); return merge(); },
+    lollipop() { cyl(0.03, 0.03, 1.0, 8, 0xf4f4f4, 0, 0.5, 0); sphere(0.32, W, 0, 1.1, 0, 1, 1, 0.28); sphere(0.2, 0xffffff, 0, 1.1, 0, 1, 1, 0.3); return merge(); },
+    cupcake() { cyl(1.0, 0.75, 1.0, 24, 0xe8a0c0, 0, 0.5, 0); sphere(1.05, W, 0, 1.25, 0, 1, 0.65, 1); sphere(0.55, W, 0, 1.75, 0, 1, 0.8, 1); sphere(0.2, 0xd8263a, 0, 2.3, 0); return merge(); },
+    donut() { { const g = new THREE.TorusGeometry(1.35, 0.55, 20, 48); const m = new THREE.Matrix4().makeRotationX(-Math.PI / 2); m.premultiply(T(0, 0.55, 0)); push(g, 0xd8a060, m); } { const g = new THREE.TorusGeometry(1.35, 0.5, 20, 48, Math.PI * 2); const m = new THREE.Matrix4().makeScale(1, 1, 0.6); m.premultiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2)); m.premultiply(T(0, 0.78, 0)); push(g, W, m); } for (let i = 0; i < 14; i++) { const a = i * 0.45, r = 1.35 + Math.sin(i * 1.7) * 0.25; box(0.3, 0.08, 0.08, [0xff4f7a, 0x4fb0ff, 0xffd447, 0x9dff7a][i % 4], Math.cos(a) * r, 1.08, Math.sin(a) * r, a); } return merge(); },
+    candycane() { for (let i = 0; i < 12; i++) cyl(0.45, 0.45, 0.55, 20, i % 2 ? 0xd8263a : W, 0, 0.28 + i * 0.55, 0); for (let i = 0; i <= 6; i++) { const a = Math.PI * i / 6; sphere(0.47, i % 2 ? 0xd8263a : W, -1.0 + Math.cos(a) * 1.0, 6.9 + Math.sin(a) * 1.0, 0); } return merge(); },
+    gingerhouse() { box(9, 5.5, 7, W, 0, 2.75, 0, 0, 1.5); roof(9, 3.8, 7, 0xfbf6f0, 0, 5.5, 0, 0.6); box(1.6, 2.6, 0.2, 0xd8263a, 0, 1.3, -3.55); for (const [x, y] of [[-2.8, 3.2], [2.8, 3.2]]) box(1.4, 1.2, 0.2, 0xfff4b8, x, y, -3.55); for (let i = 0; i < 9; i++) sphere(0.28, [0xff4f7a, 0x4fb0ff, 0x9dff7a][i % 3], -4 + i, 5.6, -3.6); cyl(0.5, 0.5, 2.2, 16, 0xfbf6f0, 2.5, 8.2, 1.2); return merge(); },
+    snowball() { sphere(0.22, W, 0, 0.22, 0); return merge(); },
+    penguin() { sphere(0.34, W, 0, 0.55, 0, 1, 1.5, 0.95); sphere(0.26, 0xf8f8f8, -0.12, 0.5, 0, 0.8, 1.3, 0.85); sphere(0.22, W, 0, 1.02, 0); cone(0.06, 0.16, 8, 0xff9a2a, -0.26, 1.0, 0); for (const z of [-0.08, 0.08]) sphere(0.035, 0xffffff, -0.18, 1.08, z); for (const z of [-0.36, 0.36]) sphere(0.12, W, 0, 0.6, z, 0.5, 1.6, 0.4); for (const z of [-0.12, 0.12]) sphere(0.1, 0xff9a2a, -0.08, 0.04, z, 1.4, 0.4, 1); return merge(); },
+    snowman() { sphere(0.8, W, 0, 0.75, 0); sphere(0.56, W, 0, 1.9, 0); sphere(0.4, W, 0, 2.75, 0); cone(0.08, 0.45, 12, 0xff8a2a, -0.55, 2.75, 0); cyl(0.32, 0.32, 0.5, 20, 0x1e1e22, 0, 3.35, 0); cyl(0.5, 0.5, 0.06, 20, 0x1e1e22, 0, 3.1, 0); for (const y of [1.7, 1.95, 2.2]) sphere(0.06, 0x1e1e22, -0.54, y, 0); box(0.9, 0.15, 0.3, 0xd8263a, 0, 2.38, 0, 0.3); return merge(); },
+    igloo() { sphere(3.4, W, 0, 0, 0, 1, 0.78, 1); cyl(1.1, 1.1, 1.9, 20, W, -3.2, 0.9, 0); box(0.9, 1.3, 1.4, 0x5a7a92, -4.05, 0.65, 0); for (let i = 1; i < 4; i++) cyl(3.45 * Math.sqrt(1 - (i / 4.2) ** 2), 3.45 * Math.sqrt(1 - (i / 4.2) ** 2), 0.05, 40, 0xc8dcea, 0, i * 0.66, 0); return merge(); },
+    icecastle() { box(11, 6, 9, W, 0, 3, 0, 0, 1.5); for (const [x, z] of [[-5.5, -4.5], [5.5, -4.5], [-5.5, 4.5], [5.5, 4.5]]) { cyl(1.4, 1.6, 10, 24, W, x, 5, z); cone(1.8, 4, 24, 0x9ad0f0, x, 12, z); } cyl(2.2, 2.4, 13, 24, W, 0, 6.5, 0); cone(2.7, 5, 24, 0x9ad0f0, 0, 15.5, 0); box(2.2, 3.4, 0.3, 0x6a9ab8, 0, 1.7, -4.6); return merge(); },
+    helmet() { sphere(0.2, W, 0, 0.18, 0, 1, 0.95, 1); box(0.05, 0.12, 0.3, 0x2a2a2a, -0.2, 0.2, 0); cone(0.06, 0.25, 8, 0xd8263a, 0, 0.45, 0); return merge(); },
+    knight() { cyl(0.26, 0.3, 0.8, 20, W, 0, 0.75, 0); sphere(0.2, W, 0, 1.33, 0); box(0.05, 0.08, 0.26, 0x2a2a2a, -0.2, 1.34, 0); cone(0.06, 0.3, 8, 0xd8263a, 0, 1.6, 0); box(0.08, 0.6, 0.45, 0x3a6fd8, -0.32, 0.85, 0.12); cyl(0.03, 0.03, 1.6, 8, 0x8a6a48, 0.3, 0.9, -0.2); cone(0.06, 0.2, 8, 0xc0c8d0, 0.3, 1.78, -0.2); for (const z of [-0.12, 0.12]) cyl(0.09, 0.09, 0.35, 12, 0x5a5f66, 0, 0.18, z); return merge(); },
+    catapult() { box(3.0, 0.4, 1.6, W, 0, 0.6, 0, 0, 1); for (const z of [-0.7, 0.7]) { box(0.3, 1.6, 0.25, W, 0.2, 1.4, z); } box(0.25, 0.25, 1.7, W, 0.2, 2.1, 0); { const g = new THREE.BoxGeometry(3.2, 0.22, 0.25); const m = new THREE.Matrix4().makeRotationZ(-0.6); m.premultiply(T(-0.4, 1.9, 0)); push(g, W, m); } sphere(0.35, 0x6a6a6a, -1.65, 2.95, 0); for (const [x, z] of [[-1.1, -0.9], [1.1, -0.9], [-1.1, 0.9], [1.1, 0.9]]) { const g = new THREE.CylinderGeometry(0.45, 0.45, 0.18, GRAPHICS.roundSegments); const m = new THREE.Matrix4().makeRotationX(Math.PI / 2); m.premultiply(T(x, 0.45, z)); push(g, 0x5a4030, m); } return merge(); },
+    dragon() { sphere(2.0, W, 0, 3.6, 0, 1.8, 1, 1); cyl(0.6, 0.9, 3.0, 16, W, -2.8, 5.4, 0); sphere(0.9, W, -3.4, 7.0, 0, 1.6, 0.9, 1); for (const z of [-0.4, 0.4]) cone(0.15, 0.8, 8, 0xf4f0e6, -3.0, 7.9, z); sphere(0.18, 0xffd447, -4.3, 7.3, 0.5); sphere(0.18, 0xffd447, -4.3, 7.3, -0.5); sphere(0.9, W, 4.4, 3.0, 0, 3.4, 0.5, 0.5); for (const side of [-1, 1]) { const g = new THREE.BoxGeometry(3.6, 0.15, 4.2); const m = new THREE.Matrix4().makeRotationX(side * 0.55); m.premultiply(T(0.2, 5.6, side * 2.6)); push(g, W, m); } for (let i = 0; i < 5; i++) cone(0.35, 0.8, 4, 0xffd447, -1.6 + i * 0.9, 5.4 - Math.abs(i - 2) * 0.2, 0); for (const [x, z] of [[-1.6, -0.9], [1.6, -0.9], [-1.6, 0.9], [1.6, 0.9]]) cyl(0.45, 0.4, 1.8, 12, W, x, 0.9, z); return merge(); },
+    castle() { for (const [w, d, x, z] of [[14, 1.4, 0, -6.8], [14, 1.4, 0, 6.8], [1.4, 14, -6.8, 0], [1.4, 14, 6.8, 0]]) box(w, 6, d, W, x, 3, z, 0, 1); for (let i = -3; i <= 3; i++) { box(1, 1, 1.5, W, i * 2, 6.5, -6.8); box(1, 1, 1.5, W, i * 2, 6.5, 6.8); } for (const [x, z] of [[-7, -7], [7, -7], [-7, 7], [7, 7]]) { cyl(1.8, 2.0, 9, 24, W, x, 4.5, z); cone(2.3, 4, 24, 0xc0403a, x, 11, z); } cyl(2.8, 3.0, 13, 24, W, 0, 6.5, 0); cone(3.4, 5, 24, 0x3a6fd8, 0, 15.5, 0); box(3, 4, 0.4, 0x4a3a2a, 0, 2, -7.5); cyl(0.08, 0.08, 3, 8, 0x5a4030, 0, 19.5, 0); box(1.6, 0.9, 0.08, 0xffd447, 0.8, 20.4, 0); return merge(); },
     rock_s() { sphere(5, W, 0, 5, 0, 1.2, 0.8, 1, GRAPHICS.rockSegments); return merge(); },
     rock_m() { sphere(9, W, 0, 9, 0, 1.1, 0.75, 1.3, GRAPHICS.rockSegments); sphere(4, 0x5a524a, 5, 12, 3,1,1,1,GRAPHICS.rockSegments); return merge(); },
     rock_l() { sphere(15, W, 0, 15, 0, 1.3, 0.8, 1,GRAPHICS.rockSegments); sphere(6, 0x5a524a, -8, 20, 6,1,1,1,GRAPHICS.rockSegments); sphere(4, 0x5a524a, 9, 9, -8,1,1,1,GRAPHICS.rockSegments); return merge(); },
@@ -731,7 +824,7 @@ function makeGeometryBuilders(THREE) {
 // =====================================================================================================
 // WORLD GENERATION (seeded, deterministic). Produces a flat array of object records.
 // =====================================================================================================
-function generateWorld(seed) {
+function generateWorld(seed, theme) {
   const rnd = mulberry32(seed * 7919 + 13);
   const objs = [];
   const R = TUNING.WORLD_RADIUS;
@@ -842,6 +935,16 @@ function generateWorld(seed) {
     }
   }
 
+  // ---- Discovery world: this trip's themed things, scattered the same way (a separate RNG keeps the base town identical) ----
+  for (const [id, n] of themeScatter(theme)) {
+    const trnd = mulberry32(seed * 104723 + id.length * 7 + n); const cell = Math.sqrt(Math.PI * R * R / n);
+    const off = trnd() * cell, off2 = trnd() * cell;
+    for (let gx = -R - cell; gx <= R + cell; gx += cell) for (let gz = -R - cell; gz <= R + cell; gz += cell) {
+      const x = gx + off + trnd() * cell, z = gz + off2 + trnd() * cell;
+      if (okPoint(x, z)) add(id, x, z, trnd() * TAU);
+    }
+  }
+
   // ---- Start yard: immediate food, and a whole backyard of things she cannot eat yet ----
   for (let i = 0; i < 3; i++) { const a = rnd() * TAU, r = 1.5 + rnd() * 5; add('leaf', sx + Math.cos(a) * r, sz + Math.sin(a) * r, rnd() * TAU); }
   for (let i = 0; i < 2; i++) { const a = rnd() * TAU, r = 2 + rnd() * 6; add('paper', sx + Math.cos(a) * r, sz + Math.sin(a) * r, rnd() * TAU); }
@@ -908,6 +1011,18 @@ function generateSpace(seed) {
   return objs.filter(o => o.state !== 2).map((o, i) => (o.id = i, o));
 }
 
+// Which discovery world a trip lands in: none on the first visit, then one theme per trip, then all of them mixed.
+function themeForLoop(loop) { const order = TUNING.THEME_ORDER; return loop <= 0 ? null : loop <= order.length ? order[loop - 1] : 'all'; }
+function themeInfo(theme) { return theme === 'all' ? TUNING.THEME_MIX : TUNING.THEMES[theme] || null; }
+function themeScatter(theme) {
+  if (!theme) return [];
+  const list = theme === 'all' ? TUNING.THEME_ORDER : TUNING.THEMES[theme] ? [theme] : [];
+  const scale = theme === 'all' ? TUNING.THEME_MIX_SCALE : 1, out = [];
+  for (const t of list) for (const id in TUNING.THEMES[t].scatter) out.push([id, Math.max(1, Math.round(TUNING.THEMES[t].scatter[id] * scale))]);
+  return out;
+}
+function themeGround(theme) { if (theme === 'all') return null; const t = TUNING.THEMES[theme]; return t ? t.ground : null; }
+
 // Open-space field: uniform scatter, a start kit, and a few placed landmarks (the goal among them). Used by the galaxy and universe stages.
 function generateField(seed, byId, scatter, R, kit, placed) {
   const rnd = mulberry32(seed * 104729 + 7);
@@ -950,14 +1065,15 @@ function formatDuration(seconds) {
   return h?`${h}:${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${m}:${String(s%60).padStart(2,'0')}`;
 }
 function formatPercent(value) { const p=clamp(value,0,100);return p>0&&p<.1?'<0.1%':`${(Math.floor(p*10+1e-9)/10).toFixed(1)}%`; }
-function createGame(seed, stageId, colorId, timerMode) {
+function createGame(seed, stageId, colorId, timerMode, theme) {
   stageId = stageId || 'town';
   const ST = STAGES[stageId];
   const sp = ST.startPos();
   const G = {
     seed, tick: 0, time: 0,       // time = simulated seconds (advances by DT * timeScale per tick; hitstop freezes it)
     stage: stageId, stageDef: ST, colorId: colorId || 'blue',
-    objs: ST.generate(seed),
+    theme: stageId === 'town' && (theme === 'all' || TUNING.THEMES[theme]) ? theme : null,
+    objs: ST.generate(seed, stageId === 'town' ? theme : null),
     power: ST.startPower(), tier: 1,
     pos: { x: sp[0], z: sp[1] }, vel: { x: 0, z: 0 }, acc: { x: 0, z: 0 }, heading: 0, speed: 0,
     finger: { down: false, x: 0, z: 0 },       // ground-plane target
@@ -1812,6 +1928,17 @@ function createRenderer(THREE, canvas, opts) {
     ring.instanceColor.needsUpdate = true;
   }
   const ENVS = { town: { sky: 0xb8cbdc }, solar: { sky: 0x05060f }, galaxy: { sky: 0x08051a }, universe: { sky: 0x020208 } };
+  // Discovery worlds: snow and candy towns get their own ground; every other town keeps the grass texture.
+  const groundTint = { snow: 0xf1f6fb, candy: 0xf7cfe2 };
+  function setTheme(theme) {
+    const g = themeGround(theme), m = ground.material;
+    const wantMap = g ? null : gtex, wantColor = g ? groundTint[g] : 0xe6e6d6;
+    if (m.map !== wantMap) { m.map = wantMap; m.needsUpdate = true; }
+    m.color.setHex(wantColor);
+    // additive light vanishes on a white or pink ground, so light grounds get a solid orange column instead
+    const solid = !!g; beaconMat.blending = solid ? THREE.NormalBlending : THREE.AdditiveBlending;
+    beaconMat.uniforms.uSolid.value = solid ? 1 : 0; beaconMat.uniforms.uColor.value.setHex(solid ? 0xff8a1a : 0xffd447);
+  }
   function setEnvironment(stage, env) {
     stageId = stage; envId = env || (stage === 'town' ? 'town' : 'solar');
     const space = envId !== 'town';
@@ -1844,6 +1971,7 @@ function createRenderer(THREE, canvas, opts) {
   function resize(w, h) { width = w; height = h; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 
   function update(G, rdt) {
+    updateBeacon(G);
     overview=!!G.overview;
     const fr = G.funnelR(), fh = fr * T.FUNNEL_HEIGHT;
     // camera
@@ -1952,6 +2080,21 @@ function createRenderer(THREE, canvas, opts) {
   }
   let finaleK = 0; // 0 = normal camera; (0,1] = falling into the core
   function setFinale(k) { finaleK = k; }
+  // ---- goal beacon: a soft column of light over the level's goal, so there is always somewhere to head ----
+  const beaconMat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(0xffd447) }, uAlpha: { value: 0.5 }, uSolid: { value: 0 } }, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    vertexShader: 'varying float vY; void main(){ vY = position.y + 0.5; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 uColor; uniform float uAlpha; uniform float uSolid; varying float vY; void main(){ float a = uAlpha * smoothstep(0.0, 0.08, vY) * pow(1.0 - vY, 1.6); gl_FragColor = vec4(uColor * mix(a, 1.0, uSolid), a); }',
+  });
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 32, 1, true), beaconMat); beacon.frustumCulled = false; beacon.renderOrder = 9; beacon.visible = false; scene.add(beacon);
+  function updateBeacon(G) {
+    const g = G.goalRef; beacon.visible = !!g && g.state === 0 && finaleK === 0 && !G.overview;
+    if (!beacon.visible) return;
+    const town = G.stage === 'town', w = g.size * (town ? 0.32 : 0.45), h = g.size * (town ? 9 : 5);
+    beacon.position.set(g.x, h / 2, g.z); beacon.scale.set(w, h, w);
+    // brighter once the clock has super-sized her: that is when heading there matters most
+    beaconMat.uniforms.uAlpha.value = (G.superSized ? 0.75 : 0.38) * (0.8 + 0.2 * Math.sin(G.tick * 0.08));
+  }
   const rattling = [];
   const o_age = (o, G) => (G.tick * DT) - o.rattleTick;
   function objectVisible(o, G) { sph.center.set(o.x, o.size * 0.4, o.z); sph.radius = Math.max(o.size * 0.6, o.foot); if (!frustum.intersectsSphere(sph)) return false; const d = Math.hypot(o.x - G.camPos.x, o.z - G.camPos.z); return d < scene.fog.far * 0.9; }
@@ -2023,7 +2166,7 @@ function createRenderer(THREE, canvas, opts) {
     for(const {mesh,matrix} of ringMatrices){mesh.matrix.copy(matrix);mesh.matrixWorldNeedsUpdate=true;}
   }
   function reset() { funnelUniforms.uColor.value.copy(dustColor); coreMat.uniforms.uColor.value.setHex(0x7d7267); for (let i = 0; i < PN; i++) P.life[i] = 0; rattling.length = 0; finaleK = 0; }
-  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setColor, setForm, setFinale, get form() { return form; }, get width() { return width; }, get height() { return height; } };
+  return { renderer, scene, camera, buildObjects, update, render, resize, onEvent, objectVisible, reset, setEnvironment, setTheme, setColor, setForm, setFinale, get form() { return form; }, get width() { return width; }, get height() { return height; } };
 }
 
 // =====================================================================================================
@@ -2031,6 +2174,8 @@ function createRenderer(THREE, canvas, opts) {
 // =====================================================================================================
 function createAudio() {
   let ctx = null, master, windGain, windFilter, windLfo, enabled = false;
+  let musicGain = null, humGain = null, musicTimer = 0, musicMode = 'town', nextNoteT = 0, noteStep = 0, noteDeg = 3, paused = false, muted = false, form = 'tornado';
+  let sfxWindowT = 0, sfxCount = 0; // rate limit: a super-size feast must not start hundreds of voices at once
   function start() {
     // Idempotent: a replay reuses the existing graph instead of stacking another context and wind loop.
     if (ctx) { try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* ignore */ } return; }
@@ -2044,6 +2189,10 @@ function createAudio() {
       windGain = ctx.createGain(); windGain.gain.value = 0;
       windLfo = ctx.createOscillator(); windLfo.frequency.value = 0.6; const lfoG = ctx.createGain(); lfoG.gain.value = 0.05; windLfo.connect(lfoG); lfoG.connect(windGain.gain); windLfo.start();
       src.connect(windFilter); windFilter.connect(windGain); windGain.connect(master); src.start();
+      musicGain = ctx.createGain(); musicGain.gain.value = TUNING.MUSIC_GAIN; musicGain.connect(master);
+      humGain = ctx.createGain(); humGain.gain.value = 0; humGain.connect(master);
+      for (const [f, g] of [[43, 1], [64.5, 0.55], [86, 0.25]]) { const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; og.gain.value = g; o.connect(og); og.connect(humGain); o.start(); }
+      nextNoteT = ctx.currentTime + 0.3; musicTimer = setInterval(scheduleMusic, 90);
       if (ctx.state === 'suspended') ctx.resume();
       enabled = true;
     } catch (e) { enabled = false; }
@@ -2054,6 +2203,53 @@ function createAudio() {
     g.gain.setValueAtTime(gain, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
     o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime + dur + 0.05);
   }
+  // ---- music: a quiet pentatonic wander; bright and quick in town, low and slow in space ----
+  const SCALES = { town: { root: 60, steps: [0, 2, 4, 7, 9, 12, 14, 16], beat: 0.19, wave: 'triangle' }, space: { root: 50, steps: [0, 3, 5, 7, 10, 12, 15, 17], beat: 0.3, wave: 'sine' } };
+  function note(midi, t, wave, dur, gain) {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = wave; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function scheduleMusic() {
+    if (!enabled || !ctx) return;
+    if (paused || muted) { nextNoteT = ctx.currentTime + 0.1; return; }
+    const sc = SCALES[musicMode];
+    if (nextNoteT < ctx.currentTime) nextNoteT = ctx.currentTime + 0.03;
+    while (nextNoteT < ctx.currentTime + 0.3) {
+      const t = nextNoteT;
+      if (noteStep % 8 === 0) note(sc.root - 12 + sc.steps[noteStep % 16 === 0 ? 0 : 3], t, 'sine', sc.beat * 7, 0.5);
+      if (Math.random() < 0.62) { noteDeg = clamp(noteDeg + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)], 0, sc.steps.length - 1); note(sc.root + sc.steps[noteDeg], t, sc.wave, sc.beat * 2.2, 0.45); }
+      nextNoteT += sc.beat; noteStep++;
+    }
+  }
+  function noise(gain, dur, type, freq) {
+    const len = Math.max(1, Math.floor(ctx.sampleRate * dur)); const buf = ctx.createBuffer(1, len, ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = ctx.createBufferSource(); s.buffer = buf; const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; const g = ctx.createGain(); g.gain.value = gain; s.connect(f); f.connect(g); g.connect(master); s.start();
+  }
+  // What an absorbed thing is made of decides the extra layer on top of the size-pitched pop.
+  const MATERIALS = [
+    ['soft', /^(leaf|paper|trash|chick|gumdrop|dinoegg)$/], ['metal', /^(can|mailbox|dumpster|tramp|car|boat|rv|bus|satellite|rocket|station|helmet|knight)$/],
+    ['animal', /^(puppy|sheep|pig|cow|horse|elephant|giraffe)$/], ['dino', /^(babydino|raptor|stego|trex|bronto|dragon)$/],
+    ['candy', /^(lollipop|cupcake|donut|candycane|gingerhouse)$/], ['snow', /^(snowball|penguin|snowman|igloo|icecastle)$/],
+    ['star', /^(g_|u_|sun|dwarfstar)/], ['stone', /^(rock_|comet|pluto|moon|mercury|mars|bigmoon|venus|earth|icemoon|neptune|uranus|gasdwarf|saturn|jupiter|giant|castle)/],
+  ];
+  const materialOf = id => { for (const [m, re] of MATERIALS) if (re.test(id)) return m; return 'wood'; };
+  function layer(material, f, frac) {
+    const g = 0.6 + 0.6 * frac;
+    if (material === 'soft') noise(0.1 * g, 0.09, 'highpass', 2400);
+    else if (material === 'metal') { tone(f * 2.2, 0.12, 'square', 0.05 * g, f * 2.0); tone(f * 3.3, 0.18, 'triangle', 0.05 * g); }
+    else if (material === 'wood') { tone(240, 0.08, 'triangle', 0.1 * g, 170); noise(0.07 * g, 0.06, 'bandpass', 900); }
+    else if (material === 'animal') tone(480, 0.16, 'sine', 0.12 * g, 920);
+    else if (material === 'dino') { tone(150, 0.4, 'sawtooth', 0.06 * g, 62); noise(0.06 * g, 0.3, 'lowpass', 300); }
+    else if (material === 'candy') { tone(1319, 0.18, 'sine', 0.08 * g); setTimeout(() => { try { tone(1760, 0.24, 'sine', 0.07 * g); } catch (e) { /* optional */ } }, 60); }
+    else if (material === 'snow') noise(0.12 * g, 0.14, 'highpass', 3200);
+    else if (material === 'stone') tone(95, 0.3, 'sine', 0.14 * g, 48);
+    else if (material === 'star') { tone(1568, 0.4, 'sine', 0.05 * g); tone(2093, 0.5, 'sine', 0.035 * g); }
+  }
+  function budget() { const t = ctx.currentTime; if (t - sfxWindowT > 0.2) { sfxWindowT = t; sfxCount = 0; } return ++sfxCount <= 10; }
+  function chime() { if (!enabled || !ctx) return; try { [1047, 1319, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.5, 'sine', 0.12), i * 90)); } catch (e) { /* optional */ } }
+  function applyGain() { if (ctx && master) master.gain.setTargetAtTime(paused || muted ? 0 : TUNING.MASTER_GAIN, ctx.currentTime, 0.05); }
+  function setMuted(m) { muted = !!m; applyGain(); }
   function thump(gain, dur, cutoff) {
     const len = Math.floor(ctx.sampleRate * dur); const buf = ctx.createBuffer(1, len, ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
     const s = ctx.createBufferSource(); s.buffer = buf; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; const g = ctx.createGain(); g.gain.value = gain; s.connect(f); f.connect(g); g.connect(master); s.start();
@@ -2062,8 +2258,10 @@ function createAudio() {
     if (!enabled || !ctx) return;
     try {
       if (e.kind === 'absorb') {
+        if (!budget()) return;
         const f = clamp(260 * Math.pow(1 / Math.max(e.size, 0.2), 0.55) * 1.6, 90, 1600);
         tone(f * 1.5, 0.12 + e.frac * 0.25, 'triangle', 0.18 + 0.12 * e.frac, f * 0.8);
+        const o = G.objs[e.id]; if (o) layer(materialOf(o.type.id), f, e.frac);
         if (e.frac > 0.4) thump(0.25 + 0.3 * e.frac, 0.25 + 0.3 * e.frac, 180 - 100 * e.frac);
       } else if (e.kind === 'rattle') { tone(70, 0.22, 'sine', 0.25, 45); thump(0.12, 0.08, 900); }
       else if (e.kind === 'tierup') { [0, 0.09, 0.18, 0.3].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047][i], 0.5, 'triangle', 0.22), d * 1000)); thump(0.4, 0.8, 120); }
@@ -2071,22 +2269,23 @@ function createAudio() {
       else if (e.kind === 'timeup') { tone(900, 0.9, 'sine', 0.12, 120); thump(0.35, 0.9, 200); }
       else if (e.kind === 'win') { [0, 0.15, 0.3, 0.45, 0.6, 0.9, 1.2].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047, 1319, 1568, 2093][i], 1.2, 'triangle', 0.22), d * 1000)); thump(0.5, 2.5, 150); }
       else if (e.kind === 'pull' && e.frac > 0.5) tone(180, 0.3, 'sawtooth', 0.05, 320);
-      else if (e.kind === 'dust') tone(900 + 600 * Math.random(), 0.05, 'sine', 0.05, 1400);
+      else if (e.kind === 'dust') { if (budget()) tone(900 + 600 * Math.random(), 0.05, 'sine', 0.05, 1400); }
       else if (e.kind === 'sway') thump(0.03 + 0.02 * Math.min(1, e.size / G.power), 0.12, 1200);
     } catch (err) { /* audio is optional */ }
-    void G;
   }
   function update(G) {
     if (!enabled || !ctx) return;
     const p01 = clamp(Math.log(G.power / TUNING.START_POWER) / Math.log(28 / TUNING.START_POWER), 0, 1);
     const spd = clamp(G.speed / (TUNING.MAX_SPEED * G.speedScale()), 0, 1);
     windFilter.frequency.value = lerp(TUNING.WIND_CUTOFF_MAX, TUNING.WIND_CUTOFF_MIN, p01) * (1 + spd * 0.6);
-    windGain.gain.value = lerp(TUNING.WIND_GAIN_MIN, TUNING.WIND_GAIN_MAX, p01) * (0.6 + 0.4 * spd) * G.timeScale;
+    form = G.stageDef.form; musicMode = G.stage === 'town' ? 'town' : 'space';
+    windGain.gain.value = lerp(TUNING.WIND_GAIN_MIN, TUNING.WIND_GAIN_MAX, p01) * (0.6 + 0.4 * spd) * G.timeScale * (form === 'blackhole' ? 0.35 : 1);
+    if (humGain) humGain.gain.setTargetAtTime(form === 'blackhole' ? TUNING.HUM_GAIN * (0.7 + 0.3 * spd) : 0, ctx.currentTime, 0.4);
   }
-  function setPaused(paused) {if(ctx&&master)master.gain.setTargetAtTime(paused?0:TUNING.MASTER_GAIN,ctx.currentTime,.05);}
+  function setPaused(p) { paused = !!p; applyGain(); }
   // Last-ten-seconds countdown: a woodblock tick that climbs in pitch toward zero.
   function countTick(n) { if (!enabled || !ctx) return; try { tone(700 + (10 - n) * 60, 0.09, 'square', 0.07, 500 + (10 - n) * 40); } catch (err) { /* optional */ } }
-  return { start, onEvent, update, setPaused, countTick, get enabled() { return enabled; } };
+  return { start, onEvent, update, setPaused, setMuted, countTick, chime, get enabled() { return enabled; }, get muted() { return muted; } };
 }
 
 // =====================================================================================================
@@ -2226,7 +2425,8 @@ function boot() {
   function newGame(seed, opts, stageId) {
     opts = opts || {};
     if (app.R) app.R.reset();
-    app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode);
+    const theme = (stageId || 'town') !== 'town' ? null : opts.theme !== undefined ? opts.theme : themeForLoop(app.loop);
+    app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode, theme);
     if(!app.run||app.G.stage==='town')app.run=createRunStats();
     if(!app.runLevels||app.G.stage==='town')app.runLevels={};
     app.run.stages[app.G.stage]=app.G.massStats;
@@ -2235,6 +2435,7 @@ function boot() {
     document.getElementById('map-caption').classList.add('hidden');document.getElementById('map-note').classList.add('hidden');
     if (!app.R) { app.R = createRenderer(THREE, canvas, { dpr: opts.dpr, antialias: opts.antialias, shadowMap: opts.shadowMap }); }
     app.R.setEnvironment(app.G.stage, app.G.stageDef.env);
+    app.R.setTheme(app.G.theme);
     app.R.buildObjects(app.G.objs, app.G.stageDef.types);
     app.R.setColor(app.colorId);
     const wasTornado = app.R.form === 'tornado';
@@ -2252,15 +2453,17 @@ function boot() {
   // After the goal: the next stage with the same color. The last stage loops back to a fresh town (new seed).
   function nextStage() {
     const G = app.G; if (!G || !G.stageDef.next) return false;
+    if (G.stageDef.last && !app.simMode) { app.loop++; writeStore(LOOP_KEY, String(app.loop)); }
     newGame(G.stageDef.last ? G.seed + 1 : G.seed, {}, G.stageDef.next);
     app.G.emit('stage', { stage: app.G.stage });
     return true;
   }
   app.colorId = 'blue'; app.stageHooks = []; app.finale = null;
   // ---- level timer setting + best times: stored on this device only (never sent anywhere) ----
-  const TIMER_KEY = 'twisty-timer-v1', BEST_KEY = 'twisty-best-v1';
+  const TIMER_KEY = 'twisty-timer-v1', BEST_KEY = 'twisty-best-v1', LOOP_KEY = 'twisty-loop-v1';
   const readStore = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
   const writeStore = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: skip */ } };
+  app.loop = Math.max(0, Math.min(99, parseInt(readStore(LOOP_KEY, '0'), 10) || 0)); // trips through the black hole on this device
   app.timerMode = TUNING.LEVEL_TIMERS[readStore(TIMER_KEY, '')] ? readStore(TIMER_KEY, '') : TUNING.LEVEL_TIMER_DEFAULT;
   function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
   function bestFor(mode, id) { const b = loadBest(); const v = b[mode] && b[mode][id]; return Number.isFinite(v) ? v : null; }
@@ -2271,6 +2474,7 @@ function boot() {
     const newBest = !e.timedOut && (prev === null || t < prev - 1e-6);
     if (newBest) setBest(G.timerMode, G.stage, t);
     app.runLevels[G.stage] = { t, timedOut: !!e.timedOut, limit: G.levelLimit, prev, newBest, mode: G.timerMode };
+    if (newBest && prev !== null) { showToast('★ New best ' + formatDuration(t)); app.audio.chime(); }
   }
   const timerPick = document.getElementById('timer-pick');
   function syncTimerPick() { for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.getAttribute('data-timer') === app.timerMode)); }
@@ -2328,6 +2532,40 @@ function boot() {
     fillLevelTable(app.completedLevels||{});
     results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
   }
+  const worldCard = document.getElementById('world-card'), toastEl = document.getElementById('toast');
+  // ---- sound on/off: a parent control in the corner, remembered on this device ----
+  const MUTE_KEY = 'twisty-mute-v1', muteBtn = document.getElementById('mute');
+  app.muted = readStore(MUTE_KEY, '0') === '1';
+  function syncMute() { muteBtn.setAttribute('aria-pressed', String(app.muted)); muteBtn.setAttribute('aria-label', app.muted ? 'Turn sound on' : 'Turn sound off'); muteBtn.textContent = app.muted ? '🔇' : '🔊'; app.audio.setMuted(app.muted); }
+  muteBtn.addEventListener('click', e => { e.stopPropagation(); app.muted = !app.muted; writeStore(MUTE_KEY, app.muted ? '1' : '0'); syncMute(); });
+  syncMute();
+  // ---- adaptive quality: if frames run long for a while, step the backing resolution down; step back up when there is headroom.
+  // Keeps touch response and motion smooth on an older iPad. ?quality=fixed pins full quality (the graphics gate measures that path).
+  const fixedQuality = /(^|[?&])quality=fixed(&|$)/.test(location.search);
+  const QUALITY = [1, 0.8, 0.66, 0.55]; // fractions of the starting pixel ratio
+  app.quality = { level: 0, ema: 1 / 60, slow: 0, fast: 0, base: 0 };
+  function adaptQuality(dt) {
+    if (fixedQuality || app.simMode || !(dt > 0) || dt > 0.25) return;
+    const q = app.quality; if (!q.base) q.base = app.R.renderer.getPixelRatio();
+    q.ema += (dt - q.ema) * 0.05;
+    if (q.ema > 1 / 40) { q.slow++; q.fast = 0; } else if (q.ema < 1 / 56) { q.fast++; q.slow = 0; } else { q.slow = 0; q.fast = 0; }
+    let to = q.level;
+    if (q.slow > 120 && q.level < QUALITY.length - 1) to = q.level + 1;
+    else if (q.fast > 600 && q.level > 0) to = q.level - 1;
+    if (to === q.level) return;
+    q.level = to; q.slow = 0; q.fast = 0; q.ema = 1 / 60;
+    app.R.renderer.setPixelRatio(q.base * QUALITY[to]); onResize();
+  }
+  function showWorldCard(theme) {
+    const info = themeInfo(theme); if (!info || app.simMode) return;
+    worldCard.querySelector('.icon').textContent = info.icon; worldCard.querySelector('.name').textContent = info.name;
+    worldCard.classList.add('hidden'); void worldCard.offsetWidth; worldCard.classList.remove('hidden');
+    clearTimeout(showWorldCard.t); showWorldCard.t = setTimeout(() => worldCard.classList.add('hidden'), 3300);
+  }
+  function showToast(text) {
+    toastEl.textContent = text; toastEl.classList.add('hidden'); void toastEl.offsetWidth; toastEl.classList.remove('hidden');
+    clearTimeout(showToast.t); showToast.t = setTimeout(() => toastEl.classList.add('hidden'), 2700);
+  }
   const LEVEL_NAMES = [['town', 'Farm city'], ['solar', 'Solar system'], ['galaxy', 'Galaxy'], ['universe', 'Universe']];
   function fillLevelTable(levels) {
     const body = document.getElementById('result-levels-body'); body.textContent = '';
@@ -2340,9 +2578,14 @@ function boot() {
       total += L.t;
       row(name, formatDuration(L.t) + (L.timedOut ? ' ⏱' : ''), fb + (L.newBest ? ' ★' : ''), L.newBest);
     }
+    const stars = document.getElementById('result-stars'); stars.textContent = '';
+    for (const [id, name] of LEVEL_NAMES) { const L = levels[id], on = !!L && !L.timedOut, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
+    { const sm = document.createElement('small'); sm.textContent = 'beat the clock'; stars.appendChild(sm); }
+    const next = themeInfo(app.G.theme); document.getElementById('next-world').textContent = next ? 'Next world: ' + next.icon + ' ' + next.name : '';
     if (complete) { const prev = bestFor(mode, 'run'), nb = prev === null || total < prev - 1e-6; if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), formatDuration(nb ? total : prev) + (nb ? ' ★' : ''), nb); }
   }
   document.getElementById('play-again').addEventListener('click',()=>{
+    setTimeout(() => showWorldCard(app.G.theme), 250);
     if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');app.audio.setPaused(false);lift();app.last=performance.now();app.acc=0;updateRunHud();
   });
@@ -2405,6 +2648,7 @@ function boot() {
     const G = app.G;
     const activeSeconds=Math.max(0,(now-app.last)/1000);
     let elapsed = Math.min(0.1, activeSeconds); app.last = now;
+    adaptQuality(activeSeconds);
     if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();updateRunHud();return;}
     if(!app.finale){advanceRunTime(app.run,G.stage,activeSeconds);if(!app.simMode)window.TwistyMetrics?.tick(activeSeconds,G.stage,G.tier);}
     if(!app.finale){
@@ -2424,9 +2668,10 @@ function boot() {
     try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId || app.G.timerMode !== app.timerMode) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
+    showWorldCard(app.G.theme);
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();
-    app.audio.setPaused(false);
+    app.audio.setPaused(false); app.audio.setMuted(app.muted);
     try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* not fullscreen */ }
     app.running = true; app.last = performance.now(); app.acc = 0;
     cancelAnimationFrame(app.raf); app.raf = requestAnimationFrame(frame);
@@ -2460,7 +2705,7 @@ function boot() {
     const prevTimerMode = app.timerMode; app.timerMode = TUNING.LEVEL_TIMERS[opts.timerMode] ? opts.timerMode : TUNING.LEVEL_TIMER_DEFAULT;
     if (opts.slowBot === true) opts.slowBot = { cycle: 300, duty: 0.35 }; // a child who drags for ~2 s, then stops to look for ~3 s
     if (app.R && app.R.renderer.getPixelRatio() !== Math.min(opts.dpr, TUNING.MAX_DPR)) app.R.renderer.setPixelRatio(Math.min(opts.dpr, TUNING.MAX_DPR));
-    newGame(seed, opts);
+    newGame(seed, Object.assign({}, opts, { theme: opts.theme || null }));
     let G = app.G; const R = app.R;
     const _pv = new THREE.Vector3();
     const view = { get width() { return R.width; }, get height() { return R.height; }, project(x, y, z, out) { const v = _pv.set(x, y, z).project(R.camera); out.ok = v.z < 1 && v.z > -1; out.x = (v.x + 1) / 2 * R.width; out.y = (1 - v.y) / 2 * R.height; return out; } };
@@ -2641,7 +2886,7 @@ function boot() {
   window.__TUNING = TUNING;
 }
 
-return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry, generateWorld, createGame, stepGame, screenToGround, createRunStats, advanceRunTime, summarizeRun, formatDuration, formatPercent, finishAbsorb, checkTierUps, startSuperSize, timeUp };
+return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry, generateWorld, createGame, stepGame, screenToGround, createRunStats, advanceRunTime, summarizeRun, formatDuration, formatPercent, finishAbsorb, checkTierUps, startSuperSize, timeUp, themeForLoop, themeInfo, themeScatter };
 })();
 
 </script>

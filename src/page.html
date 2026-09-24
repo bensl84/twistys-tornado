@@ -1,0 +1,147 @@
+<!doctype html>
+<!--
+TWISTY'S TORNADO — a one-finger 3D tornado game for a young child on an iPad (Safari).
+The game runtime is self-contained in this file: no build step or network request is required to play it.
+The separate manifest, icons, and service worker support web-hosted installation and offline relaunch.
+
+three.js r158 (0.158.0) is inlined at the bottom of this file, byte-identical to the pinned npm/CDN build
+(https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js) minus its one-line deprecation console.warn,
+so the file also runs fully offline. MIT license, Copyright 2010-2023 Three.js Authors.
+
+Self-test harness: window.__sim(seed, seconds, opts) -> Promise<telemetry JSON>. See "SELF-TEST HARNESS" in the script.
+
+================================================================================================
+DESIGN PRINCIPLES (Phase 1 research digest, <= 1 page). Each kept principle maps to a telemetry field.
+================================================================================================
+Sources: Csikszentmihalyi, Flow (challenge/skill balance, clear goals, immediate feedback);
+Rigby & Ryan, Glued to Games / PENS (competence, autonomy, presence); Swink, Game Feel (real-time control
+inside a <100 ms correction cycle, weight from attack/release curves, polish as amplifier of control);
+Jonasson & Purho, "Juice it or lose it" (layer discrete feedback on every action: shake, freeze, particles,
+easing, sound); Katamari Damacy analyses (one verb, continuous scale, the world re-reads itself as you grow,
+camera zoom-out is the story). Explicitly ignored: monetization, retention, variable-ratio rewards, streaks,
+energy, daily returns.
+
+P1  Control is the game (Swink). The tornado responds to the finger on the very next frame, but carries
+    momentum and a turn rate so it has weight.            -> input_latency_frames, fps_p99_frametime_ms
+P2  Challenge tracks skill (Flow). The world always holds something she can eat AND something she cannot yet.
+    Most attempts succeed, not all.                        -> attempt_success_rate_rolling (70-95 %)
+P3  A visible next goal at every moment (Flow: clear proximal goals). At least one too-big object on screen.
+                                                           -> frames_with_visible_too_big_pct
+P4  Competence through growth, not score (PENS). Growth is shown by scale, camera distance, sound and what
+    becomes edible; optional run statistics report time and consumed mass without gating progress.
+                                                           -> tier_ups, obstacle_to_food_conversions
+P5  Recontextualization (Katamari). Things that blocked her become food; the camera pulls back so she sees it.
+                                                           -> obstacle_to_food_conversions, tier_ups
+P6  Feedback density (Juice). No stretch of active play longer than 1 s without a discrete event; big events
+    get bigger feedback (shake by mass, hitstop, FOV punch, slow-mo on a new tier).
+                                                           -> max_feedback_gap_s, max_deadtime_s
+P7  Immediate first success (Flow/PENS). First absorb within seconds of the first touch.
+                                                           -> time_to_first_absorb_s
+P8  Steady rhythm (Flow). Absorb rate stays inside a band for the whole session; no grind, no flood.
+                                                           -> absorbs_per_min_series
+P9  Autonomy (PENS). Open plain, no walls, optional space overview, nothing expires, nothing punishes.
+                                                           -> session_length_to_win_s (bounded by design, not timers)
+P10 Reliability is feel (Swink). Dropped frames and errors are the same as bad control.
+                                                           -> fps_mean, console_errors, nan_count, heap_growth_pct
+Cut (not measurable here): narrative framing, relatedness/social play, music adaptivity beyond pitch/rumble.
+================================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Twister</title>
+<meta name="twisty-build" content="2026-09-24-twister-v16-engineering">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Twister">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="format-detection" content="telephone=no">
+<style>
+<!--#include style.css-->
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
+<section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
+  <div class="card">
+    <h1 id="results-title">What a whirlwind!</h1><p class="subtitle">Your journey from farm city to universe</p>
+    <div id="result-stars" aria-label="Levels finished before the clock"></div>
+    <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
+    <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
+    <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
+    <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
+    <p id="next-world"></p>
+    <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
+    <button id="play-again" type="button">Play again</button>
+  </div>
+</section>
+<button id="space-map" class="hidden" aria-label="Show space overview" aria-pressed="false">◎</button>
+<div id="map-caption" class="hidden"><h1></h1><p></p></div>
+<div id="map-note" class="hidden">An illustrated universe • Sizes, distances and orbits are simplified for play • Tap ◎ to return</div>
+<div id="start" aria-label="Pick a tornado color to start">
+  <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
+  <div class="row">
+    <button type="button" class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="purple" aria-label="Start with a purple tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+    <button type="button" class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
+  </div>
+  <div id="timer-pick" role="group" aria-label="Time for each level">
+    <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
+    <button type="button" data-timer="normal" aria-pressed="true" aria-label="Normal: 90 seconds for the town, 60 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor"/></svg>Normal</button>
+    <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
+  </div>
+</div>
+<button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
+<div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>
+<div id="toast" class="hidden" aria-live="polite"></div>
+<div id="countdown" class="hidden" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#12232dcc" stroke="#ffffff30" stroke-width="8"/><circle id="countdown-ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd447" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><span id="countdown-n">10</span></div>
+<svg id="goal-arrow" class="hidden" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 L56 40 L40 40 L40 58 L24 58 L24 40 L8 40 Z" fill="#ffd447" stroke="#12232d" stroke-width="3" stroke-linejoin="round"/></svg>
+<noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
+<div id="fail" class="hidden" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;"></div>
+<div id="fade" style="position:absolute;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;"></div>
+<div id="rotate" aria-label="Rotate the iPad sideways">
+  <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="30" y="12" width="40" height="76" rx="6" fill="#f2e9d8" stroke="#8a7a60" stroke-width="4"/><circle cx="50" cy="80" r="3" fill="#8a7a60"/></svg>
+</div>
+<script src="metrics-config.js"></script>
+<script src="metrics-client.js"></script>
+<script>
+const TornadoGame = (() => {
+'use strict';
+
+//#include game/00-tuning.js
+//#include game/01-rng.js
+//#include game/02-types.js
+//#include game/03-geometry.js
+//#include game/04-world.js
+//#include game/05-space.js
+//#include game/06-sim.js
+//#include game/07-input.js
+//#include game/08-renderer.js
+//#include game/09-audio.js
+//#include game/10-bot.js
+//#include game/11-app.js
+return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry, generateWorld, createGame, stepGame, screenToGround, createRunStats, advanceRunTime, summarizeRun, formatDuration, formatPercent, finishAbsorb, checkTierUps, startSuperSize, timeUp, themeForLoop, themeInfo, themeScatter };
+})();
+
+</script>
+<script>
+//#include vendor/three.r158.min.js
+</script>
+<script>
+TornadoGame.boot();
+// Offline on the home screen: register the service worker (see sw.js; bump BUILD there on every deploy).
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('./sw.js').catch(function () {});
+  // When a newer worker takes over (a redeploy), reload once so the page matches its cache.
+  var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+}
+</script>
+</body>
+</html>

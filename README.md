@@ -8,7 +8,7 @@ Twisty's Tornado is a one-finger 3D tornado game designed for a young child on a
 
 ## Current state
 
-The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. This v12 source refreshes the town with softer tree, vehicle and roof silhouettes, finer grass and less washed-out distance haze. The reference town scene draws about 2.20 million triangles, down from 2.36 million in v11; the game retains up to 2× display resolution. The v11 space visuals and v10 run statistics remain. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. Local test results alone are not proof of deployment or iPad readiness.
+The canonical game is the root `index.html`. It contains the game code and an inlined copy of three.js r158, so the game itself can open from `file://` without a build step or network connection. That file is built from `src/` (see [Edit and build](#edit-and-build)) and committed, so GitHub Pages serves it as-is. This v12 source refreshes the town with softer tree, vehicle and roof silhouettes, finer grass and less washed-out distance haze. The reference town scene draws about 2.20 million triangles, down from 2.36 million in v11; the game retains up to 2× display resolution. The v11 space visuals and v10 run statistics remain. GitHub Pages serves `main` from the repository root; [Pages deployment history](https://github.com/bensl84/twistys-tornado/deployments) identifies the deployed revision independently of this source document. Local test results alone are not proof of deployment or iPad readiness.
 
 The [graphics exit gate](docs/graphics-exit-gate.md) defines measurable smoothness, frame-rate and regression requirements. Local checks are separate from final visual approval and actual-iPad performance proof.
 
@@ -16,14 +16,14 @@ The space stages now feature eight textured planets on animated solar orbits, Sa
 
 These are science-inspired illustrations, not a scale model or a current-position star chart. Distances, sizes and speeds are compressed; spacecraft and pickup density are fictionalized for the game. See [space graphics and verification](docs/space-visuals.md) for screenshots, references and precise boundaries.
 
-The product name is **Twisty's Tornado**. The current browser and Apple standalone title still use the shorter legacy label **Twister**, while the web-app manifest uses **Twisty** as its short label.
+The product name is **Twisty's Tornado**. The current browser and Apple standalone title still use the shorter legacy label **Twister**, while the web-app manifest (linked from the page, with the 180 px Apple touch icon) uses **Twisty** as its short label.
 
 Current limitations are recorded rather than hidden:
 
 - A fresh five-seed deterministic logic run passes every acceptance gate, but there is no current physical-iPad performance receipt.
-- The root page registers the service worker when served over HTTP(S), but it does not currently link `manifest.webmanifest` or an Apple touch icon. Offline caching after a web visit is implemented; full home-screen install metadata is not verified.
+- The root page registers the service worker when served over HTTP(S) and links `manifest.webmanifest` and `icon-180.png` as the Apple touch icon. Adding to the Home Screen on the real iPad is not yet verified.
 - `test/` is a preserved legacy v3 preview from before the current 3D rebuild. It is not a test suite, release candidate, or source of truth.
-- Most gameplay and pacing values are in the `TUNING` block near the top of `index.html`; renderer geometry and presentation constants also exist elsewhere in that file.
+- Most gameplay and pacing values are in the `TUNING` block in `src/game/00-tuning.js`; renderer geometry and presentation constants also exist in the other `src/game/` files.
 
 See [the last full audit (v10)](docs/audit.md) for category ratings, evidence, risks, and the documentation ownership map.
 
@@ -64,10 +64,14 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 
 ## Repository map
 
-- `index.html` — canonical game, renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness.
+- `index.html` — the built, deployed game: renderer, touch controls, sound, stage logic, inlined three.js, and the `window.__sim` test harness. Do not edit it by hand; edit `src/` and rebuild.
+- `src/page.html` — page shell (head, markup, script wrappers) with `#include` lines; `src/style.css`; `src/game/00-tuning.js` … `11-app.js` — the game in load order, sharing one scope; `src/vendor/three.r158.min.js` — three.js.
+- `scripts/build.mjs` — rebuilds `index.html` from `src/`; `--check` fails if they differ.
+- `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
+- `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-17-twister-v13-metrics-local`.
-- `manifest.webmanifest` and `icon-*.png` — install metadata and icons; present but not currently referenced from `index.html`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-24-twister-v16-engineering`.
+- `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).
 - `docs/space-visuals.md` — space-graphics behavior, screenshots, scientific boundaries and local verification.
@@ -76,6 +80,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `scripts/run-stats.test.mjs` — mass denominators, exactly-once absorption, phase totals, reset and formatting tests.
 - `scripts/level-timer.test.mjs` — level-clock presets, super size at 10 s left, the goal fly-in at 0 and the clock stopping at the win.
 - `scripts/worlds.test.mjs` — trip order, themed generation, a finite mesh for every themed thing, and tiers that match sizes.
+- `scripts/context-loss.test.mjs` — real-browser check that a lost WebGL context freezes the game and level clock and a restored one draws again.
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
 - `test/` — historical v3 preview retained for reference only.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.
@@ -116,6 +121,17 @@ node scripts/graphics-gate.mjs --seconds 5
 
 The local collector stores validated milestone records for 14 days and daily totals for 90 days. It accepts only the configured game origin, has a server-side collection stop control, and never places a database/admin secret in the public game. A live rollout additionally needs an exact hosting owner, logging and backup retention review, cost controls, privacy notice/collection basis, administrator access, and a target-iPad read-back before enabling real child play data. Do not reuse a shared project whose ownership or existing data is unclear. These implementation notes do not establish legal compliance or production readiness.
 
+## Edit and build
+
+Edit files under `src/`, then rebuild and commit both `src/` and `index.html`:
+
+```sh
+npm run build    # node scripts/build.mjs
+npm run check    # fails if index.html is not exactly the src/ build
+```
+
+The build only concatenates files, so the output is byte-for-byte what the sources say; there is no minifier or bundler. CI rejects a pull request whose `index.html` was edited directly or not rebuilt. The build identifier lives in two places: the `twisty-build` meta tag in `src/page.html` and `BUILD` in `sw.js`.
+
 ## Run locally
 
 For the game alone, open `index.html` directly in a WebGL-capable browser.
@@ -136,7 +152,13 @@ Run the focused geometry and orbital regression tests with Node.js alone:
 node --test scripts/*.test.mjs
 ```
 
-The runner requires Node.js plus Playwright with Chromium. This repository does not currently pin that dependency. Install Playwright locally or globally, or point `PLAYWRIGHT_PATH` at an existing installation.
+The runner requires Node.js 22.5+ plus Playwright with Chromium. `npm ci` installs the pinned Playwright; `npx playwright install chromium` fetches its browser. An existing installation also works through `PLAYWRIGHT_PATH` (and `BROWSER_EXECUTABLE` for a specific Chromium).
+
+```sh
+npm ci && npx playwright install chromium
+npm test               # unit tests
+npm run test:browser   # WebGL context loss and restore
+```
 
 ```sh
 node sim.mjs --seeds 1-5 --render 0 --gates

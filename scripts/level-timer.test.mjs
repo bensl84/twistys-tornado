@@ -54,3 +54,14 @@ test('super size never shrinks a player who is already bigger, and the goal pull
   game.timeUp(G);const s=G.goalRef.state;game.timeUp(G);assert.equal(G.goalRef.state,s);
   assert.equal(G.absorbing.filter(o=>o===G.goalRef).length,1);
 });
+
+test('the goal bobs at its normal highlight size through the whole countdown (never an unbounded scale)',()=>{
+  const G=game.createGame(3,'town',null,'quick');
+  run(G,G.levelLimit-T.SUPER_SIZE_AT_S+0.1);
+  assert.equal(G.superSized,true);assert.ok(G.highlighted.includes(G.goalRef));
+  for(let s=0;s<T.SUPER_SIZE_AT_S-0.5;s+=0.5){
+    run(G,0.5);
+    if(G.goalRef.state!==0)break;
+    assert.ok(G.goalRef.highlightT>0&&G.goalRef.highlightT<=T.HIGHLIGHT_S,`highlightT ${G.goalRef.highlightT} at ${G.levelT.toFixed(1)} s`);
+  }
+});

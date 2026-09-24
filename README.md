@@ -29,7 +29,21 @@ See [the last full audit (v10)](docs/audit.md) for category ratings, evidence, r
 
 ## Timer and end-of-run results
 
-A small live display shows time in the current form, total run time and consumed mass percentage. It counts foreground playing time, including slow-motion/hitstop and the short playable stage-win celebration, but excludes the color picker, space overview, background/context-loss time, world rebuilding, finale animation and results screen. It is a stopwatch, not a countdown or win condition.
+A small live display shows time in the current form, total run time and consumed mass percentage. It counts foreground playing time, including slow-motion/hitstop and the short playable stage-win celebration, but excludes the color picker, space overview, background/context-loss time, world rebuilding, finale animation and results screen. It is a stopwatch for the whole run; the separate level clock below is the only countdown.
+
+### Level clock
+
+Each level has a maximum time so nobody gets bored. The start screen has three settings, remembered on the device:
+
+| Setting | Town | Each space level |
+|---|---|---|
+| Quick | 45 s | 30 s |
+| Normal (default) | 90 s | 60 s |
+| 5 min | 5:00 | 5:00 |
+
+The clock only ever helps. At 10 seconds left the player grows to the level's biggest size over one second, everything becomes edible, a big countdown ring appears, and an arrow points to the goal. At 0 the goal flies in and the level ends as a normal win. The level clock counts simulation ticks, so it pauses with the space overview, background time and results, and stops at the win. Tapping a setting never starts the game; only a color disc does.
+
+Best times are kept per setting and per level in this browser's local storage (`twisty-best-v1`), never sent anywhere. A level only sets a best time when it was finished before its clock ran out. The results card shows each level's time (⏱ when the clock finished it) and marks new bests with ★.
 
 After the universe finale, the summary stays open with three rows: **Tornado**, **Black hole**, and **Total**. Each shows time and consumption. **Play again** resumes a fresh town with the same color and zeroed statistics; reloading also starts fresh. Results are not saved between page visits.
 
@@ -51,6 +65,7 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 - `scripts/space.test.mjs` — dependency-free regression tests for planet order, orbital motion, moving-body pickup lookup and stage isolation.
 - `scripts/graphics.test.mjs` — dependency-free mesh-normal, rounded-edge and resolution regression tests.
 - `scripts/run-stats.test.mjs` — mass denominators, exactly-once absorption, phase totals, reset and formatting tests.
+- `scripts/level-timer.test.mjs` — level-clock presets, super size at 10 s left, the goal fly-in at 0 and the clock stopping at the win.
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
 - `test/` — historical v3 preview retained for reference only.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.

@@ -22,7 +22,6 @@ Current limitations are recorded rather than hidden:
 
 - A fresh five-seed deterministic logic run passes every acceptance gate, but there is no current physical-iPad performance receipt.
 - The root page registers the service worker when served over HTTP(S) and links `manifest.webmanifest` and `icon-180.png` as the Apple touch icon. Adding to the Home Screen on the real iPad is not yet verified.
-- `test/` is a preserved legacy v3 preview from before the current 3D rebuild. It is not a test suite, release candidate, or source of truth.
 - Most gameplay and pacing values are in the `TUNING` block in `src/game/00-tuning.js`; renderer geometry and presentation constants also exist in the other `src/game/` files.
 
 See [the last full audit (v10)](docs/audit.md) for category ratings, evidence, risks, and the documentation ownership map.
@@ -82,7 +81,6 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `scripts/worlds.test.mjs` — trip order, themed generation, a finite mesh for every themed thing, and tiers that match sizes.
 - `scripts/context-loss.test.mjs` — real-browser check that a lost WebGL context freezes the game and level clock and a restored one draws again.
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
-- `test/` — historical v3 preview retained for reference only.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.
 - `metrics-client.js` and `metrics-config.js` — optional first-party web play milestones. The published-site endpoint is empty, so this branch does not send public play data.
 - `metrics/` — local SQL collector, private dashboard, synthetic demo generator and integration checks. The server deliberately binds only to loopback and has no production deployment adapter yet.

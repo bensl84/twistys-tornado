@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Headless self-test runner for index.html.
 // Usage: node sim.mjs [--seeds 1-5] [--seconds 600] [--render 0|1] [--dpr 1.5] [--gates] [--json out.json] [--shot dir]
-//                     [--timer quick|normal|adult] [--slow]
+//                     [--timer quick|normal|adult] [--slow] [--theme animals|dinos|candy|snow|castle|all]
 // --timer picks the level-clock setting (default normal). --slow drives a slow child: the bot drags ~2 s, then stops ~3 s.
 // With --timer other than normal, or --slow, only the timer and safety gates apply (pacing gates assume the normal bot).
 // The gate table is always printed; with --gates the process exits 1 when any gate fails (for CI), otherwise it exits 0.
@@ -35,7 +35,8 @@ const width = Number(opt('width', 1180)), height = Number(opt('height', 820));
 const jsonOut = opt('json', null);
 const timerMode = opt('timer', 'normal');
 const slowBot = has('slow');
-const timerProfile = timerMode !== 'normal' || slowBot;
+const theme = opt('theme', null);
+const timerProfile = timerMode !== 'normal' || slowBot || !!theme; // themed towns are denser, so town pacing gates do not apply
 const shotDir = opt('shot', null);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const htmlPath = path.resolve(opt('file', path.join(here, 'index.html')));
@@ -90,7 +91,7 @@ for (const seed of seeds) {
   const t0 = Date.now();
   await page.goto('file://' + htmlPath);
   await page.waitForFunction(() => typeof window.__sim === 'function');
-  const res = await page.evaluate(([seed, seconds, render, dpr, timerMode, slowBot]) => window.__sim(seed, seconds, { render, dpr, timerMode, slowBot }), [seed, seconds, render, dpr, timerMode, slowBot]);
+  const res = await page.evaluate(([seed, seconds, render, dpr, timerMode, slowBot, theme]) => window.__sim(seed, seconds, { render, dpr, timerMode, slowBot, theme }), [seed, seconds, render, dpr, timerMode, slowBot, theme]);
   res.wall_s = +((Date.now() - t0) / 1000).toFixed(1);
   res.page_errors = pageErrors;
   res.console_errors = Math.max(res.console_errors, pageErrors.length);

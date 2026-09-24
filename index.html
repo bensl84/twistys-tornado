@@ -50,7 +50,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <head>
 <meta charset="utf-8">
 <title>Twister</title>
-<meta name="twisty-build" content="2026-09-17-twister-v13-metrics-local">
+<meta name="twisty-build" content="2026-09-24-twister-v14-level-timer">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -62,6 +62,26 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   body { position:fixed; inset:0; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
   canvas#c { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
   #start { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(20,30,40,0.35); touch-action:none; }
+  #start { flex-direction:column; gap:5vmin; }
+  #timer-pick { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; touch-action:manipulation; }
+  #timer-pick button { display:flex; align-items:center; gap:8px; min-height:48px; padding:8px 16px; border-radius:24px; border:2px solid #ffffff70; background:#12232dd9; color:#fff5e3; font:600 16px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
+  #timer-pick button[aria-pressed="true"] { background:#fff3d6; color:#12232d; border-color:#fff3d6; box-shadow:0 6px 20px #0005; }
+  #timer-pick button:focus-visible { outline:3px solid #ffd447; outline-offset:3px; }
+  #timer-pick .clock { width:22px; height:22px; flex:none; }
+  #timer-pick small { font-weight:500; opacity:.75; font-size:12px; }
+  #countdown { position:absolute; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:7; width:96px; height:96px; pointer-events:none; }
+  #countdown svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+  #countdown span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font:800 44px -apple-system,"Helvetica Neue",Arial,sans-serif; text-shadow:0 3px 12px #000a; font-variant-numeric:tabular-nums; }
+  #countdown.beat span { animation:beat .5s ease-out; }
+  @keyframes beat { 0% { transform:scale(1.35); } 100% { transform:scale(1); } }
+  #goal-arrow { position:absolute; left:0; top:0; z-index:7; width:64px; height:64px; margin:-32px 0 0 -32px; pointer-events:none; filter:drop-shadow(0 3px 8px #000a); }
+  #hud-clock.low { color:#ffd447; }
+  #result-levels { margin:6px 0 4px; border-top:1px solid #ffffff22; padding-top:12px; }
+  #result-levels h2 { margin:0 0 8px; font-size:15px; color:#c0d3d9; font-weight:600; }
+  #result-levels table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:15px; }
+  #result-levels td, #result-levels th { padding:5px 0; text-align:left; } #result-levels th { color:#b7cdd6; font-weight:500; font-size:12px; }
+  #result-levels td:nth-child(n+2), #result-levels th:nth-child(n+2) { text-align:right; }
+  #result-levels .star { color:#ffd447; font-weight:700; }
   #start .row { display:flex; flex-wrap:wrap; gap:4vmin; justify-content:center; align-items:center; max-width:92vw; }
   #start .disc { width:22vmin; height:22vmin; max-width:170px; max-height:170px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
   #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
@@ -98,13 +118,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div></div>
+<div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
 <section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
   <div class="card">
     <h1 id="results-title">What a whirlwind!</h1><p class="subtitle">Your journey from farm city to universe</p>
     <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
     <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
     <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
+    <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
     <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
     <button id="play-again" type="button">Play again</button>
   </div>
@@ -121,7 +142,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <div class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
     <div class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></div>
   </div>
+  <div id="timer-pick" role="group" aria-label="Time for each level">
+    <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
+    <button type="button" data-timer="normal" aria-pressed="true" aria-label="Normal: 90 seconds for the town, 60 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor"/></svg>Normal</button>
+    <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
+  </div>
 </div>
+<div id="countdown" class="hidden" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#12232dcc" stroke="#ffffff30" stroke-width="8"/><circle id="countdown-ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd447" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><span id="countdown-n">10</span></div>
+<svg id="goal-arrow" class="hidden" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 L56 40 L40 40 L40 58 L24 58 L24 40 L8 40 Z" fill="#ffd447" stroke="#12232d" stroke-width="3" stroke-linejoin="round"/></svg>
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
 <div id="fail" class="hidden" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;"></div>
 <div id="fade" style="position:absolute;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;"></div>
@@ -176,6 +204,14 @@ const TUNING = {
   FINALE_ZOOM_S: 3.2,        // Seconds the camera takes to fall into the core.
   FINALE_DARK_S: 0.7,        // Seconds of black.
   FINALE_FLASH_S: 1.6,       // Seconds for the white of the new universe to clear.
+  // ---- Level clock (Ben, 2026-09-24): a max time per level so nobody gets bored. It only ever helps: at
+  // SUPER_SIZE_AT_S seconds left the player grows to the level's biggest size, and at 0 the goal flies in.
+  // Seconds per level for each start-screen setting. 'space' covers solar, galaxy and universe.
+  LEVEL_TIMERS: { quick: { town: 45, space: 30 }, normal: { town: 90, space: 60 }, adult: { town: 300, space: 300 } },
+  LEVEL_TIMER_DEFAULT: 'normal',
+  SUPER_SIZE_AT_S: 10,       // Seconds left on the level clock when the player becomes the biggest size.
+  SUPER_GROW_S: 1.0,         // Seconds the super-size grow takes (log-space ease, so it reads as one big whoosh).
+  TIMEOUT_PULL_S: 1.8,       // Seconds the goal takes to fly in when the clock reaches 0.
   SPIN: 2.6,                 // Playtest 1: 'twirl really fast'. Multiplies funnel twist and debris orbit speed.
   COLORS: { blue: 0x3a86ff, teal: 0x2ec4b6, purple: 0x8b5cf6, pink: 0xff5fa2, red: 0xe63946 }, // Start discs.
   COLOR_MIX: 0.6,            // How strongly the chosen color tints the dust funnel (0 = plain dust).
@@ -914,7 +950,7 @@ function formatDuration(seconds) {
   return h?`${h}:${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${m}:${String(s%60).padStart(2,'0')}`;
 }
 function formatPercent(value) { const p=clamp(value,0,100);return p>0&&p<.1?'<0.1%':`${(Math.floor(p*10+1e-9)/10).toFixed(1)}%`; }
-function createGame(seed, stageId, colorId) {
+function createGame(seed, stageId, colorId, timerMode) {
   stageId = stageId || 'town';
   const ST = STAGES[stageId];
   const sp = ST.startPos();
@@ -930,6 +966,8 @@ function createGame(seed, stageId, colorId) {
     camDist: 0, camDistTarget: 0, camPitch: TUNING.CAM_PITCH, focus: { x: 0, z: 0 }, camPos: { x: 0, y: 0, z: 0 },
     events: [],                                // {t, kind, size, tier, id}
     absorbCount: 0, tierUps: 0, won: false, winT: null, firstAbsorbOfTier: {},
+    timerMode: TUNING.LEVEL_TIMERS[timerMode] ? timerMode : TUNING.LEVEL_TIMER_DEFAULT, levelT: 0, levelLimit: 0, levelWinT: null, // level clock: ticks * DT, stops at the win
+    superSized: false, superT: 0, superFrom: 0, superTo: 0, timedOut: false,
     distSinceDust: 0, timeSinceDust: 0, lastResponseTick: -1, lastInputTick: -1, stuckT: 0, squeeze: 0, lastBlockT: -99, bestDF: Infinity, prevX: sp[0], prevZ: sp[1],
     grid: null, absorbing: [], rattleQueue: [],
     listeners: [],
@@ -937,6 +975,7 @@ function createGame(seed, stageId, colorId) {
   G.massStats={totalMass:G.objs.reduce((sum,o)=>sum+objectMass(o),0),consumedMass:0};
   G.camDist = G.camDistTarget = TUNING.CAM_DIST0 + G.power * TUNING.CAM_DIST_K;
   G.goalId = ST.goal; G.goalRef = G.objs.find(o => o.type.id === ST.goal) || null; G.goalSize = ST.byId[ST.goal].size;
+  { const tm = TUNING.LEVEL_TIMERS[G.timerMode]; G.levelLimit = stageId === 'town' ? tm.town : tm.space; }
   G.focus.x = G.pos.x; G.focus.z = G.pos.z;
   // spatial hash for neighbor queries
   const CELL = 12;
@@ -982,6 +1021,19 @@ function updateOrbits(G, dt) {
 function stepGame(G) {
   G.tick++;
   const T = TUNING;
+  // ---- level clock: real ticks (it pauses whenever the simulation does), stops at the win ----
+  if (!G.won) {
+    G.levelT += DT;
+    const left = G.levelLimit - G.levelT;
+    if (!G.superSized && left <= T.SUPER_SIZE_AT_S) startSuperSize(G);
+    if (!G.timedOut && left <= 0) timeUp(G);
+  }
+  if (G.superT > 0) {
+    G.superT = Math.max(0, G.superT - DT);
+    const k = easeOut(1 - G.superT / T.SUPER_GROW_S);
+    G.power = Math.max(G.power, Math.exp(lerp(Math.log(G.superFrom), Math.log(G.superTo), k)));
+    checkTierUps(G);
+  }
   // ---- time scale (slow-mo) and hitstop ----
   if (G.slowmo > 0) { G.slowmo -= DT; G.timeScale = G.slowmo > 0 ? lerp(T.SLOWMO_SCALE, 1, easeIn(clamp(1 - G.slowmo / T.SLOWMO_S, 0, 1))) : 1; } else { G.slowmo = 0; G.timeScale = 1; }
   // decay-only effects run on real ticks
@@ -1124,8 +1176,13 @@ function finishAbsorb(G, o) {
   let firstOfTier = false;
   if (!G.firstAbsorbOfTier[tierOfObj]) { G.firstAbsorbOfTier[tierOfObj] = true; firstOfTier = true; if (tierOfObj > 1) G.slowmo = T.SLOWMO_S; }
   G.emit('absorb', { size: o.size, tier: tierOfObj, id: o.id, frac, conversion, firstOfTier, x: o.x, z: o.z });
-  // tier-up check
-  const th = G.stageDef.thresholds();
+  checkTierUps(G);
+  if (o.type.id === G.goalId && !G.won) { G.won = true; G.winT = G.time; G.levelWinT = G.levelT; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time, stage: G.stage, final: !!G.stageDef.last, levelT: G.levelT, timedOut: G.timedOut }); }
+  void prevPower;
+}
+
+function checkTierUps(G) {
+  const T = TUNING, th = G.stageDef.thresholds();
   while (G.tier - 1 < th.length && G.power >= th[G.tier - 1]) {
     G.tier++; G.tierUps++; G.fovPunch = T.FOV_PUNCH;
     // highlight the nearest few newly-edible objects so she sees what just opened up
@@ -1136,8 +1193,31 @@ function finishAbsorb(G, o) {
     for (let i = 0; i < Math.min(3, cands.length); i++) { cands[i].highlightT = T.HIGHLIGHT_S; G.highlighted.push(cands[i]); }
     G.emit('tierup', { tier: G.tier, power: G.power });
   }
-  if (o.type.id === G.goalId && !G.won) { G.won = true; G.winT = G.time; G.slowmo = T.SLOWMO_S * 2; G.emit('win', { t: G.time, stage: G.stage, final: !!G.stageDef.last }); }
-  void prevPower;
+}
+
+// Level clock at SUPER_SIZE_AT_S seconds left: grow to the level's biggest size so the last seconds are a feast.
+function startSuperSize(G) {
+  const T = TUNING;
+  G.superSized = true;
+  G.superFrom = Math.max(G.power, 1e-3); G.superTo = Math.max(G.power, G.goalSize * 1.05);
+  G.superT = G.superTo > G.superFrom ? T.SUPER_GROW_S : 0;
+  G.fovPunch = T.FOV_PUNCH * 1.6; G.slowmo = Math.max(G.slowmo, T.SLOWMO_S);
+  const g = G.goalRef;
+  if (g && g.state === 0) { g.highlightT = 1e9; G.highlighted = G.highlighted || []; if (!G.highlighted.includes(g)) G.highlighted.push(g); }
+  G.emit('supersize', { left: G.levelLimit - G.levelT, power: G.superTo });
+}
+
+// Level clock at 0: the goal flies in from wherever it is. The level always ends; nobody is left stuck.
+function timeUp(G) {
+  const T = TUNING;
+  G.timedOut = true;
+  G.emit('timeup', {});
+  const g = G.goalRef;
+  if (!g) { G.won = true; G.winT = G.time; G.levelWinT = G.levelT; G.emit('win', { t: G.time, stage: G.stage, final: !!G.stageDef.last, levelT: G.levelT, timedOut: true }); return; }
+  if (g.state !== 0) return; // already on its way in
+  G.power = Math.max(G.power, G.goalSize * 1.05); G.superT = 0; checkTierUps(G);
+  beginAbsorb(G, g, Math.hypot(g.x - G.pos.x, g.z - G.pos.z));
+  g.absorbDur = T.TIMEOUT_PULL_S;
 }
 
 // Camera follows on the logic side so telemetry (visibility) matches what is rendered.
@@ -1902,6 +1982,12 @@ function createRenderer(THREE, canvas, opts) {
       emitParticles(30, G.pos.x, 0.3, G.pos.z, 3 + fr * 2, 2 + fr, 0.1 + fr * 0.1, [0x8a7a62, 0xb0a48c], false, 0.8);
     } else if (e.kind === 'tierup') {
       emitParticles(140, G.pos.x, 0.3, G.pos.z, 6 + fr * 4, 3 + fr * 2, 0.12 + fr * 0.12, [0xffd447, 0xffffff, 0xff7a3a, 0x7ad0ff, 0x9dff7a], false, 1.6);
+    } else if (e.kind === 'supersize') {
+      // super size: a ring burst in her color plus gold, sized to the new (biggest) scale
+      const big = Math.max(fr, e.power * TUNING.FUNNEL_RADIUS);
+      emitParticles(260, G.pos.x, 0.5, G.pos.z, 8 + big * 4, 4 + big * 2, 0.15 + big * 0.1, [TUNING.COLORS[G.colorId] || 0xffffff, 0xffd447, 0xffffff, 0xff7a3a], false, 2.0);
+    } else if (e.kind === 'timeup') {
+      emitParticles(180, G.pos.x, fr, G.pos.z, 6 + fr * 5, 5 + fr * 2, 0.14 + fr * 0.1, [0xffffff, 0xffd447, TUNING.COLORS[G.colorId] || 0xffffff], G.stageDef.form === 'blackhole', 1.6);
     } else if (e.kind === 'win') {
       emitParticles(600, G.pos.x, fr * 4, G.pos.z, 30 + fr * 6, 12 + fr * 3, 0.25 + fr * 0.035, [0xff4b6e, 0xffd447, 0x47d1ff, 0x9dff7a, 0xffffff, 0xff8a3a], false, 5);
       funnelUniforms.uColor.value.setHex(0xffd27a); coreMat.uniforms.uColor.value.setHex(0xe0a040);
@@ -1981,6 +2067,8 @@ function createAudio() {
         if (e.frac > 0.4) thump(0.25 + 0.3 * e.frac, 0.25 + 0.3 * e.frac, 180 - 100 * e.frac);
       } else if (e.kind === 'rattle') { tone(70, 0.22, 'sine', 0.25, 45); thump(0.12, 0.08, 900); }
       else if (e.kind === 'tierup') { [0, 0.09, 0.18, 0.3].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047][i], 0.5, 'triangle', 0.22), d * 1000)); thump(0.4, 0.8, 120); }
+      else if (e.kind === 'supersize') { tone(160, 1.1, 'sawtooth', 0.08, 1300); [0, 0.12, 0.24, 0.36, 0.5].forEach((d, i) => setTimeout(() => tone([392, 523, 659, 784, 1047][i], 0.7, 'triangle', 0.2), 300 + d * 1000)); thump(0.45, 1.0, 140); }
+      else if (e.kind === 'timeup') { tone(900, 0.9, 'sine', 0.12, 120); thump(0.35, 0.9, 200); }
       else if (e.kind === 'win') { [0, 0.15, 0.3, 0.45, 0.6, 0.9, 1.2].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047, 1319, 1568, 2093][i], 1.2, 'triangle', 0.22), d * 1000)); thump(0.5, 2.5, 150); }
       else if (e.kind === 'pull' && e.frac > 0.5) tone(180, 0.3, 'sawtooth', 0.05, 320);
       else if (e.kind === 'dust') tone(900 + 600 * Math.random(), 0.05, 'sine', 0.05, 1400);
@@ -1996,7 +2084,9 @@ function createAudio() {
     windGain.gain.value = lerp(TUNING.WIND_GAIN_MIN, TUNING.WIND_GAIN_MAX, p01) * (0.6 + 0.4 * spd) * G.timeScale;
   }
   function setPaused(paused) {if(ctx&&master)master.gain.setTargetAtTime(paused?0:TUNING.MASTER_GAIN,ctx.currentTime,.05);}
-  return { start, onEvent, update, setPaused, get enabled() { return enabled; } };
+  // Last-ten-seconds countdown: a woodblock tick that climbs in pitch toward zero.
+  function countTick(n) { if (!enabled || !ctx) return; try { tone(700 + (10 - n) * 60, 0.09, 'square', 0.07, 500 + (10 - n) * 40); } catch (err) { /* optional */ } }
+  return { start, onEvent, update, setPaused, countTick, get enabled() { return enabled; } };
 }
 
 // =====================================================================================================
@@ -2136,8 +2226,9 @@ function boot() {
   function newGame(seed, opts, stageId) {
     opts = opts || {};
     if (app.R) app.R.reset();
-    app.G = createGame(seed, stageId || 'town', app.colorId);
+    app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode);
     if(!app.run||app.G.stage==='town')app.run=createRunStats();
+    if(!app.runLevels||app.G.stage==='town')app.runLevels={};
     app.run.stages[app.G.stage]=app.G.massStats;
     const mapButton=document.getElementById('space-map');
     mapButton.classList.toggle('hidden',app.G.stage==='town');mapButton.setAttribute('aria-pressed','false');mapButton.setAttribute('aria-label','Show space overview');
@@ -2151,6 +2242,7 @@ function boot() {
     if (wasTornado && app.G.stageDef.form === 'blackhole') app.G.slowmo = TUNING.SLOWMO_S * 1.5; // the collapse into a black hole gets a beat
     app.G.listeners.push(e => app.R.onEvent(e, app.G));
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
+    app.G.listeners.push(e => { if (e.kind === 'win' && !app.simMode) recordLevel(app.G, e); });
     app.G.listeners.push(e => { if (!app.simMode && !(app.finale && app.finale.reborn)) window.TwistyMetrics?.gameEvent(e,app.G); });
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
@@ -2165,6 +2257,25 @@ function boot() {
     return true;
   }
   app.colorId = 'blue'; app.stageHooks = []; app.finale = null;
+  // ---- level timer setting + best times: stored on this device only (never sent anywhere) ----
+  const TIMER_KEY = 'twisty-timer-v1', BEST_KEY = 'twisty-best-v1';
+  const readStore = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
+  const writeStore = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: skip */ } };
+  app.timerMode = TUNING.LEVEL_TIMERS[readStore(TIMER_KEY, '')] ? readStore(TIMER_KEY, '') : TUNING.LEVEL_TIMER_DEFAULT;
+  function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
+  function bestFor(mode, id) { const b = loadBest(); const v = b[mode] && b[mode][id]; return Number.isFinite(v) ? v : null; }
+  function setBest(mode, id, t) { const b = loadBest(); b[mode] = b[mode] || {}; b[mode][id] = t; writeStore(BEST_KEY, JSON.stringify(b)); }
+  // A level only sets a best time when it was finished before the clock ran out.
+  function recordLevel(G, e) {
+    const t = Number.isFinite(e.levelT) ? e.levelT : G.levelT, prev = bestFor(G.timerMode, G.stage);
+    const newBest = !e.timedOut && (prev === null || t < prev - 1e-6);
+    if (newBest) setBest(G.timerMode, G.stage, t);
+    app.runLevels[G.stage] = { t, timedOut: !!e.timedOut, limit: G.levelLimit, prev, newBest, mode: G.timerMode };
+  }
+  const timerPick = document.getElementById('timer-pick');
+  function syncTimerPick() { for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.getAttribute('data-timer') === app.timerMode)); }
+  timerPick.addEventListener('click', e => { const b = e.target.closest('[data-timer]'); if (!b || app.simMode) return; app.timerMode = b.getAttribute('data-timer'); writeStore(TIMER_KEY, app.timerMode); syncTimerPick(); });
+  syncTimerPick();
   app.resultsOpen=false;app.completedRun=null;
   const hud=document.getElementById('run-hud'),results=document.getElementById('results');
   function readout(id,value) {const el=document.getElementById(id);if(el.textContent!==value)el.textContent=value;}
@@ -2175,12 +2286,61 @@ function boot() {
     readout('hud-time',formatDuration(town?s.tornadoSeconds:s.blackholeSeconds));
     readout('hud-total',formatDuration(s.totalSeconds));
     readout('hud-mass',(town?'Farm city consumed: ':'Game universe consumed: ')+formatPercent(town?s.tornadoPercent:s.blackholePercent));
+    updateLevelClock();
+  }
+  const countdownEl = document.getElementById('countdown'), ringEl = document.getElementById('countdown-ring'), arrowEl = document.getElementById('goal-arrow'), hudClock = document.getElementById('hud-clock');
+  const RING = 276.46, _gv = new THREE.Vector3(); app.lastCount = null;
+  const TIMER_NAMES = { quick: 'Quick', normal: 'Normal', adult: '5 min' };
+  function updateLevelClock() {
+    const G = app.G, T = TUNING, left = Math.max(0, G.levelLimit - G.levelT);
+    const live = app.running && !app.resultsOpen && !app.finale && !G.overview;
+    readout('hud-left', G.won ? 'done' : formatDuration(Math.ceil(left - 1e-9)));
+    const best = bestFor(G.timerMode, G.stage); readout('hud-best', best === null ? '–' : formatDuration(best));
+    hudClock.classList.toggle('low', !G.won && left <= T.SUPER_SIZE_AT_S);
+    const showCd = live && !G.won && left <= T.SUPER_SIZE_AT_S;
+    countdownEl.classList.toggle('hidden', !showCd);
+    if (showCd) {
+      const n = Math.ceil(left - 1e-9);
+      if (n !== app.lastCount) { app.lastCount = n; readout('countdown-n', String(n)); countdownEl.classList.remove('beat'); void countdownEl.offsetWidth; countdownEl.classList.add('beat'); if (n > 0) app.audio.countTick(n); }
+      ringEl.setAttribute('stroke-dashoffset', String(RING * (1 - left / T.SUPER_SIZE_AT_S)));
+    } else app.lastCount = null;
+    // goal arrow: once super-sized, point at the goal (bob above it on screen, or ride the screen edge toward it)
+    const g = G.goalRef, showArrow = live && G.superSized && !G.won && g && g.state === 0;
+    arrowEl.classList.toggle('hidden', !showArrow);
+    if (!showArrow) return;
+    // Keep clear of the countdown ring (top centre) and the HUD: the arrow's box is inset from every edge, deepest at the top.
+    const W = app.R.width, H = app.R.height, m = 56, top = 150;
+    _gv.set(g.x, g.size * 0.6, g.z).project(app.R.camera);
+    let x = (_gv.x + 1) / 2 * W, y = (1 - _gv.y) / 2 * H; const behind = _gv.z > 1; if (behind) { x = W - x; y = H - y; }
+    let deg;
+    if (!behind && x > m && x < W - m && y > top + 60 && y < H - m) { y -= 60 + 10 * Math.abs(Math.sin(performance.now() / 180)); deg = 180; }
+    else {
+      const cx = W / 2, cy = (top + H - m) / 2, dx = x - cx || 1e-6, dy = y - cy || 1e-6;
+      const k = Math.min((W / 2 - m) / Math.abs(dx), (dy < 0 ? cy - top : H - m - cy) / Math.abs(dy));
+      x = cx + dx * k; y = cy + dy * k; deg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+    }
+    arrowEl.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
   }
   function showResults() {
     const s=app.completedRun;lift();app.resultsOpen=true;app.acc=0;
     if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
+    fillLevelTable(app.completedLevels||{});
     results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
+  }
+  const LEVEL_NAMES = [['town', 'Farm city'], ['solar', 'Solar system'], ['galaxy', 'Galaxy'], ['universe', 'Universe']];
+  function fillLevelTable(levels) {
+    const body = document.getElementById('result-levels-body'); body.textContent = '';
+    const mode = (levels.town && levels.town.mode) || app.timerMode;
+    document.getElementById('result-levels-title').textContent = 'Level times · ' + (TIMER_NAMES[mode] || mode);
+    const row = (name, now, best, star) => { const tr = document.createElement('tr'); for (const [txt, cls] of [[name], [now], [best, star ? 'star' : '']]) { const td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.appendChild(td); } body.appendChild(tr); };
+    let total = 0, complete = true;
+    for (const [id, name] of LEVEL_NAMES) {
+      const L = levels[id], b = bestFor(mode, id), fb = b === null ? '–' : formatDuration(b); if (!L) { complete = false; row(name, '–', fb, false); continue; }
+      total += L.t;
+      row(name, formatDuration(L.t) + (L.timedOut ? ' ⏱' : ''), fb + (L.newBest ? ' ★' : ''), L.newBest);
+    }
+    if (complete) { const prev = bestFor(mode, 'run'), nb = prev === null || total < prev - 1e-6; if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), formatDuration(nb ? total : prev) + (nb ? ' ★' : ''), nb); }
   }
   document.getElementById('play-again').addEventListener('click',()=>{
     if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
@@ -2254,14 +2414,14 @@ function boot() {
       if (n === 4) app.acc = 0;
     }else app.acc=0;
     if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
-    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
+    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
   }
   function startLive() {
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');
     app.finale = null; setFade(0, false); if (app.R) app.R.setFinale(0);
-    try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
+    try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId || app.G.timerMode !== app.timerMode) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
@@ -2273,8 +2433,8 @@ function boot() {
   }
   // Start = pick a color. Five discs; tapping one is the single start tap.
   function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); }
-  startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent')) return; e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
-  startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent') || app.simMode) return; pickFrom(e); startLive(); });
+  startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent,#timer-pick')) return; e.preventDefault(); if (app.simMode) return; pickFrom(e); startLive(); }, touchOpts);
+  startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent,#timer-pick') || app.simMode) return; pickFrom(e); startLive(); });
   window.TwistyMetrics?.initUI();
 
   // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.
@@ -2297,6 +2457,8 @@ function boot() {
     app.resultsOpen=false;app.completedRun=null;app.finale=null;results.classList.add('hidden');hud.classList.add('hidden');setFade(0,false);
     if (opts.tuning) for (const k in opts.tuning) { if (typeof TUNING[k] === 'object' && !Array.isArray(TUNING[k])) Object.assign(TUNING[k], opts.tuning[k]); else TUNING[k] = opts.tuning[k]; }
     const errBefore = consoleErrors;
+    const prevTimerMode = app.timerMode; app.timerMode = TUNING.LEVEL_TIMERS[opts.timerMode] ? opts.timerMode : TUNING.LEVEL_TIMER_DEFAULT;
+    if (opts.slowBot === true) opts.slowBot = { cycle: 300, duty: 0.35 }; // a child who drags for ~2 s, then stops to look for ~3 s
     if (app.R && app.R.renderer.getPixelRatio() !== Math.min(opts.dpr, TUNING.MAX_DPR)) app.R.renderer.setPixelRatio(Math.min(opts.dpr, TUNING.MAX_DPR));
     newGame(seed, opts);
     let G = app.G; const R = app.R;
@@ -2339,7 +2501,7 @@ function boot() {
       if (e.kind === 'win') acc.wonAt = e.t;
     };
     const isNum = v => typeof v === 'number' && isFinite(v);
-    let winTick = null; const _visNear = []; const trace = [];
+    let winTick = null; const _visNear = []; const trace = []; const levels = {};
     const tooBigVisibleSampleEvery = 3;
     let heapT = null;
     function oneTick(realFrameMs) {
@@ -2352,9 +2514,13 @@ function boot() {
         if (G.tick === probe.start) probe.inputTick = G.lastInputTick;
         if (G.lastResponseTick >= probe.inputTick && G.lastResponseTick > 0) { latencies.push(G.lastResponseTick - probe.inputTick); probe = null; G.lastResponseTick = -1; }
         else if (G.tick - probe.start > 30) { latencies.push(31); probe = null; }
-      } else bot.step(setTouch, lift);
+      } else if (opts.slowBot && (G.tick % opts.slowBot.cycle) >= opts.slowBot.cycle * opts.slowBot.duty) lift();
+      else bot.step(setTouch, lift);
       const t0 = performance.now();
       stepGame(G);
+      { const L = levels[G.stage] || (levels[G.stage] = { limit: G.levelLimit, level_s: null, supersize_left: null, timed_out: false, won: false });
+        if (G.superSized && L.supersize_left === null) L.supersize_left = +(G.levelLimit - G.levelT).toFixed(3);
+        if (G.won && !L.won) { L.won = true; L.level_s = +G.levelWinT.toFixed(2); L.timed_out = G.timedOut; } }
       if (opts.render) { R.update(G, DT); R.render(); }
       if (nCpu < capTicks) cpuTimes[nCpu++] = performance.now() - t0;
       if (opts.trace && G.tick >= opts.trace[0] && G.tick <= opts.trace[1] && G.tick % (opts.traceEvery || 1) === 0) trace.push({ tick: G.tick, x: +G.pos.x.toFixed(2), z: +G.pos.z.toFixed(2), vx: +G.vel.x.toFixed(2), vz: +G.vel.z.toFixed(2), ax: +G.acc.x.toFixed(2), az: +G.acc.z.toFixed(2), fx: +G.finger.x.toFixed(1), fz: +G.finger.z.toFixed(1), down: G.finger.down, hs: G.hitstop, ts: +G.timeScale.toFixed(2), in: G.lastInputTick, resp: G.lastResponseTick, tgt: bot.target ? bot.target.type.id + '@' + bot.target.x.toFixed(1) + ',' + bot.target.z.toFixed(1) : null, cur: bot.curious ? bot.curious.type.id : null, P: +G.power.toFixed(1), tier: G.tier, abs: G.absorbCount });
@@ -2460,6 +2626,8 @@ function boot() {
     // the stage still running at the end: its heap window ends at the run's end, its tier and power are the current ones
     if (G.stage !== 'town' && result.stages[G.stage]) { const cur = result.stages[G.stage]; if (cur.heap_growth_pct === null) cur.heap_growth_pct = result.heap_growth_pct; if (cur.final_tier === null) { cur.final_tier = G.tier; cur.final_power = +G.power.toFixed(0); } }
     result.space = result.stages.solar || null;
+    result.timer_mode = app.timerMode; result.slow_bot = !!opts.slowBot; result.levels = levels;
+    app.timerMode = prevTimerMode;
     app.simMode = false;
     return result;
   };
@@ -2473,7 +2641,7 @@ function boot() {
   window.__TUNING = TUNING;
 }
 
-return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry, generateWorld, createGame, stepGame, screenToGround, createRunStats, advanceRunTime, summarizeRun, formatDuration, formatPercent, finishAbsorb };
+return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry, generateWorld, createGame, stepGame, screenToGround, createRunStats, advanceRunTime, summarizeRun, formatDuration, formatPercent, finishAbsorb, checkTierUps, startSuperSize, timeUp };
 })();
 
 </script>

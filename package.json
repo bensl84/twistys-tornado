@@ -1,0 +1,16 @@
+{
+  "name": "twistys-tornado",
+  "private": true,
+  "description": "Twister: a one-finger 3D tornado game for iPad Safari. index.html is built from src/ and served as-is.",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "test": "node --test scripts/level-timer.test.mjs scripts/worlds.test.mjs scripts/run-stats.test.mjs scripts/space.test.mjs scripts/graphics.test.mjs metrics/server.test.mjs",
+    "test:browser": "node --test scripts/context-loss.test.mjs",
+    "sim": "node sim.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

@@ -58,12 +58,23 @@ function createCosmicArt(THREE) {
       c.globalAlpha=1;
     });
   }
-  function galaxy(kind='spiral',tone='blue') {
-    return texture('galaxy:'+kind+':'+tone,(c,n)=>{
-      const rnd=mulberry32(872+kind.length*59); const mid=n/2;
+  // Universe galaxies come in variants so no two neighbours look alike: arm count and winding, flattening and palette.
+  // Variant 0 is the original look (the galaxy stage only uses it).
+  const GALAXY_VARIANTS=5;
+  const GALAXY_LOOKS=[
+    {arms:2,pitch:2.25,flat:0.85,disk:'#bfc7df',star:'#f2f5ff',accent:'#ffe3ed',knot:'#e6edff',core:'#eacaa4',heart:'#fff6e1'},
+    {arms:3,pitch:1.6, flat:0.7, disk:'#d8b77a',star:'#ffe7b8',accent:'#fff4dc',knot:'#ffd08a',core:'#f2b36b',heart:'#fff1cf'},
+    {arms:2,pitch:3.1, flat:0.95,disk:'#b58ad8',star:'#f1d4ff',accent:'#ff9fdc',knot:'#d9a2ff',core:'#e7a7d8',heart:'#fff0fb'},
+    {arms:4,pitch:1.9, flat:0.6, disk:'#6fb4c9',star:'#d4fbff',accent:'#9ff7e2',knot:'#8fe9ff',core:'#bfe9e0',heart:'#f2fffd'},
+    {arms:2,pitch:2.6, flat:0.8, disk:'#d98464',star:'#ffd9c4',accent:'#ff8a6a',knot:'#ffb07a',core:'#ff9e5e',heart:'#fff0da'},
+  ];
+  function galaxy(kind='spiral',tone='blue',variant=0) {
+    const look=GALAXY_LOOKS[variant%GALAXY_VARIANTS];
+    return texture('galaxy:'+kind+':'+tone+(variant?':'+variant:''),(c,n)=>{
+      const rnd=mulberry32(872+kind.length*59+variant*977); const mid=n/2;
       if(['group','cluster','web','quasar'].includes(kind)) {
         if(kind==='quasar') {
-          c.drawImage(galaxy('spiral',tone).image,0,0,n,n);
+          c.drawImage(galaxy('spiral',tone,variant).image,0,0,n,n);
           c.save();c.translate(mid,mid);c.rotate(-0.65);c.scale(0.09,1);glow(c,0,0,n*0.47,'#87d8ff',0.95);c.restore();
           glow(c,mid,mid,n*0.09,'#ffffff',1);return;
         }
@@ -73,7 +84,7 @@ function createCosmicArt(THREE) {
           const x=kind==='web'?n*0.12+i/count*n*0.76:mid+Math.cos(a)*r;
           const y=kind==='web'?mid+Math.sin(i/count*8)*n*0.2+(rnd()-0.5)*n*0.12:mid+Math.sin(a)*r*0.8;
           const s=n*(kind==='group'?0.25:kind==='cluster'?0.12:0.05)*(0.6+rnd()*0.6);
-          c.drawImage(galaxy(i%3?'spiral':'elliptical',tone).image,x-s/2,y-s/2,s,s);
+          c.drawImage(galaxy(i%3?'spiral':'elliptical',tone,variant?(variant+i)%GALAXY_VARIANTS:0).image,x-s/2,y-s/2,s,s);
         }
         return;
       }
@@ -82,28 +93,29 @@ function createCosmicArt(THREE) {
       }
       const elliptic=kind==='elliptical'||kind==='lenticular';
       // A diffuse disk and broad, uneven star-forming arms, not four hard lines.
-      c.save();c.translate(mid,mid);c.scale(1,elliptic?0.65:0.85);
-      glow(c,0,0,n*0.45,elliptic?'#bfa889':tone==='neutral'?'#bfc7df':'#346eae',0.28);c.restore();
+      const flat=elliptic?0.65:look.flat;
+      c.save();c.translate(mid,mid);c.scale(1,flat);
+      glow(c,0,0,n*0.45,elliptic?(variant?look.core:'#bfa889'):tone==='neutral'?look.disk:'#346eae',0.28);c.restore();
       for(let i=0;i<20000;i++) {
         const r=Math.pow(rnd(),0.65)*n*0.45;
         let a=rnd()*TAU, x,y;
         if(!elliptic && kind!=='irregular' && kind!=='nebula') {
-          const arm=i%2;
-          a=arm*Math.PI+Math.log(1+r/38)*2.25+(rnd()+rnd()+rnd()-1.5)*(0.22+r/n*0.36);
+          const arm=i%look.arms;
+          a=arm*TAU/look.arms+Math.log(1+r/38)*look.pitch+(rnd()+rnd()+rnd()-1.5)*(0.22+r/n*0.36);
           // A few inter-arm stars soften the edge without filling the dark lanes.
           if(i%19===0)a=rnd()*TAU;
           if(kind==='ring') a=rnd()*TAU;
         }
         const rr=kind==='ring'?n*0.30+(rnd()-0.5)*n*0.06:r;
-        x=mid+Math.cos(a)*rr; y=mid+Math.sin(a)*rr*(elliptic?0.65:0.85);
+        x=mid+Math.cos(a)*rr; y=mid+Math.sin(a)*rr*flat;
         const alpha=(1-r/(n*0.49))*(elliptic?0.22:0.55);
-        c.fillStyle=elliptic?'#ffe3b0':tone==='neutral'?(i%13===0?'#ffe3ed':'#f2f5ff'):(i%13===0?'#ef8dbd':i%3?'#87cfff':'#edf6ff');
+        c.fillStyle=elliptic?(variant?look.star:'#ffe3b0'):tone==='neutral'?(i%13===0?look.accent:look.star):(i%13===0?'#ef8dbd':i%3?'#87cfff':'#edf6ff');
         c.globalAlpha=alpha; const s=0.5+rnd()*1.6;c.fillRect(x,y,s,s);
-        if(i%18===0) glow(c,x,y,4+rnd()*9,elliptic?'#ffe4be':tone==='neutral'?'#e6edff':i%5?'#59c3ff':'#e988b5',0.16);
+        if(i%18===0) glow(c,x,y,4+rnd()*9,elliptic?(variant?look.knot:'#ffe4be'):tone==='neutral'?look.knot:i%5?'#59c3ff':'#e988b5',0.16);
       }
       c.globalAlpha=1;
       if(kind==='barred') {c.save();c.translate(mid,mid);c.rotate(0.25);c.scale(2.8,0.55);glow(c,0,0,n*0.11,'#ffe9c4',0.9);c.restore();}
-      if(kind!=='irregular' && kind!=='nebula'){glow(c,mid,mid,n*0.15,'#eacaa4',0.65);glow(c,mid,mid,n*0.055,'#fff6e1',0.95);}
+      if(kind!=='irregular' && kind!=='nebula'){glow(c,mid,mid,n*0.15,look.core,0.65);glow(c,mid,mid,n*0.055,look.heart,0.95);}
     },512);
   }
   function galaxyKind(id) {
@@ -125,7 +137,7 @@ function createCosmicArt(THREE) {
       if(/pulsar/.test(id)){c.save();c.translate(n/2,n/2);c.scale(.035,1);glow(c,0,0,n*.49,'#c1eeff');c.restore();}
     },256);
   }
-  return { planet, galaxy, galaxyKind, star, glow, texture };
+  return { planet, galaxy, galaxyKind, star, glow, texture, variants: GALAXY_VARIANTS };
 }
 
 function createRenderer(THREE, canvas, opts) {
@@ -220,6 +232,12 @@ function createRenderer(THREE, canvas, opts) {
   const dummy = new THREE.Object3D();
   const M4 = new THREE.Matrix4();
   const galaxyColors = [0xff91c2,0x80d9ff,0xffd283,0xa793ff,0x8cebd9,0xffa68a,0xc9edff,0xffb8e2];
+  const WHITE = new THREE.Color(0xffffff);
+  // ---- the last goal: a big black hole (black core; the disk and photon ring follow it, see updateFinalHole) ----
+  // core radius as a share of the goal's size: 0.8 makes it about 1.5x her own black hole when she reaches it
+  const FINAL_HOLE_ID = 'u_everything', FINAL_HOLE_R = 0.8;
+  const holeCoreMat = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false });
+  let finalHoleObj = null;
   const solarOverviewScale = {mercury:3,venus:2.4,earth:2.8,mars:2.5,jupiter:1.3,saturn:1.15,uranus:1.8,neptune:1.8};
   let objs = [];
   function buildObjects(list, types) {
@@ -229,33 +247,43 @@ function createRenderer(THREE, canvas, opts) {
     objs = list;
     const byType = {};
     for (const o of list) (byType[o.type.id] = byType[o.type.id] || []).push(o);
+    finalHoleObj = null;
     for (const t of (types || TYPES)) {
-      const arr = byType[t.id] || []; if (!arr.length) continue;
-      let geo, material=t.glow?glowMat:objMat;
+      const all = byType[t.id] || []; if (!all.length) continue;
       const debris=stageId==='solar'&&['pluto','bigmoon','icemoon','gasdwarf','giant','dwarfstar'].includes(t.id);
       const texturedPlanet=stageId==='solar'&&planetIds.has(t.id)&&!debris;
-      const galaxySprite=t.id.startsWith('u_');
+      const finalHole=t.id===FINAL_HOLE_ID; // the last goal is a real black hole, not a picture
+      const galaxySprite=t.id.startsWith('u_')&&!finalHole;
       const nebulaSprite=/^g_(big)?nebula$|^g_wisp$/.test(t.id);
       const starSprite=t.id.startsWith('g_')&&!nebulaSprite;
+      // universe galaxies are spread over several looks (arms, winding, palette) so neighbours differ
+      const buckets = new Map();
+      for (const o of all) { const v = galaxySprite ? (o.id * 13 + t.index * 7) % art.variants : 0; if (!buckets.has(v)) buckets.set(v, []); buckets.get(v).push(o); }
+      for (const [variant, arr] of buckets) {
+      let geo, material=t.glow?glowMat:objMat;
       if(texturedPlanet) {
         geo=new THREE.SphereGeometry(t.size/2,40,24);geo.translate(0,t.size/2,0);
         material=cosmicMaterial(t.id,art.planet(t.id));
       } else if(debris){geo=debrisGeometry(t.size);material=objMat;
+      } else if(finalHole){geo=new THREE.SphereGeometry(t.size*FINAL_HOLE_R,48,32);geo.translate(0,t.size*0.4,0);material=holeCoreMat;
       } else if(galaxySprite||nebulaSprite||starSprite) {
         geo=new THREE.PlaneGeometry(t.size*2.2,t.size*2.2);geo.rotateX(-Math.PI/2);geo.translate(0,t.size*0.4,0);
         const kind=nebulaSprite?'nebula':/g_.*cluster|g_globular|g_core/.test(t.id)?'elliptical':art.galaxyKind(t.id);
         const isStar=starSprite&&!/cluster|globular|core/.test(t.id);
-        material=cosmicMaterial(isStar?'star:'+t.id:'galaxy:'+kind+':'+(galaxySprite?'neutral':'blue'),isStar?art.star(t.id):art.galaxy(kind,galaxySprite?'neutral':'blue'),true);
+        material=cosmicMaterial(isStar?'star:'+t.id:'galaxy:'+kind+':'+(galaxySprite?'neutral':'blue')+(variant?':'+variant:''),isStar?art.star(t.id):art.galaxy(kind,galaxySprite?'neutral':'blue',variant),true);
       } else geo = builders[t.id]();
       const im = new THREE.InstancedMesh(geo, material, arr.length);
       im.castShadow = !!shadowsOn && t.tier >= T.SHADOW_TIERS_MIN; im.receiveShadow = !!shadowsOn && t.tier >= 3;
       im.frustumCulled = false;
       const c = new THREE.Color();
       arr.forEach((o, i) => {
-        o.inst = i; o.mesh = im;
+        o.inst = i; o.mesh = im; if (finalHole) finalHoleObj = o;
         dummy.position.set(o.x, 0, o.z); dummy.rotation.set(0, o.ry, 0); dummy.scale.setScalar(o.scale); dummy.updateMatrix();
         im.setMatrixAt(i, dummy.matrix);
-        c.setHex(galaxySprite?galaxyColors[(o.id*7+o.colorIndex)%galaxyColors.length]:texturedPlanet||nebulaSprite||starSprite||debris?0xffffff:t.colors[o.colorIndex]); im.setColorAt(i, c);
+        // the palette now lives in each galaxy picture, so the per-galaxy tint is kept light
+        if (galaxySprite) c.setHex(galaxyColors[(o.id*7+o.colorIndex)%galaxyColors.length]).lerp(WHITE, 0.45);
+        else c.setHex(finalHole||texturedPlanet||nebulaSprite||starSprite||debris?0xffffff:t.colors[o.colorIndex]);
+        im.setColorAt(i, c);
         if(texturedPlanet&&(t.id==='saturn'||t.id==='uranus')) {
           const r=t.size/2;
           for(const [inner,outer,opacity] of [[1.35,1.68,0.55],[1.73,2.05,0.75],[2.09,2.22,0.3]]){
@@ -267,7 +295,8 @@ function createRenderer(THREE, canvas, opts) {
       });
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
-      scene.add(im); meshes[t.id] = im;
+      scene.add(im); meshes[t.id + ':' + variant] = im;
+      }
     }
     buildCosmicScene();
   }
@@ -382,6 +411,25 @@ function createRenderer(THREE, canvas, opts) {
       void main(){ float r = length(vP); float ring = exp(-pow((r - 0.5) * 9.0, 2.0)); float glow = exp(-pow(r * 2.0, 2.0)) * 0.35; gl_FragColor = vec4(mix(uColor, uHot, ring) * (ring + glow), uAlpha * (ring * 0.9 + glow)); }`,
   });
   const bhHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 48), bhHaloMat); bhHalo.renderOrder = 8; bhHalo.frustumCulled = false; bhGroup.add(bhHalo);
+  // the last goal's hot orange disk and photon ring (its black core is the goal's own instance, so they follow it in)
+  const holeUniforms = { uTime: { value: 0 }, uColor: { value: new THREE.Color(0xff7a2a) }, uHot: { value: new THREE.Color(0xfff4d8) }, uAlpha: { value: 1 } };
+  const holeGroup = new THREE.Group(); holeGroup.visible = false; scene.add(holeGroup);
+  const holeDiskMat = bhDiskMat.clone(); holeDiskMat.uniforms = holeUniforms;
+  const holeDisk = new THREE.Mesh(new THREE.CircleGeometry(1, 96), holeDiskMat); holeDisk.rotation.x = -Math.PI / 2 + 0.32; holeDisk.renderOrder = 7; holeDisk.frustumCulled = false; holeGroup.add(holeDisk);
+  const holeRingMat = bhHaloMat.clone(); holeRingMat.uniforms = holeUniforms;
+  const holeRing = new THREE.Mesh(new THREE.CircleGeometry(1, 64), holeRingMat); holeRing.renderOrder = 8; holeRing.frustumCulled = false; holeGroup.add(holeRing);
+  const holeInvQ = new THREE.Quaternion();
+  function updateFinalHole(G) {
+    const o = finalHoleObj; holeGroup.visible = !!o && o.state !== 2 && envId === 'universe' && !G.overview;
+    if (!holeGroup.visible) return;
+    o.mesh.getMatrixAt(o.inst, M4); M4.decompose(holeGroup.position, holeGroup.quaternion, holeGroup.scale);
+    const R = o.type.size * FINAL_HOLE_R, cy = o.type.size * 0.4;
+    const k = (G.swallowT > 0 || G.swallowed) ? G.swallowK : 0, grow = 1 + 0.35 * k; // it swells as it pulls her in
+    holeDisk.position.set(0, cy, 0); holeDisk.scale.setScalar(R * 2.3 * grow); // ends well short of the level start holeDisk.rotation.z = -G.tick * DT * 0.5 * (1 + 2 * k);
+    holeRing.position.set(0, cy, 0); holeRing.scale.setScalar(R * 2.16 * grow);
+    holeRing.quaternion.copy(holeInvQ.copy(holeGroup.quaternion).invert()).multiply(camera.quaternion);
+    holeUniforms.uTime.value = G.tick * DT * 1.2 * (1 + 2 * k);
+  }
   let form = 'tornado', transformT = 0;
   const bhCenter = new THREE.Vector3();
   function setForm(f) {
@@ -668,7 +716,9 @@ function createRenderer(THREE, canvas, opts) {
     if (isBH) {
       // collapse-in on liftoff: the funnel shrinks into the core while the disk spins up
       if (transformT > 0) transformT = Math.max(0, transformT - rdt);
-      const k = 1 - transformT / T.BH_TRANSFORM_S; const grow = easeOut(k);
+      // 5-min ending: her black hole shrinks away as the big one pulls her in
+      const sw = (G.swallowT > 0 || G.swallowed) ? Math.max(0.03, 1 - easeIn(G.swallowK)) : 1;
+      const k = 1 - transformT / T.BH_TRANSFORM_S; const grow = easeOut(k) * sw;
       funnel.visible = transformT > 0; core.visible = transformT > 0;
       if (transformT > 0) { const sq = 1 - k; for (const u of [funnelUniforms, coreMat.uniforms]) { u.uScale.value.set(fr * sq, fh * (0.2 + 0.8 * sq)); u.uAlpha.value = 0.66 * sq; } }
       bhCenter.set(G.pos.x + prevLeanX * 0.15, fr * T.BH_Y, G.pos.z + prevLeanZ * 0.15);
@@ -678,6 +728,7 @@ function createRenderer(THREE, canvas, opts) {
       bhHalo.position.copy(bhCenter); bhHalo.scale.setScalar(Math.max(0.001, fr * T.BH_CORE * 2.6 * grow)); bhHalo.quaternion.copy(camera.quaternion);
       bhUniforms.uTime.value = G.tick * DT * T.SPIN; bhUniforms.uAlpha.value = 0.6 + 0.4 * grow;
     } else { funnelUniforms.uAlpha.value = 0.66; coreMat.uniforms.uAlpha.value = 0.92; }
+    updateFinalHole(G);
     // finale: fall into the core
     if (finaleK > 0) {
       const k = easeIn(clamp(finaleK, 0, 1));

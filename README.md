@@ -42,6 +42,8 @@ Each level has a maximum time so nobody gets bored. The start screen has three s
 
 The clock only ever helps. At 10 seconds left the player grows to the level's biggest size over one second, everything becomes edible, a big countdown ring appears, and an arrow points to the goal. At 0 the goal flies in and the level ends as a normal win. The level clock counts simulation ticks, so it pauses with the space overview, background time and results, and stops at the win. Tapping a setting never starts the game; only a color disc does.
 
+The last level's goal is a big black hole, drawn about one and a half times the player's own black hole. On Quick and Normal the player swallows it. On **5 min** it is the other way round: reaching it, or running out of time, gets the player pulled in over 2.2 seconds, and the results say *Swallowed by the black hole!* The universe's galaxies are drawn in five different looks (arm count, winding, flattening and colour), so neighbours differ.
+
 Best times are kept per setting and per level in this browser's local storage (`twisty-best-v1`), never sent anywhere. A level only sets a best time when it was finished before its clock ran out. The results card shows each level's time (⏱ when the clock finished it) and marks new bests with ★.
 
 After the universe finale, the summary stays open with three rows: **Tornado**, **Black hole**, and **Total**. Each shows time and consumption. **Play again** resumes a fresh town with the same color and zeroed statistics; reloading also starts fresh. Results are not saved between page visits.
@@ -69,7 +71,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
 - `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-24-twister-v17-wispy`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-25-twister-v18-black-hole`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).

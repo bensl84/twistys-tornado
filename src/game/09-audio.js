@@ -96,6 +96,7 @@ function createAudio() {
       else if (e.kind === 'tierup') { [0, 0.09, 0.18, 0.3].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047][i], 0.5, 'triangle', 0.22), d * 1000)); thump(0.4, 0.8, 120); }
       else if (e.kind === 'supersize') { tone(160, 1.1, 'sawtooth', 0.08, 1300); [0, 0.12, 0.24, 0.36, 0.5].forEach((d, i) => setTimeout(() => tone([392, 523, 659, 784, 1047][i], 0.7, 'triangle', 0.2), 300 + d * 1000)); thump(0.45, 1.0, 140); }
       else if (e.kind === 'timeup') { tone(900, 0.9, 'sine', 0.12, 120); thump(0.35, 0.9, 200); }
+      else if (e.kind === 'swallow') { tone(320, 2.2, 'sine', 0.16, 35); tone(160, 2.2, 'triangle', 0.08, 25); thump(0.5, 1.6, 90); }
       else if (e.kind === 'win') { [0, 0.15, 0.3, 0.45, 0.6, 0.9, 1.2].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047, 1319, 1568, 2093][i], 1.2, 'triangle', 0.22), d * 1000)); thump(0.5, 2.5, 150); }
       else if (e.kind === 'pull' && e.frac > 0.5) tone(180, 0.3, 'sawtooth', 0.05, 320);
       else if (e.kind === 'dust') { if (budget()) tone(900 + 600 * Math.random(), 0.05, 'sine', 0.05, 1400); }

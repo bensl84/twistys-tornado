@@ -311,15 +311,18 @@ function createRenderer(THREE, canvas, opts) {
         // that travel sideways with the spin, which is what reads as rotation; a spinning helix would look like climbing.
         // Angles only appear as whole-number multiples, so the pattern is continuous around the funnel.
         float spin = vA + uTime * 2.6; // same direction as the funnel's twist, a little faster
-        float ringArg = vY * 36.0 + sin(spin * 2.0) * 0.5;
-        float rings = 0.5 + 0.5 * sin(ringArg);
-        // each ring gets its own dash offset (ring index changes at the dark trough), so gaps never line up vertically
-        float ringId = floor((ringArg + 1.5707963) / 6.2831853);
+        // thin crisp rings (sharpened sine peaks), each broken into long dashes with its own offset
+        float ringArg = vY * 34.0 + sin(spin * 2.0) * 0.35;
+        float ringId = floor((ringArg + 1.5707963) / 6.2831853); // changes at the dark gap between rings
         float offs = fract(sin(ringId * 12.9898) * 43758.5453) * 6.2831853;
-        float dash = 0.5 + 0.5 * sin(spin * 2.0 + offs);
-        float dash2 = 0.5 + 0.5 * sin(spin * 5.0 - offs * 1.7);
-        float dust = rings * mix(0.25, 1.0, dash) * mix(0.7, 1.0, dash2);
-        float dens = mix(0.12, 1.0, smoothstep(0.05, 0.6, dust));
+        float line = pow(0.5 + 0.5 * sin(ringArg), 6.0) * smoothstep(0.3, 0.6, 0.5 + 0.5 * sin(spin * 2.0 + offs));
+        // a second set of finer, fainter lines between them
+        float ringArg2 = vY * 71.0 - sin(spin * 3.0) * 0.4 + 1.1;
+        float ringId2 = floor((ringArg2 + 1.5707963) / 6.2831853);
+        float offs2 = fract(sin(ringId2 * 78.233 + 3.1) * 43758.5453) * 6.2831853;
+        float line2 = pow(0.5 + 0.5 * sin(ringArg2), 10.0) * smoothstep(0.4, 0.7, 0.5 + 0.5 * sin(spin * 3.0 - offs2));
+        float dust = max(line, line2 * 0.6);
+        float dens = mix(0.18, 1.0, smoothstep(0.04, 0.5, dust));
         float edge = 1.0 - smoothstep(0.75, 1.0, vY);
         float base = smoothstep(0.0, 0.06, vY);
         vec3 col = mix(uCore, uColor, 0.48 + dust * 0.32);
@@ -344,6 +347,7 @@ function createRenderer(THREE, canvas, opts) {
 
   // ---- debris ring ----
   const RN = T.DEBRIS_RING_N;
+  const streakAxis = new THREE.Vector3(0, 0, 1), streakDir = new THREE.Vector3(); // chips and debris drawn as streaks
   const ring = new THREE.InstancedMesh(new THREE.SphereGeometry(.65,8,6), new THREE.MeshStandardMaterial({ vertexColors: false, roughness: 0.9 }), RN);
   ring.castShadow = false; ring.frustumCulled = false; scene.add(ring);
   const ringData = [];
@@ -430,7 +434,14 @@ function createRenderer(THREE, canvas, opts) {
       P.x[i] += P.vx[i] * dt; P.y[i] += P.vy[i] * dt; P.z[i] += P.vz[i] * dt;
       const t = P.life[i] / P.max[i];
       const s = P.s[i] * (0.3 + 0.7 * t);
-      dummy.position.set(P.x[i], P.y[i], P.z[i]); dummy.rotation.set(P.spin[i] + P.life[i] * 5, P.spin[i], 0); dummy.scale.setScalar(s); dummy.updateMatrix(); parts.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(P.x[i], P.y[i], P.z[i]);
+      if (P.orbit[i] && form !== 'blackhole') {
+        // debris whirling round the tornado: a thin streak along its motion, so the funnel reads as spinning lines
+        const sp = Math.hypot(P.vx[i], P.vz[i]) + 1e-4; // horizontal motion only: the streaks lie flat and spin round
+        streakDir.set(P.vx[i] / sp, 0, P.vz[i] / sp); dummy.quaternion.setFromUnitVectors(streakAxis, streakDir);
+        dummy.scale.set(s * 0.2, s * 0.2, s * (1.4 + Math.min(sp * 0.25, 3.5)));
+      } else { dummy.rotation.set(P.spin[i] + P.life[i] * 5, P.spin[i], 0); dummy.scale.setScalar(s); }
+      dummy.updateMatrix(); parts.setMatrixAt(i, dummy.matrix);
     }
     parts.instanceMatrix.needsUpdate = true;
     void fh;
@@ -690,7 +701,14 @@ function createRenderer(THREE, canvas, opts) {
         lx = prevLeanX * d.h * d.h; lz = prevLeanZ * d.h * d.h;
       }
       dummy.position.set(G.pos.x + Math.cos(a) * rr + lx, y, G.pos.z + Math.sin(a) * rr + lz);
-      dummy.rotation.set(rt * 3 + d.spin, a, d.spin); dummy.scale.setScalar(d.s * (0.5 + Math.pow(fr, 0.8) * 0.8)); dummy.updateMatrix(); ring.setMatrixAt(i, dummy.matrix);
+      const cs = d.s * (0.5 + Math.pow(fr, 0.8) * 0.8);
+      if (isBH) { dummy.rotation.set(rt * 3 + d.spin, a, d.spin); dummy.scale.setScalar(cs); }
+      else {
+        // around the tornado each chip is a thin horizontal streak lying along its orbit: spinning lines, not balls
+        streakDir.set(-Math.sin(a), 0, Math.cos(a)); dummy.quaternion.setFromUnitVectors(streakAxis, streakDir);
+        dummy.scale.set(cs * 0.24, cs * 0.24, cs * (2.2 + 1.2 * d.w));
+      }
+      dummy.updateMatrix(); ring.setMatrixAt(i, dummy.matrix);
     }
     ring.instanceMatrix.needsUpdate = true;
     // absorbing objects: anticipation (lift + shake), then spiral in, shrink, tumble

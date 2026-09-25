@@ -837,6 +837,9 @@ function createRenderer(THREE, canvas, opts) {
       emitParticles(260, G.pos.x, 0.5, G.pos.z, 8 + big * 4, 4 + big * 2, 0.15 + big * 0.1, [TUNING.COLORS[G.colorId] || 0xffffff, 0xffd447, 0xffffff, 0xff7a3a], false, 2.0);
     } else if (e.kind === 'timeup') {
       emitParticles(180, G.pos.x, fr, G.pos.z, 6 + fr * 5, 5 + fr * 2, 0.14 + fr * 0.1, [0xffffff, 0xffd447, TUNING.COLORS[G.colorId] || 0xffffff], G.stageDef.form === 'blackhole', 1.6);
+    } else if (e.kind === 'win' && e.swallowed) {
+      // the 5-min ending: no celebration; a last swirl of glowing dust falls in after her
+      emitParticles(160, G.pos.x, fr, G.pos.z, 6 + fr * 3, 2 + fr, 0.14 + fr * 0.05, [0xff7a2a, 0xfff4d8, 0xffb070], true, 2.2);
     } else if (e.kind === 'win') {
       emitParticles(600, G.pos.x, fr * 4, G.pos.z, 30 + fr * 6, 12 + fr * 3, 0.25 + fr * 0.035, [0xff4b6e, 0xffd447, 0x47d1ff, 0x9dff7a, 0xffffff, 0xff8a3a], false, 5);
       funnelUniforms.uColor.value.setHex(0xffd27a); coreMat.uniforms.uColor.value.setHex(0xe0a040);

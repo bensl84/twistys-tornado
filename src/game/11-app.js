@@ -132,6 +132,9 @@ function boot() {
     if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
     fillLevelTable(app.completedLevels||{});
+    // the 5-minute setting ends the other way round: the biggest black hole pulls you in
+    document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
+    document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
     results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
   }
   const worldCard = document.getElementById('world-card'), toastEl = document.getElementById('toast');
@@ -261,7 +264,7 @@ function boot() {
       if (n === 4) app.acc = 0;
     }else app.acc=0;
     if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
-    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
+    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;app.completedSwallowed=!!G.swallowed;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
   }

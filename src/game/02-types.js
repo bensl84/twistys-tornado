@@ -135,7 +135,7 @@ const UNIVERSE_TYPES = [
   { id: 'u_wall',        tier: 5, size: 380, foot: 190, blocks: false, colors: [0xd0d8ff, 0xf0e0ff] },
   { id: 'u_supercluster',tier: 5, size: 430, foot: 215, blocks: false, colors: [0xe8f0ff, 0xfff4e8] },
   { id: 'u_attractor',   tier: 5, size: 560, foot: 280, blocks: true,  colors: [0xffffff, 0xfff4d6], glow: true },
-  { id: 'u_everything',  tier: 6, size: 900, foot: 450, blocks: true,  colors: [0xfff4d6], glow: true },
+  { id: 'u_everything',  tier: 6, size: 900, foot: 720, blocks: true,  colors: [0xfff4d6], glow: true }, // the big black hole: foot = its drawn core
 ];
 const TYPE_BY_ID = {};
 // Astronomical identities and order; radii, sizes and periods are compressed for play.

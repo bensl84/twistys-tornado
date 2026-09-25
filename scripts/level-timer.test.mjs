@@ -65,3 +65,32 @@ test('the goal bobs at its normal highlight size through the whole countdown (ne
     assert.ok(G.goalRef.highlightT>0&&G.goalRef.highlightT<=T.HIGHLIGHT_S,`highlightT ${G.goalRef.highlightT} at ${G.levelT.toFixed(1)} s`);
   }
 });
+
+test('last level: you swallow the big black hole, except on the 5-minute setting where it swallows you',()=>{
+  const reach=(mode)=>{
+    const G=game.createGame(2,'universe',null,mode),g=G.goalRef,seen=[];G.listeners.push(e=>seen.push(e));
+    G.power=G.goalSize*1.05;game.checkTierUps(G);G.pos.x=g.x+g.foot*0.5;G.pos.z=g.z;
+    run(G,T.SWALLOW_S+T.SPIRAL_S_BIG+0.5);
+    return {G,g,seen,win:seen.find(e=>e.kind==='win')};
+  };
+  const normal=reach('normal');
+  assert.ok(normal.win,'normal: the level is won');assert.equal(normal.g.state,2,'normal: the black hole is swallowed');
+  assert.ok(!normal.win.swallowed);assert.equal(normal.G.swallowed,false);
+  const adult=reach('adult');
+  assert.ok(adult.win,'adult: the run still ends');assert.equal(adult.win.swallowed,true);assert.equal(adult.G.swallowed,true);
+  assert.equal(adult.g.state,0,'adult: the black hole is still there');
+  assert.ok(Math.hypot(adult.G.pos.x-adult.g.x,adult.G.pos.z-adult.g.z)<1e-6,'adult: pulled right into the middle');
+  assert.ok(adult.seen.some(e=>e.kind==='swallow'));
+  // only the last level: earlier levels on the 5-minute setting are eaten normally
+  const G=game.createGame(2,'galaxy',null,'adult'),g=G.goalRef;G.power=G.goalSize*1.05;game.checkTierUps(G);G.pos.x=g.x;G.pos.z=g.z;
+  run(G,T.SPIRAL_S_BIG+0.5);assert.equal(g.state,2);assert.equal(G.swallowed,false);
+});
+
+test('5-minute setting: when the clock runs out on the last level, the black hole pulls you in',()=>{
+  const G=game.createGame(2,'universe',null,'adult'),seen=[];G.listeners.push(e=>seen.push(e));
+  G.levelT=G.levelLimit-0.05;run(G,0.1);
+  assert.equal(G.timedOut,true);assert.ok(G.swallowT>0,'swallow started');
+  run(G,T.SWALLOW_S+0.2);
+  const win=seen.find(e=>e.kind==='win');assert.ok(win&&win.swallowed&&win.timedOut);
+  assert.ok(G.levelWinT<=G.levelLimit+T.SWALLOW_S+0.1);
+});

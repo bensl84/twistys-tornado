@@ -36,6 +36,7 @@ function createGame(seed, stageId, colorId, timerMode, theme) {
     absorbCount: 0, tierUps: 0, won: false, winT: null, firstAbsorbOfTier: {},
     timerMode: TUNING.LEVEL_TIMERS[timerMode] ? timerMode : TUNING.LEVEL_TIMER_DEFAULT, levelT: 0, levelLimit: 0, levelWinT: null, // level clock: ticks * DT, stops at the win
     superSized: false, superT: 0, superFrom: 0, superTo: 0, timedOut: false,
+    swallowT: 0, swallowK: 0, swallowFromX: 0, swallowFromZ: 0, swallowed: false, // 5-min setting: the last black hole eats you
     distSinceDust: 0, timeSinceDust: 0, lastResponseTick: -1, lastInputTick: -1, stuckT: 0, squeeze: 0, lastBlockT: -99, bestDF: Infinity, prevX: sp[0], prevZ: sp[1],
     grid: null, absorbing: [], rattleQueue: [],
     listeners: [],
@@ -96,6 +97,7 @@ function stepGame(G) {
     if (!G.superSized && left <= T.SUPER_SIZE_AT_S) startSuperSize(G);
     if (!G.timedOut && left <= 0) timeUp(G);
   }
+  if (G.swallowT > 0) stepSwallow(G, DT); // real ticks, like the clock: hitstop and slow-mo cannot stretch it
   if (G.superT > 0) {
     G.superT = Math.max(0, G.superT - DT);
     const k = easeOut(1 - G.superT / T.SUPER_GROW_S);
@@ -154,6 +156,7 @@ function stepGame(G) {
     if ((G.acc.x * dx + G.acc.z * dz) > 1e-9 || (Math.abs(G.acc.x) + Math.abs(G.acc.z)) > 1e-6) G.lastResponseTick = G.tick;
   }
   G.pos.x += G.vel.x * dt; G.pos.z += G.vel.z * dt;
+  if (G.swallowT > 0 || G.swallowed) pinSwallow(G); // being pulled in (and staying in) overrides steering
 
   // ---- object interaction ----
   const fr = G.funnelR();
@@ -218,7 +221,27 @@ function stepGame(G) {
   updateCamera(G, dt);
 }
 
+// 5-min setting on the last level: reaching for the big black hole gets you swallowed by it instead.
+function blackHoleWins(G) { return !!G.stageDef.last && G.timerMode === 'adult'; }
+function startSwallow(G) {
+  if (G.swallowT > 0 || G.swallowed) return;
+  G.swallowT = TUNING.SWALLOW_S; G.swallowK = 0; G.swallowFromX = G.pos.x; G.swallowFromZ = G.pos.z;
+  G.emit('swallow', { x: G.goalRef.x, z: G.goalRef.z });
+}
+function pinSwallow(G) {
+  const g = G.goalRef, k = G.swallowK * G.swallowK * (3 - 2 * G.swallowK);
+  G.pos.x = lerp(G.swallowFromX, g.x, k); G.pos.z = lerp(G.swallowFromZ, g.z, k); G.vel.x = 0; G.vel.z = 0; G.speed = 0;
+}
+function stepSwallow(G, dt) {
+  G.swallowT = Math.max(0, G.swallowT - dt); G.swallowK = 1 - G.swallowT / TUNING.SWALLOW_S; pinSwallow(G);
+  if (G.swallowT === 0 && !G.won) {
+    G.swallowed = true; G.won = true; G.winT = G.time; G.levelWinT = G.levelT; G.slowmo = TUNING.SLOWMO_S * 2;
+    G.emit('win', { t: G.time, stage: G.stage, final: true, levelT: G.levelT, timedOut: G.timedOut, swallowed: true });
+  }
+}
+
 function beginAbsorb(G, o, d) {
+  if (o === G.goalRef && blackHoleWins(G)) { startSwallow(G); return; }
   o.state = 1; o.absorbT = 0;
   const frac = clamp(o.size / G.power, 0, 1);
   o.absorbDur = lerp(TUNING.SPIRAL_S, TUNING.SPIRAL_S_BIG, frac);
@@ -283,7 +306,7 @@ function timeUp(G) {
   G.emit('timeup', {});
   const g = G.goalRef;
   if (!g) { G.won = true; G.winT = G.time; G.levelWinT = G.levelT; G.emit('win', { t: G.time, stage: G.stage, final: !!G.stageDef.last, levelT: G.levelT, timedOut: true }); return; }
-  if (g.state !== 0) return; // already on its way in
+  if (g.state !== 0 || G.swallowT > 0) return; // already on its way in (or already pulling her in)
   G.power = Math.max(G.power, G.goalSize * 1.05); G.superT = 0; checkTierUps(G);
   beginAbsorb(G, g, Math.hypot(g.x - G.pos.x, g.z - G.pos.z));
   g.absorbDur = T.TIMEOUT_PULL_S;

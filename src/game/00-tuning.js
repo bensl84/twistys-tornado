@@ -60,6 +60,7 @@ const TUNING = {
   SUPER_SIZE_AT_S: 10,       // Seconds left on the level clock when the player becomes the biggest size.
   SUPER_GROW_S: 1.0,         // Seconds the super-size grow takes (log-space ease, so it reads as one big whoosh).
   TIMEOUT_PULL_S: 1.8,       // Seconds the goal takes to fly in when the clock reaches 0.
+  SWALLOW_S: 2.2,            // 5-min setting, last level: seconds the big black hole takes to pull the player in.
   SPIN: 2.6,                 // Playtest 1: 'twirl really fast'. Multiplies funnel twist and debris orbit speed.
   COLORS: { blue: 0x3a86ff, teal: 0x2ec4b6, purple: 0x8b5cf6, pink: 0xff5fa2, red: 0xe63946 }, // Start discs.
   COLOR_MIX: 0.6,            // How strongly the chosen color tints the dust funnel (0 = plain dust).

@@ -47,6 +47,18 @@ function boot() {
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
     app.G.listeners.push(e => { if (e.kind === 'win' && !app.simMode) recordLevel(app.G, e); });
     app.G.listeners.push(e => { if (!app.simMode && !(app.finale && app.finale.reborn)) window.TwistyMetrics?.gameEvent(e,app.G); });
+    clearPickupGuide();
+    if (!app.simMode && app.G.stage === 'town' && app.loop === 0) {
+      const town = app.G;
+      app.starterPickup = town.objs.find(o => o.starterPickup);
+      town.listeners.push(e => {
+        if (e.kind === 'supersize') clearPickupGuide();
+        if (e.kind === 'absorb' && app.starterPickup && town.lastInputTick >= 0) {
+          clearPickupGuide();
+          showToast('Nice! Keep collecting to grow.');
+        }
+      });
+    }
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
     for (const h of app.stageHooks) h(app.G);
@@ -144,7 +156,9 @@ function boot() {
 //#ios
     pauseButton.classList.add('hidden');
 //#end
-    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
+    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();
+    document.getElementById('result-details').scrollTop = 0;
+    document.getElementById('play-again').focus({ preventScroll: true });
   }
   const worldCard = document.getElementById('world-card'), toastEl = document.getElementById('toast');
   // ---- sound on/off: a parent control in the corner, remembered on this device ----
@@ -179,6 +193,27 @@ function boot() {
   function showToast(text) {
     toastEl.textContent = text; toastEl.classList.add('hidden'); void toastEl.offsetWidth; toastEl.classList.remove('hidden');
     clearTimeout(showToast.t); showToast.t = setTimeout(() => toastEl.classList.add('hidden'), 2700);
+  }
+  const pickupHint = document.getElementById('pickup-hint'), pickupHintText = pickupHint.firstElementChild;
+  const pickupMarker = document.getElementById('pickup-marker'), pickupPoint = new THREE.Vector3();
+  function clearPickupGuide() {
+    app.starterPickup = null;
+    pickupHint.classList.add('hidden');
+    pickupMarker.classList.add('hidden');
+  }
+  function updatePickupGuide() {
+    const target = app.starterPickup;
+    if (!target) return;
+    const { camera, width, height } = app.R;
+    const p = pickupPoint.set(target.x, 0.05, target.z).project(camera);
+    const x = (p.x + 1) * width / 2, y = (1 - p.y) * height / 2;
+    const onScreen = target.state === 0 && Math.abs(p.z) < 1 &&
+      x > 20 && x < width - 20 && y > 20 && y < height - 20;
+    const hint = onScreen ? 'Drag to the glowing scrap' : 'Drag over small things to grow';
+    if (pickupHintText.textContent !== hint) pickupHintText.textContent = hint;
+    pickupHint.classList.remove('hidden');
+    pickupMarker.classList.toggle('hidden', !onScreen);
+    if (onScreen) pickupMarker.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
   }
   const LEVEL_NAMES = [['town', 'Farm city'], ['solar', 'Solar system'], ['galaxy', 'Galaxy'], ['universe', 'Universe']];
   function fillLevelTable(levels) {
@@ -299,6 +334,7 @@ function boot() {
     else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;app.completedSwallowed=!!G.swallowed;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
+    updatePickupGuide();
   }
   function startLive() {
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');

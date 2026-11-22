@@ -24,11 +24,15 @@ try{
  await context.route('**/*',route=>{if(route.request().url().startsWith('file:'))return route.continue();network++;return route.abort();});
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto(pathToFileURL(join(root,'index.html')).href+'?quality=fixed');await page.waitForFunction(()=>window.__app?.R);
- check('page identity and first meaningful screen',await page.title()==='Twister'&&await page.locator('[data-color]').count()===5,page.url());
+ check('page identity and first meaningful screen',await page.title()==='Twisty’s Tornado'&&await page.locator('[data-color]').count()===5,page.url());
  report.userAgent=await page.evaluate(()=>navigator.userAgent);
  const settings=()=>page.evaluate(()=>({antialias:__app.R.renderer.getContext().getContextAttributes().antialias,dpr:__app.R.renderer.getPixelRatio(),width:document.getElementById('c').width,height:document.getElementById('c').height,cssWidth:innerWidth,cssHeight:innerHeight,contextLost:__app.R.renderer.getContext().isContextLost()}));
  const retina=await settings();check('actual antialiasing and 2x backing resolution',retina.antialias&&retina.dpr===2&&Math.abs(retina.width-retina.cssWidth*2)<=1&&Math.abs(retina.height-retina.cssHeight*2)<=1,retina);
  await page.locator('[data-color="blue"]').tap({force:true});
+ const pickupHint=page.getByText('Drag to the glowing scrap');
+ await pickupHint.waitFor({state:'visible'});
+ check('first run shows a marked pickup',await page.locator('#pickup-marker').isVisible());
+ const pickupPath=join(output,'first-pickup.png');await page.screenshot({path:pickupPath});report.screenshots.push({view:'first-pickup',path:pickupPath,viewport:'1180x820',dpr:2});
  const cdp=await context.newCDPSession(page),start=await page.evaluate(()=>({...__app.G.pos}));
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:590,y:450}]});
  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:850,y:380}]});
@@ -78,6 +82,8 @@ try{
  await page.evaluate(()=>__finishStage());await page.waitForFunction(()=>__app.G.stage==='town'&&!__app.finale&&__fade()===0,null,{timeout:30000});
  check('live finale returns to town with space controls hidden',!await page.locator('#space-map').isVisible(),await page.evaluate(()=>__state()));
  check('end-of-run summary pauses the new town',await page.locator('#results').isVisible()&&await page.evaluate(()=>__app.resultsOpen&&__app.G.tick===0),await page.evaluate(()=>__app.completedRun));
+ await page.setViewportSize({width:667,height:375});
+ const replayPath=join(output,'replay-landscape.png');await page.screenshot({path:replayPath});report.screenshots.push({view:'replay-landscape',path:replayPath,viewport:'667x375',dpr:2});
  await page.locator('#play-again').tap();await page.waitForFunction(()=>!__app.resultsOpen&&__app.G.tick>3);
  check('Play again starts a fresh run',await page.evaluate(()=>__app.run.seconds.blackhole===0&&__app.run.stages.town.consumedMass===0),await page.evaluate(()=>__app.run.seconds));
  const context1=await browser.newContext({viewport:{width:1180,height:820},deviceScaleFactor:1,offline:true});

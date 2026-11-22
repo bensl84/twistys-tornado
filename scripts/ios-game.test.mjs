@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build } from './build.mjs';
 
-test('the packaged game plays offline and its host can pause and resume it', { timeout: 120_000 }, async () => {
+test('the packaged game teaches a first pickup, pauses, and replays offline', { timeout: 120_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'twisty-ios-'));
   try {
     const html = build('ios');
@@ -63,6 +63,49 @@ test('the packaged game plays offline and its host can pause and resume it', { t
       assert.equal(await page.evaluate(() => window.__app.G.tick), pausedTick);
       await page.evaluate(() => window.twistyHost.setPaused(false));
       await page.waitForFunction(tick => window.__app.G.tick > tick + 3, pausedTick);
+
+      const marker = page.locator('#pickup-marker');
+      await marker.waitFor({ state: 'visible' });
+      const bounds = await marker.boundingBox();
+      assert.ok(bounds, 'the first pickup is marked in the phone viewport');
+      const starterId = await page.evaluate(() => window.__app.starterPickup.id);
+      const target = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+      const touch = await page.context().newCDPSession(page);
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart', touchPoints: [{ x: target.x - 24, y: target.y + 24 }],
+      });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [target] });
+      await page.waitForFunction(id => window.__app.G.objs[id].state === 2, starterId, { timeout: 8000 });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.getByText('Nice! Keep collecting to grow.').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#pickup-hint').isVisible(), false);
+      assert.equal(await marker.isVisible(), false);
+
+      await page.setViewportSize({ width: 667, height: 375 });
+      await page.evaluate(() => {
+        window.__jumpStage('universe');
+        window.__finishStage();
+      });
+      const results = page.getByRole('dialog', { name: 'What a whirlwind!' });
+      await results.waitFor({ state: 'visible', timeout: 30_000 });
+      const layout = await page.evaluate(() => {
+        const title = document.getElementById('results-title').getBoundingClientRect();
+        const replay = document.getElementById('play-again').getBoundingClientRect();
+        const details = document.getElementById('result-details');
+        return {
+          titleVisible: title.top >= 0 && title.bottom < innerHeight,
+          replayVisible: replay.top >= 0 && replay.bottom <= innerHeight,
+          detailsStartAtTop: details.scrollTop === 0,
+          detailsScroll: details.scrollHeight > details.clientHeight,
+        };
+      });
+      assert.deepEqual(layout, {
+        titleVisible: true, replayVisible: true, detailsStartAtTop: true, detailsScroll: true,
+      });
+      await results.getByText('Next world: 🐄 Animal Farm').waitFor({ state: 'visible' });
+      await results.getByRole('button', { name: 'Play again' }).tap();
+      await page.waitForFunction(() => !window.__app.resultsOpen && window.__app.G.tick > 3);
+      assert.equal(await page.locator('#pickup-hint').isVisible(), false);
 
       assert.deepEqual(await page.evaluate(() => window.hostActions), ['privacy', 'pause']);
       assert.deepEqual(requests, [localURL]);

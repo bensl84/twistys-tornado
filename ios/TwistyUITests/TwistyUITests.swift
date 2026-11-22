@@ -16,8 +16,10 @@ final class TwistyUITests: XCTestCase {
         XCTAssertTrue(app.alerts["Privacy"].waitForExistence(timeout: 5))
         app.alerts.buttons["Done"].tap()
 
-        let quick = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Quick:")).firstMatch
-        XCTAssertTrue(quick.isHittable)
+        let quick = app.webViews.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Quick")).firstMatch
+        XCTAssertTrue(quick.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(quick.isHittable, app.debugDescription)
         quick.tap()
         if app.buttons["Turn sound off"].exists {
             app.buttons["Turn sound off"].tap()

@@ -83,8 +83,13 @@ test('the packaged game teaches a first pickup, pauses, and replays offline', { 
 
       await page.setViewportSize({ width: 667, height: 375 });
       await page.evaluate(() => {
+        // Exercise the actual finale and results handoff without waiting on software rendering.
+        window.__TUNING.FINALE_ZOOM_S = 0.01;
+        window.__TUNING.FINALE_DARK_S = 0.01;
+        window.__TUNING.FINALE_FLASH_S = 0.01;
         window.__jumpStage('universe');
         window.__finishStage();
+        window.__app.G.winT -= 3;
       });
       const results = page.getByRole('dialog', { name: 'What a whirlwind!' });
       await results.waitFor({ state: 'visible', timeout: 30_000 });

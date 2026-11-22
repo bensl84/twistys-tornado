@@ -49,18 +49,29 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!--#web-->
 <title>Twister</title>
+<!--#end-->
+<!--#ios-->
+<title>Twisty’s Tornado</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:">
+<!--#end-->
 <meta name="twisty-build" content="2026-09-25-twister-v18-black-hole">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!--#web-->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Twister">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
+<!--#end-->
 <meta name="format-detection" content="telephone=no">
 <style>
 <!--#include style.css-->
+<!--#ios-->
+<!--#include ios.css-->
+<!--#end-->
 </style>
 </head>
 <body>
@@ -83,7 +94,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <div id="map-caption" class="hidden"><h1></h1><p></p></div>
 <div id="map-note" class="hidden">An illustrated universe • Sizes, distances and orbits are simplified for play • Tap ◎ to return</div>
 <div id="start" aria-label="Pick a tornado color to start">
+<!--#web-->
   <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
+<!--#end-->
+<!--#ios-->
+  <h1 class="ios-title">Twisty’s Tornado</h1>
+  <p class="ios-instruction">Pick a color to play</p>
+  <button id="ios-privacy" class="ios-control" type="button">Privacy</button>
+<!--#end-->
   <div class="row">
     <button type="button" class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
     <button type="button" class="disc" data-color="teal" aria-label="Start with a teal tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
@@ -97,19 +115,29 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
   </div>
 </div>
+<!--#ios-->
+<button id="ios-pause" class="ios-control hidden" type="button" aria-label="Pause game">Ⅱ</button>
+<!--#end-->
 <button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
 <div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>
 <div id="toast" class="hidden" aria-live="polite"></div>
 <div id="countdown" class="hidden" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#12232dcc" stroke="#ffffff30" stroke-width="8"/><circle id="countdown-ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd447" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><span id="countdown-n">10</span></div>
 <svg id="goal-arrow" class="hidden" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 L56 40 L40 40 L40 58 L24 58 L24 40 L8 40 Z" fill="#ffd447" stroke="#12232d" stroke-width="3" stroke-linejoin="round"/></svg>
+<!--#web-->
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
+<!--#end-->
+<!--#ios-->
+<noscript>Twisty’s Tornado needs JavaScript to play.</noscript>
+<!--#end-->
 <div id="fail" class="hidden" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;"></div>
 <div id="fade" style="position:absolute;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;"></div>
 <div id="rotate" aria-label="Rotate the iPad sideways">
   <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="30" y="12" width="40" height="76" rx="6" fill="#f2e9d8" stroke="#8a7a60" stroke-width="4"/><circle cx="50" cy="80" r="3" fill="#8a7a60"/></svg>
 </div>
+<!--#web-->
 <script src="metrics-config.js"></script>
 <script src="metrics-client.js"></script>
+<!--#end-->
 <script>
 const TornadoGame = (() => {
 'use strict';
@@ -135,6 +163,7 @@ return { boot, TUNING, TYPES, GRAPHICS, makeGeometryBuilders, roundedBoxGeometry
 </script>
 <script>
 TornadoGame.boot();
+//#web
 // Offline on the home screen: register the service worker (see sw.js; bump BUILD there on every deploy).
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('./sw.js').catch(function () {});
@@ -142,6 +171,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   var hadController = !!navigator.serviceWorker.controller, reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
 }
+//#end
 </script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+name: iOS
+
+on:
+  pull_request:
+    paths: ['ios/**', 'src/**', 'scripts/build.mjs', '.github/workflows/ios.yml']
+  push:
+    branches: [main]
+    paths: ['ios/**', 'src/**', 'scripts/build.mjs', '.github/workflows/ios.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    name: ${{ matrix.family }} Simulator
+    runs-on: xcode-27
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iPhone, iPad]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Select an installed simulator
+        env:
+          DEVICE_FAMILY: ${{ matrix.family }}
+        run: |
+          xcodebuild -version
+          device_id="$(xcrun simctl list devices available --json | jq -er --arg prefix "$DEVICE_FAMILY" '
+            [.devices | to_entries[] | select(.key | contains(".iOS-"))]
+            | sort_by(.key) | reverse
+            | map(.value[]) | map(select(.name | startswith($prefix))) | first | .udid
+          ')"
+          echo "TWISTY_SIMULATOR_ID=$device_id" >> "$GITHUB_ENV"
+      - name: Play Twisty in Simulator
+        run: |
+          xcodebuild -project ios/Twisty.xcodeproj -scheme Twisty \
+            -destination "platform=iOS Simulator,id=$TWISTY_SIMULATOR_ID" \
+            -parallel-testing-enabled NO -resultBundlePath "$RUNNER_TEMP/Twisty.xcresult" \
+            CODE_SIGNING_ALLOWED=NO TWISTY_NODE="$(command -v node)" test
+      - name: Preserve test receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twisty-${{ matrix.family }}-xcresult
+          path: ${{ runner.temp }}/Twisty.xcresult
+          retention-days: 7

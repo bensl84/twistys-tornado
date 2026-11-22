@@ -63,8 +63,14 @@ function boot() {
   app.colorId = 'blue'; app.stageHooks = []; app.finale = null;
   // ---- level timer setting + best times: stored on this device only (never sent anywhere) ----
   const TIMER_KEY = 'twisty-timer-v1', BEST_KEY = 'twisty-best-v1', LOOP_KEY = 'twisty-loop-v1';
+//#web
   const readStore = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
   const writeStore = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: skip */ } };
+//#end
+//#ios
+  const readStore = (k, d) => { try { const v = window.twistyHost.storage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
+  const writeStore = (k, v) => { try { window.twistyHost.storage.setItem(k, v); } catch (e) { /* private mode: skip */ } };
+//#end
   app.loop = Math.max(0, Math.min(99, parseInt(readStore(LOOP_KEY, '0'), 10) || 0)); // trips through the black hole on this device
   app.timerMode = TUNING.LEVEL_TIMERS[readStore(TIMER_KEY, '')] ? readStore(TIMER_KEY, '') : TUNING.LEVEL_TIMER_DEFAULT;
   function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
@@ -135,6 +141,9 @@ function boot() {
     // the 5-minute setting ends the other way round: the biggest black hole pulls you in
     document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
     document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
+//#ios
+    pauseButton.classList.add('hidden');
+//#end
     results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
   }
   const worldCard = document.getElementById('world-card'), toastEl = document.getElementById('toast');
@@ -192,6 +201,9 @@ function boot() {
   }
   document.getElementById('play-again').addEventListener('click',()=>{
     setTimeout(() => showWorldCard(app.G.theme), 250);
+//#ios
+    pauseButton.classList.remove('hidden');
+//#end
     if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');app.audio.setPaused(false);lift();app.last=performance.now();app.acc=0;updateRunHud();
   });
@@ -240,7 +252,22 @@ function boot() {
   window.addEventListener('mouseup', () => { mouseDown = false; if (!app.simMode) lift(); });
   document.addEventListener('gesturestart', e => e.preventDefault());
   document.addEventListener('touchmove', e => { if (e.target !== canvas&&!e.target.closest('#results')) e.preventDefault(); }, touchOpts);
+//#web
   document.addEventListener('visibilitychange',()=>{app.last=performance.now();app.acc=0;lift();app.audio.setPaused(document.hidden||app.resultsOpen);});
+//#end
+//#ios
+  function syncPause() {
+    app.last = performance.now();
+    app.acc = 0;
+    lift();
+    app.audio.setPaused(document.hidden || app.resultsOpen || window.twistyHost.paused);
+  }
+  document.addEventListener('visibilitychange', syncPause);
+  document.addEventListener('twisty-pause', syncPause);
+  const pauseButton = document.getElementById('ios-pause');
+  pauseButton.addEventListener('click', () => window.twistyHost.open('pause'));
+  document.getElementById('ios-privacy').addEventListener('click', () => window.twistyHost.open('privacy'));
+//#end
 
   // ---- WebGL context loss ----
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); app.contextLost = true; }, false);
@@ -250,7 +277,12 @@ function boot() {
   function frame(now) {
     if (!app.running) return;
     app.raf = requestAnimationFrame(frame);
+//#web
     if (app.contextLost||document.hidden||app.resultsOpen) {app.last=now;app.acc=0;return;}
+//#end
+//#ios
+    if (app.contextLost || document.hidden || app.resultsOpen || window.twistyHost.paused) { app.last = now; app.acc = 0; return; }
+//#end
     const G = app.G;
     const activeSeconds=Math.max(0,(now-app.last)/1000);
     let elapsed = Math.min(0.1, activeSeconds); app.last = now;
@@ -274,6 +306,9 @@ function boot() {
     try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId || app.G.timerMode !== app.timerMode) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
+//#ios
+    pauseButton.classList.remove('hidden');
+//#end
     showWorldCard(app.G.theme);
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();
@@ -284,14 +319,29 @@ function boot() {
   }
   // Start = pick a color. Five discs; tapping one is the single start tap.
   function pickFrom(e) { const d = e.target && e.target.closest ? e.target.closest('[data-color]') : null; if (d) app.colorId = d.getAttribute('data-color'); return !!d; }
+//#web
   startEl.addEventListener('touchend', e => { if (e.target.closest('#metrics-parent,#timer-pick')) return; e.preventDefault(); if (app.simMode || !pickFrom(e)) return; startLive(); }, touchOpts);
+//#end
+//#ios
+  startEl.addEventListener('touchend', e => { if (e.target.closest('#ios-privacy,#timer-pick')) return; e.preventDefault(); if (app.simMode || !pickFrom(e)) return; startLive(); }, touchOpts);
+//#end
+//#web
   startEl.addEventListener('click', e => { if (e.target.closest('#metrics-parent,#timer-pick') || app.simMode || !pickFrom(e)) return; startLive(); });
+//#end
+//#ios
+  startEl.addEventListener('click', e => { if (e.target.closest('#ios-privacy,#timer-pick') || app.simMode || !pickFrom(e)) return; startLive(); });
+//#end
   window.TwistyMetrics?.initUI();
 
   // First paint (scene visible behind the start disc). If 3D cannot start here, say so instead of a dead disc.
   function showFailure(msg) {
     const f = document.getElementById('fail'); if (!f) return;
+//#web
     f.innerHTML = msg + '<br>Open the game in Safari: <a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a>';
+//#end
+//#ios
+    f.textContent = msg;
+//#end
     f.classList.remove('hidden'); startEl.classList.add('hidden');
   }
   try { newGame(1, {}); app.R.render(); }

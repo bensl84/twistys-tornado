@@ -131,6 +131,9 @@ function generateWorld(seed, theme) {
   add('chair', sx + 4.5, sz - 3, 0.4); add('chair', sx - 5, sz - 2.5, -0.5); add('can', sx + 1, sz - 7, 0);
   add('house', sx - 4, sz - 26, 0); add('car', sx + 14, sz - 20, 0.2); add('shed', sx + 22, sz + 4, 0.5); add('tree', sx - 20, sz + 8, 0); add('pine', sx + 18, sz + 22, 0); add('tree', sx - 16, sz - 14, 0);
   for (let j = 0; j < 4; j++) add('fence', sx - 12 + j * 2.4, sz + 18, 0);
+  // Put one small pickup in camera view at the start on both phone and tablet.
+  const starterPickup = add('paper', sx + 2.2, sz - 3.2, 0);
+  if (starterPickup) starterPickup.starterPickup = true;
 
   // Remove solid objects that would sit on top of the start
   for (const o of objs) if (o.type.blocks && Math.hypot(o.x - sx, o.z - sz) < 7 + o.foot) o.state = 2;

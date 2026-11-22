@@ -1,6 +1,6 @@
 # Twisty's Tornado
 
-Twisty's Tornado is a one-finger 3D tornado game designed for a young child on an iPad. Pick one of five colors, drag anywhere on the screen, absorb increasingly large objects, and grow from a backyard tornado into a black hole. A complete run moves through the town, solar system, galaxy, and universe before looping back to a new Earth.
+Twisty's Tornado is a one-finger 3D tornado game designed for a young child on an iPad. Pick one of five colors and drag toward the glowing scrap for your first pickup. Collect increasingly large objects to grow from a backyard tornado into a black hole. A complete run moves through the town, solar system, galaxy, and universe before looping back to a new Earth.
 
 [Play the current game](https://bensl84.github.io/twistys-tornado/)
 
@@ -16,7 +16,7 @@ The space stages now feature eight textured planets on animated solar orbits, Sa
 
 These are science-inspired illustrations, not a scale model or a current-position star chart. Distances, sizes and speeds are compressed; spacecraft and pickup density are fictionalized for the game. See [space graphics and verification](docs/space-visuals.md) for screenshots, references and precise boundaries.
 
-The product name is **Twisty's Tornado**. The current browser and Apple standalone title still use the shorter legacy label **Twister**, while the web-app manifest (linked from the page, with the 180 px Apple touch icon) uses **Twisty** as its short label.
+The browser title is **Twisty's Tornado**. The Apple touch icon and web-app manifest use **Twisty** as the Home Screen label.
 
 Current limitations are recorded rather than hidden:
 
@@ -46,7 +46,7 @@ The last level's goal is a big black hole, drawn about one and a half times the 
 
 Best times are kept per setting and per level in this browser's local storage (`twisty-best-v1`), never sent anywhere. A level only sets a best time when it was finished before its clock ran out. The results card shows each level's time (⏱ when the clock finished it) and marks new bests with ★.
 
-After the universe finale, the summary stays open with three rows: **Tornado**, **Black hole**, and **Total**. Each shows time and consumption. **Play again** resumes a fresh town with the same color and zeroed statistics; reloading also starts fresh. Results are not saved between page visits.
+After the universe finale, the summary stays open with three rows: **Tornado**, **Black hole**, and **Total**. Each shows time and consumption. The next world and **Play again** stay visible while the statistics scroll. Replay starts a fresh town with the same color and zeroed statistics; reloading also starts fresh. Results are not saved between page visits.
 
 - Farm-city mass: consumed collectible mass ÷ all generated town collectible mass.
 - Game-universe mass: average of the consumed-mass fractions in solar, galaxy and universe stages, weighted equally. Unvisited stages contribute zero.
@@ -71,7 +71,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
 - `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-09-25-twister-v18-black-hole`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-11-22-twisty-v19-first-run`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).

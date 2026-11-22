@@ -1,16 +1,3 @@
-  #start {
-    gap:clamp(10px,3vmin,30px);
-    box-sizing:border-box;
-    padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
-      max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-    background:linear-gradient(#07192299,#07192240,#07192299);
-  }
-  .ios-title { margin:0; color:#fff3d6; font-size:clamp(28px,8vmin,72px); line-height:1.1; text-align:center; text-shadow:0 4px 18px #071922; }
-  .ios-instruction { margin:0; color:#fff; font-size:clamp(15px,4vmin,24px); font-weight:600; }
-  #start .row { gap:clamp(7px,2.5vmin,32px); max-width:100%; }
-  #start .disc { width:clamp(44px,15vmin,144px); height:clamp(44px,15vmin,144px); }
-  #timer-pick button { padding-inline:clamp(6px,2.6vw,16px); }
-  #timer-pick .clock { width:16px; height:16px; }
   #rotate:not(.hidden) { display:none; }
   .ios-control {
     position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(14px + env(safe-area-inset-bottom));
@@ -21,7 +8,4 @@
   #ios-pause { font-size:22px; }
   @media (max-width: 340px), (max-height: 360px) {
     #ios-privacy { position:static; order:1; min-height:44px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #start .disc, #countdown.beat span { animation:none; }
   }

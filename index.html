@@ -49,13 +49,13 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Twister</title>
-<meta name="twisty-build" content="2026-09-25-twister-v18-black-hole">
+<title>Twisty’s Tornado</title>
+<meta name="twisty-build" content="2026-11-22-twisty-v19-first-run">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Twister">
+<meta name="apple-mobile-web-app-title" content="Twisty">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="format-detection" content="telephone=no">
@@ -63,13 +63,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#5f7f9f; }
   body { position:fixed; inset:0; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
   canvas#c { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
-  #start { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(20,30,40,0.35); touch-action:none; }
-  #start { flex-direction:column; gap:5vmin; }
+  #start { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,3vmin,30px); box-sizing:border-box; padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); background:linear-gradient(#07192299,#07192240,#07192299); touch-action:none; }
+  .game-title { margin:0; color:#fff3d6; font-size:clamp(28px,8vmin,72px); line-height:1.1; text-align:center; text-shadow:0 4px 18px #071922; }
+  .start-instruction { margin:0; color:#fff; font-size:clamp(15px,4vmin,24px); font-weight:600; }
   #timer-pick { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; touch-action:manipulation; }
-  #timer-pick button { display:flex; align-items:center; gap:8px; min-height:48px; padding:8px 16px; border-radius:24px; border:2px solid #ffffff70; background:#12232dd9; color:#fff5e3; font:600 16px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
+  #timer-pick button { display:flex; align-items:center; gap:8px; min-height:48px; padding:8px clamp(6px,2.6vw,16px); border-radius:24px; border:2px solid #ffffff70; background:#12232dd9; color:#fff5e3; font:600 16px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
   #timer-pick button[aria-pressed="true"] { background:#fff3d6; color:#12232d; border-color:#fff3d6; box-shadow:0 6px 20px #0005; }
   #timer-pick button:focus-visible { outline:3px solid #ffd447; outline-offset:3px; }
-  #timer-pick .clock { width:22px; height:22px; flex:none; }
+  #timer-pick .clock { width:16px; height:16px; flex:none; }
   #timer-pick small { font-weight:500; opacity:.75; font-size:12px; }
   #countdown { position:absolute; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:7; width:96px; height:96px; pointer-events:none; }
   #countdown svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
@@ -81,11 +82,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #world-card { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:16; text-align:center; pointer-events:none; color:#fff; text-shadow:0 4px 18px #000b; animation:card 3.2s ease-out forwards; }
   #world-card .icon { font-size:clamp(90px,20vmin,160px); line-height:1.1; } #world-card .name { font:800 clamp(28px,6vmin,46px) -apple-system,"Helvetica Neue",Arial,sans-serif; }
   @keyframes card { 0% { opacity:0; transform:translate(-50%,-50%) scale(.6); } 15% { opacity:1; transform:translate(-50%,-50%) scale(1.08); } 25% { transform:translate(-50%,-50%) scale(1); } 80% { opacity:1; } 100% { opacity:0; } }
-  #toast { position:absolute; left:50%; top:calc(118px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:8; pointer-events:none; padding:10px 18px; border-radius:22px; background:#ffd447; color:#12232d; font:800 18px -apple-system,"Helvetica Neue",Arial,sans-serif; box-shadow:0 6px 22px #0006; animation:toast 2.6s ease-out forwards; }
+  #toast { position:absolute; left:50%; top:calc(118px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:8; pointer-events:none; width:max-content; max-width:calc(100% - 32px); box-sizing:border-box; padding:10px 18px; border-radius:22px; background:#ffd447; color:#12232d; font:800 18px -apple-system,"Helvetica Neue",Arial,sans-serif; box-shadow:0 6px 22px #0006; animation:toast 2.6s ease-out forwards; }
   @keyframes toast { 0% { opacity:0; transform:translate(-50%,-12px); } 12% { opacity:1; transform:translate(-50%,0); } 80% { opacity:1; } 100% { opacity:0; } }
+  #pickup-marker { position:absolute; top:0; left:0; width:34px; height:34px; box-sizing:border-box; z-index:7; pointer-events:none; border:3px solid #ffe685; border-radius:50%; box-shadow:0 0 0 1px #402c00, 0 0 14px #ffd447, inset 0 0 8px #ffd44799; }
+  #pickup-hint { position:absolute; left:calc(70px + env(safe-area-inset-left)); right:calc(70px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:8; margin:0; text-align:center; pointer-events:none; }
+  #pickup-hint span { display:inline-block; padding:9px 14px; border:1px solid #ffe68580; border-radius:20px; background:#12232ded; color:#fff5de; font-size:clamp(14px,2.8vmin,18px); font-weight:700; }
   #result-stars { display:flex; gap:10px; align-items:center; margin:0 0 14px; font-size:30px; line-height:1; }
   #result-stars .on { color:#ffd447; text-shadow:0 0 12px #ffd44780; } #result-stars .off { color:#ffffff38; } #result-stars small { font-size:13px; color:#c0d3d9; margin-left:6px; }
-  #next-world { margin:14px 0 0; font-size:16px; color:#f6f2e7; } #next-world:empty { display:none; }
+  #next-world { margin:0 0 10px; font-size:16px; color:#f6f2e7; } #next-world:empty { display:none; }
   #result-levels { margin:6px 0 4px; border-top:1px solid #ffffff22; padding-top:12px; }
   #result-levels h2 { margin:0 0 8px; font-size:15px; color:#c0d3d9; font-weight:600; }
   #result-levels table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:15px; }
@@ -96,8 +100,8 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #start .disc:focus-visible { outline:4px solid #ffd447; outline-offset:4px; }
   #mute { position:absolute; right:calc(14px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:19; width:48px; height:48px; border-radius:50%; border:1px solid #ffffff50; background:#12232dcc; color:#fff; font-size:22px; line-height:1; touch-action:manipulation; cursor:pointer; }
   #mute[aria-pressed="true"] { background:#3a2a2acc; }
-  #start .row { display:flex; flex-wrap:wrap; gap:4vmin; justify-content:center; align-items:center; max-width:92vw; }
-  #start .disc { width:22vmin; height:22vmin; max-width:170px; max-height:170px; border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation: pulse 1.6s ease-in-out infinite; }
+  #start .row { display:flex; flex-wrap:wrap; gap:clamp(7px,2.5vmin,32px); justify-content:center; align-items:center; max-width:100%; }
+  #start .disc { width:clamp(44px,15vmin,144px); height:clamp(44px,15vmin,144px); border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation:pulse 1.6s ease-in-out infinite; }
   #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
   #start svg { width:62%; height:62%; }
   #metrics-parent { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:20; color:#fff; font-size:14px; touch-action:manipulation; }
@@ -121,13 +125,20 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #run-hud { position:absolute; top:calc(14px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); z-index:6; pointer-events:none; color:#fff5e3; background:#12232ddd; border:1px solid #ffffff24; border-radius:16px; padding:10px 14px; font-size:12px; line-height:1.6; font-variant-numeric:tabular-nums; box-shadow:0 4px 16px #0002; }
   #run-hud strong { font-size:17px; margin-left:10px; } #hud-mass { color:#b5e3d5; }
   #results { position:absolute; inset:0; z-index:18; display:flex; align-items:center; justify-content:center; padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); background:#071521bf; box-sizing:border-box; touch-action:pan-y; }
-  #results .card { box-sizing:border-box; width:min(560px,100%); max-height:100%; overflow-y:auto; border-radius:24px; border:1px solid #c9e1dc38; padding:clamp(18px,4vmin,32px); background:#122632; color:#f6f2e7; box-shadow:0 20px 70px #0007; }
-  #results h1 { margin:0 0 5px; font-size:clamp(25px,5vmin,36px); } #results .subtitle { margin:0 0 20px; color:#c0d3d9; font-size:14px; }
+  #results .card { display:flex; flex-direction:column; box-sizing:border-box; width:min(560px,100%); max-height:100%; overflow:hidden; border-radius:24px; border:1px solid #c9e1dc38; padding:clamp(16px,3.5vmin,28px); background:#122632; color:#f6f2e7; box-shadow:0 20px 70px #0007; }
+  #results h1 { flex:none; margin:0 0 5px; font-size:clamp(25px,5vmin,36px); } #results .subtitle { margin:0 0 16px; color:#c0d3d9; font-size:14px; }
+  #result-details { min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
+  #result-details:focus-visible { outline:2px solid #ffd447; outline-offset:-2px; }
+  .result-actions { flex:none; border-top:1px solid #ffffff22; padding-top:clamp(8px,2vmin,16px); }
+  #results:not(.hidden) ~ #mute { visibility:hidden; }
   .result-row { display:grid; grid-template-columns:1fr auto; gap:6px 14px; padding:15px 0; border-top:1px solid #ffffff22; font-variant-numeric:tabular-nums; }
   .result-row h2 { margin:0; font-size:18px; } .result-row .time { font-size:20px; font-weight:650; } .result-row .mass-label { color:#b7cdd6; font-size:13px; } .result-row .mass { color:#99e5c8; text-align:right; font-weight:650; }
   #results .note { font-size:12px; line-height:1.5; color:#b7cdd6; margin:12px 0 18px; }
   #play-again { width:100%; min-height:52px; border:0; border-radius:14px; background:#b5efca; color:#102a23; font:700 17px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
   #play-again:focus-visible { outline:3px solid #fff; outline-offset:4px; }
+  @media (prefers-reduced-motion: reduce) {
+    #start .disc, #countdown.beat span { animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -135,21 +146,28 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
 <section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
   <div class="card">
-    <h1 id="results-title">What a whirlwind!</h1><p id="results-subtitle" class="subtitle">Your journey from farm city to universe</p>
-    <div id="result-stars" aria-label="Levels finished before the clock"></div>
-    <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
-    <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
-    <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
-    <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
-    <p id="next-world"></p>
-    <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
-    <button id="play-again" type="button">Play again</button>
+    <h1 id="results-title">What a whirlwind!</h1>
+    <div id="result-details" tabindex="0" role="region" aria-label="Run statistics">
+      <p id="results-subtitle" class="subtitle">Your journey from farm city to universe</p>
+      <div id="result-stars" aria-label="Levels finished before the clock"></div>
+      <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
+      <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
+      <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
+      <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
+      <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
+    </div>
+    <div class="result-actions">
+      <p id="next-world"></p>
+      <button id="play-again" type="button">Play again</button>
+    </div>
   </div>
 </section>
 <button id="space-map" class="hidden" aria-label="Show space overview" aria-pressed="false">◎</button>
 <div id="map-caption" class="hidden"><h1></h1><p></p></div>
 <div id="map-note" class="hidden">An illustrated universe • Sizes, distances and orbits are simplified for play • Tap ◎ to return</div>
 <div id="start" aria-label="Pick a tornado color to start">
+  <h1 class="game-title">Twisty’s Tornado</h1>
+  <p class="start-instruction">Pick a color to play</p>
   <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
   <div class="row">
     <button type="button" class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
@@ -167,6 +185,8 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
 <div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>
 <div id="toast" class="hidden" aria-live="polite"></div>
+<div id="pickup-marker" class="hidden" aria-hidden="true"></div>
+<p id="pickup-hint" class="hidden"><span>Drag to the glowing scrap</span></p>
 <div id="countdown" class="hidden" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#12232dcc" stroke="#ffffff30" stroke-width="8"/><circle id="countdown-ring" cx="50" cy="50" r="44" fill="none" stroke="#ffd447" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><span id="countdown-n">10</span></div>
 <svg id="goal-arrow" class="hidden" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 L56 40 L40 40 L40 58 L24 58 L24 40 L8 40 Z" fill="#ffd447" stroke="#12232d" stroke-width="3" stroke-linejoin="round"/></svg>
 <noscript><div id="nojs" style="position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#1c2a36;color:#f2e9d8;font-size:22px;line-height:1.5;text-align:center;">This viewer cannot run the game (scripts are off). Open it in Safari instead: <br><a href="https://bensl84.github.io/twistys-tornado/" style="color:#ffd447;font-size:22px;">bensl84.github.io/twistys-tornado</a></div></noscript>
@@ -957,6 +977,9 @@ function generateWorld(seed, theme) {
   add('chair', sx + 4.5, sz - 3, 0.4); add('chair', sx - 5, sz - 2.5, -0.5); add('can', sx + 1, sz - 7, 0);
   add('house', sx - 4, sz - 26, 0); add('car', sx + 14, sz - 20, 0.2); add('shed', sx + 22, sz + 4, 0.5); add('tree', sx - 20, sz + 8, 0); add('pine', sx + 18, sz + 22, 0); add('tree', sx - 16, sz - 14, 0);
   for (let j = 0; j < 4; j++) add('fence', sx - 12 + j * 2.4, sz + 18, 0);
+  // Put one small pickup in camera view at the start on both phone and tablet.
+  const starterPickup = add('paper', sx + 2.2, sz - 3.2, 0);
+  if (starterPickup) starterPickup.starterPickup = true;
 
   // Remove solid objects that would sit on top of the start
   for (const o of objs) if (o.type.blocks && Math.hypot(o.x - sx, o.z - sz) < 7 + o.foot) o.state = 2;
@@ -2557,6 +2580,18 @@ function boot() {
     app.G.listeners.push(e => app.audio.onEvent(e, app.G));
     app.G.listeners.push(e => { if (e.kind === 'win' && !app.simMode) recordLevel(app.G, e); });
     app.G.listeners.push(e => { if (!app.simMode && !(app.finale && app.finale.reborn)) window.TwistyMetrics?.gameEvent(e,app.G); });
+    clearPickupGuide();
+    if (!app.simMode && app.G.stage === 'town' && app.loop === 0) {
+      const town = app.G;
+      app.starterPickup = town.objs.find(o => o.starterPickup);
+      town.listeners.push(e => {
+        if (e.kind === 'supersize') clearPickupGuide();
+        if (e.kind === 'absorb' && app.starterPickup && town.lastInputTick >= 0) {
+          clearPickupGuide();
+          showToast('Nice! Keep collecting to grow.');
+        }
+      });
+    }
     onResize();
     updateCamera(app.G, 1); app.R.update(app.G, DT);
     for (const h of app.stageHooks) h(app.G);
@@ -2645,7 +2680,9 @@ function boot() {
     // the 5-minute setting ends the other way round: the biggest black hole pulls you in
     document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
     document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
-    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();document.getElementById('play-again').focus();
+    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();
+    document.getElementById('result-details').scrollTop = 0;
+    document.getElementById('play-again').focus({ preventScroll: true });
   }
   const worldCard = document.getElementById('world-card'), toastEl = document.getElementById('toast');
   // ---- sound on/off: a parent control in the corner, remembered on this device ----
@@ -2680,6 +2717,27 @@ function boot() {
   function showToast(text) {
     toastEl.textContent = text; toastEl.classList.add('hidden'); void toastEl.offsetWidth; toastEl.classList.remove('hidden');
     clearTimeout(showToast.t); showToast.t = setTimeout(() => toastEl.classList.add('hidden'), 2700);
+  }
+  const pickupHint = document.getElementById('pickup-hint'), pickupHintText = pickupHint.firstElementChild;
+  const pickupMarker = document.getElementById('pickup-marker'), pickupPoint = new THREE.Vector3();
+  function clearPickupGuide() {
+    app.starterPickup = null;
+    pickupHint.classList.add('hidden');
+    pickupMarker.classList.add('hidden');
+  }
+  function updatePickupGuide() {
+    const target = app.starterPickup;
+    if (!target) return;
+    const { camera, width, height } = app.R;
+    const p = pickupPoint.set(target.x, 0.05, target.z).project(camera);
+    const x = (p.x + 1) * width / 2, y = (1 - p.y) * height / 2;
+    const onScreen = target.state === 0 && Math.abs(p.z) < 1 &&
+      x > 20 && x < width - 20 && y > 20 && y < height - 20;
+    const hint = onScreen ? 'Drag to the glowing scrap' : 'Drag over small things to grow';
+    if (pickupHintText.textContent !== hint) pickupHintText.textContent = hint;
+    pickupHint.classList.remove('hidden');
+    pickupMarker.classList.toggle('hidden', !onScreen);
+    if (onScreen) pickupMarker.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
   }
   const LEVEL_NAMES = [['town', 'Farm city'], ['solar', 'Solar system'], ['galaxy', 'Galaxy'], ['universe', 'Universe']];
   function fillLevelTable(levels) {
@@ -2777,6 +2835,7 @@ function boot() {
     else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;app.completedSwallowed=!!G.swallowed;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
+    updatePickupGuide();
   }
   function startLive() {
     app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');

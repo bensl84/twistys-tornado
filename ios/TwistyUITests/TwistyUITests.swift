@@ -16,14 +16,17 @@ final class TwistyUITests: XCTestCase {
         XCTAssertTrue(app.alerts["Privacy"].waitForExistence(timeout: 5))
         app.alerts.buttons["Done"].tap()
 
-        let quick = app.webViews.descendants(matching: .any)
+        let quick = app.switches
             .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Quick")).firstMatch
         XCTAssertTrue(quick.waitForExistence(timeout: 8), app.debugDescription)
         XCTAssertTrue(quick.isHittable, app.debugDescription)
         quick.tap()
-        if app.buttons["Turn sound off"].exists {
-            app.buttons["Turn sound off"].tap()
+        let mute = app.switches["Turn sound off"]
+        let unmute = app.switches["Turn sound on"]
+        if mute.exists {
+            mute.tap()
         }
+        XCTAssertTrue(unmute.waitForExistence(timeout: 5), app.debugDescription)
 
         blue.tap()
         let pause = app.buttons["Pause game"]
@@ -44,17 +47,17 @@ final class TwistyUITests: XCTestCase {
         pauseMenu.buttons["End this run"].tap()
         XCTAssertTrue(blue.waitForExistence(timeout: 15))
         XCTAssertFalse(pause.exists)
-        XCTAssertTrue(app.buttons["Turn sound on"].exists)
+        XCTAssertTrue(unmute.waitForExistence(timeout: 5), app.debugDescription)
 
         app.terminate()
         app.launch()
         XCTAssertTrue(blue.waitForExistence(timeout: 35))
-        XCTAssertTrue(app.buttons["Turn sound on"].exists)
+        XCTAssertTrue(unmute.waitForExistence(timeout: 5), app.debugDescription)
         blue.tap()
         XCTAssertTrue(pause.waitForExistence(timeout: 15))
         // A retained Quick choice starts at 0:45; Normal would show 1:30.
         let quickCountdown = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", ".*0:4[0-5].*")).firstMatch
-        XCTAssertTrue(quickCountdown.waitForExistence(timeout: 5))
+        XCTAssertTrue(quickCountdown.waitForExistence(timeout: 5), app.debugDescription)
     }
 
     @MainActor

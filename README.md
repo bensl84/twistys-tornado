@@ -188,4 +188,18 @@ Open [the Xcode project](ios/Twisty.xcodeproj) and select the shared Twisty sche
 
 The app packages the same game from `src/` as an offline resource. Its WebKit view opens only that bundled file. The app includes a native pause menu and keeps sound, timer, best times and unlocked worlds in local app preferences. The iOS build excludes the website’s metrics scripts, install metadata and service worker.
 
-The iOS CI workflow runs the app’s startup, pause and persistence smoke test on iPhone and iPad simulators. The [graphics exit gate](docs/graphics-exit-gate.md) documents the separate physical iPad playthrough and performance evidence required to validate the game on device. Version 1.0 uses the app identifier `com.benleonard.twistystornado`. The [support and privacy page](support.html) covers the iOS app.
+The iOS CI workflow runs the app’s startup, pause and persistence smoke test on iPhone and iPad simulators. The [graphics exit gate](docs/graphics-exit-gate.md) documents the separate physical iPad playthrough and performance evidence required to validate the game on device. Version 1.0 uses the app identifier `com.benleonard.twistystornado`. See the [support](#iphone-and-ipad-support) and [privacy policy](#privacy-policy-for-the-ios-app) for the iOS app.
+
+## iPhone and iPad support
+
+Pick a color to start and drag one finger across the scene to move. Switch the level timer before you pick a color. During a run, tap the pause button to resume or return to the start screen.
+
+To report a problem, use the [Twisty’s Tornado support tracker](https://github.com/bensl84/twistys-tornado/issues). Reports are public. Include your device model, iOS or iPadOS version, and what happened. Leave out personal information.
+
+## Privacy policy for the iOS app
+
+Twisty’s Tornado works offline. The iOS app has no accounts, ads, or analytics. It does not collect or send gameplay data or personal information.
+
+The app stores your sound setting, timer choice, best times, and unlocked worlds on your device. Delete the app to remove its saved data from the device. The app has no account or server that stores these records.
+
+For privacy questions about the app, use the support link above.

@@ -1,0 +1,453 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		15AFE86DC445BCCFDED869FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E99710C5B5B8AF04FA6240E /* AppDelegate.swift */; };
+		32256A2DEAAEA9F2AF442C23 /* Three-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 15E8642E5DB68403635CD99E /* Three-LICENSE.txt */; };
+		38032D5155D9EE797EEEE1F0 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 602484AD838C79A66B5FE9DE /* GameViewController.swift */; };
+		987C927F03858580960F1BE1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 84836133075A7F5C1ECC2DD0 /* PrivacyInfo.xcprivacy */; };
+		9E03DC1530F71B1CCB0FCA44 /* TwistyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A286472CEA5CD6A559B388 /* TwistyUITests.swift */; };
+		D3B04BE7D3EEB4B971573A15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01FB0B4F8ED65E8B6B99805A /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F34DAADA9468AA478F810BDD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 19385B8F3552205E1FEAAA77 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B25296E069BB6EC4723F6C58;
+			remoteInfo = Twisty;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01FB0B4F8ED65E8B6B99805A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		115A584FC1580FB44913B923 /* TwistyUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TwistyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		15E8642E5DB68403635CD99E /* Three-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Three-LICENSE.txt"; sourceTree = "<group>"; };
+		602484AD838C79A66B5FE9DE /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
+		84836133075A7F5C1ECC2DD0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		9E99710C5B5B8AF04FA6240E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A1A286472CEA5CD6A559B388 /* TwistyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwistyUITests.swift; sourceTree = "<group>"; };
+		AB9689E10F4C26477DCC4001 /* Twisty.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Twisty.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2D0483093F3A851C4410CB2B /* TwistyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A1A286472CEA5CD6A559B388 /* TwistyUITests.swift */,
+			);
+			path = TwistyUITests;
+			sourceTree = "<group>";
+		};
+		39A7DDA91F50BB31282D3F06 = {
+			isa = PBXGroup;
+			children = (
+				A5685B18C913CFED5B75C1AA /* Twisty */,
+				2D0483093F3A851C4410CB2B /* TwistyUITests */,
+				5EE8994AC6F7219130D268A5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5EE8994AC6F7219130D268A5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB9689E10F4C26477DCC4001 /* Twisty.app */,
+				115A584FC1580FB44913B923 /* TwistyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A5685B18C913CFED5B75C1AA /* Twisty */ = {
+			isa = PBXGroup;
+			children = (
+				9E99710C5B5B8AF04FA6240E /* AppDelegate.swift */,
+				01FB0B4F8ED65E8B6B99805A /* Assets.xcassets */,
+				602484AD838C79A66B5FE9DE /* GameViewController.swift */,
+				84836133075A7F5C1ECC2DD0 /* PrivacyInfo.xcprivacy */,
+				15E8642E5DB68403635CD99E /* Three-LICENSE.txt */,
+			);
+			path = Twisty;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6528A3F1341756A4224F26C0 /* TwistyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEAB97AC4B55C030432980AA /* Build configuration list for PBXNativeTarget "TwistyUITests" */;
+			buildPhases = (
+				8EC511F6DA87088F4783C26F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				41C6040A60D9FEE690D963E6 /* PBXTargetDependency */,
+			);
+			name = TwistyUITests;
+			packageProductDependencies = (
+			);
+			productName = TwistyUITests;
+			productReference = 115A584FC1580FB44913B923 /* TwistyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		B25296E069BB6EC4723F6C58 /* Twisty */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD638B7DA64F707EB984CE24 /* Build configuration list for PBXNativeTarget "Twisty" */;
+			buildPhases = (
+				4A66201B0EB164A99FB4A3D4 /* Sources */,
+				F2CC935018B0AA08A47B9C33 /* Resources */,
+				64EF103CF2FDE41BFFC54033 /* Bundle offline game */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Twisty;
+			packageProductDependencies = (
+			);
+			productName = Twisty;
+			productReference = AB9689E10F4C26477DCC4001 /* Twisty.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		19385B8F3552205E1FEAAA77 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					6528A3F1341756A4224F26C0 = {
+						TestTargetID = B25296E069BB6EC4723F6C58;
+					};
+					B25296E069BB6EC4723F6C58 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 955762F154048A4B79046319 /* Build configuration list for PBXProject "Twisty" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 39A7DDA91F50BB31282D3F06;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5EE8994AC6F7219130D268A5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B25296E069BB6EC4723F6C58 /* Twisty */,
+				6528A3F1341756A4224F26C0 /* TwistyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F2CC935018B0AA08A47B9C33 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3B04BE7D3EEB4B971573A15 /* Assets.xcassets in Resources */,
+				987C927F03858580960F1BE1 /* PrivacyInfo.xcprivacy in Resources */,
+				32256A2DEAAEA9F2AF442C23 /* Three-LICENSE.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		64EF103CF2FDE41BFFC54033 /* Bundle offline game */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/package-game.mjs",
+				"$(SRCROOT)/../scripts/build.mjs",
+				"$(SRCROOT)/../src",
+			);
+			name = "Bundle offline game";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Game/index.html",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nexport PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nif ! command -v \"${TWISTY_NODE:-node}\" >/dev/null 2>&1; then\n  echo \"error: Node.js is needed to bundle Twisty. Install Node 22 or set TWISTY_NODE to its executable in Xcode.\"\n  exit 1\nfi\n\"${TWISTY_NODE:-node}\" \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4A66201B0EB164A99FB4A3D4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				15AFE86DC445BCCFDED869FD /* AppDelegate.swift in Sources */,
+				38032D5155D9EE797EEEE1F0 /* GameViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8EC511F6DA87088F4783C26F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9E03DC1530F71B1CCB0FCA44 /* TwistyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		41C6040A60D9FEE690D963E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B25296E069BB6EC4723F6C58 /* Twisty */;
+			targetProxy = F34DAADA9468AA478F810BDD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2738784049011237EEB1965D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = Twisty/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.benleonard.twistystornado;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		39693D9B877B265A0B5BF424 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		878F15C374DFD9838E518C95 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.benleonard.twistystornado.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Twisty;
+			};
+			name = Debug;
+		};
+		A5DED401E82D56D38C9951FE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D6BBAFD6CBABA77D93C1A969 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = Twisty/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.benleonard.twistystornado;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FC1D79783F8BADF1D9AEF6DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.benleonard.twistystornado.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Twisty;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		955762F154048A4B79046319 /* Build configuration list for PBXProject "Twisty" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5DED401E82D56D38C9951FE /* Debug */,
+				39693D9B877B265A0B5BF424 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DD638B7DA64F707EB984CE24 /* Build configuration list for PBXNativeTarget "Twisty" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2738784049011237EEB1965D /* Debug */,
+				D6BBAFD6CBABA77D93C1A969 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EEAB97AC4B55C030432980AA /* Build configuration list for PBXNativeTarget "TwistyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				878F15C374DFD9838E518C95 /* Debug */,
+				FC1D79783F8BADF1D9AEF6DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 19385B8F3552205E1FEAAA77 /* Project object */;
+}

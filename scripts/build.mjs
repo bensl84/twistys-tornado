@@ -12,16 +12,29 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = join(root, 'src'), out = join(root, 'index.html');
 const INCLUDE = /^(?:\/\/#include (\S+)|<!--#include (\S+)-->)$/;
+const PLATFORM = /^(?:\/\/#(web|ios|end)|<!--#(web|ios|end)-->)$/;
 
-export function build() {
-  const lines = readFileSync(join(src, 'page.html'), 'utf8').split('\n');
-  return lines.map(line => {
-    const m = INCLUDE.exec(line);
-    if (!m) return line;
-    const text = readFileSync(join(src, m[1] || m[2]), 'utf8');
-    if (!text.endsWith('\n')) throw new Error(`src/${m[1] || m[2]} must end with a newline`);
-    return text.slice(0, -1);
-  }).join('\n');
+export function build(platform = 'web') {
+  function render(path) {
+    const source = readFileSync(join(src, path), 'utf8');
+    if (!source.endsWith('\n')) throw new Error(`src/${path} must end with a newline`);
+    let section = null;
+    const output = [];
+    for (const line of source.slice(0, -1).split('\n')) {
+      const marker = PLATFORM.exec(line);
+      if (marker) {
+        const tag = marker[1] || marker[2];
+        if (tag === 'end' ? !section : section) throw new Error(`Unexpected ${tag} marker in src/${path}`);
+        section = tag === 'end' ? null : tag;
+      } else if (!section || section === platform) {
+        const include = INCLUDE.exec(line);
+        output.push(include ? render(include[1] || include[2]) : line);
+      }
+    }
+    if (section) throw new Error(`Unclosed ${section} section in src/${path}`);
+    return output.join('\n');
+  }
+  return render('page.html') + '\n';
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

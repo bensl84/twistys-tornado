@@ -181,3 +181,11 @@ The first command is the fast logic and progression gate. The second is a render
 Before publishing a change to any cached root asset, update `BUILD` in `sw.js`, run the deterministic and local graphics gates, and test the deployed URL. Track the remaining target-device and human signoff rows in the graphics exit gate; a local pass is not full graphics acceptance. A source change, a successful local test, a GitHub Pages deployment, and a physical-iPad result are separate evidence lanes; do not treat one as proof of the others.
 
 The 2026-09-15 source checks do not establish physical-iPad readiness. A complete run on the target iPad remains the next device-validation step. Publishing requires the user's authorization and confirmation of the exact Pages build and live service-worker cache. To roll back, use a normal revert commit and a new cache BUILD identifier; never rewrite published history or reuse the old cache name.
+
+## iPhone and iPad app
+
+Open [the Xcode project](ios/Twisty.xcodeproj) and select the shared Twisty scheme. It targets iOS and iPadOS 17 or later. The resource build uses Node.js 22 or later. For a Node binary outside the normal system and Homebrew paths, pass an absolute `TWISTY_NODE` build setting.
+
+The app packages the same game from `src/` as an offline resource. Its WebKit view opens only that bundled file. The app includes a native pause menu and keeps sound, timer, best times and unlocked worlds in local app preferences. The iOS build excludes the website’s metrics scripts, install metadata and service worker.
+
+The iOS CI workflow runs the app’s startup, pause and persistence smoke test on iPhone and iPad simulators. The [graphics exit gate](docs/graphics-exit-gate.md) documents the separate physical iPad playthrough and performance evidence required to validate the game on device. Version 1.0 uses the app identifier `com.benleonard.twistystornado`. The [support and privacy page](support.html) covers the iOS app.

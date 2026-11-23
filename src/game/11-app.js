@@ -16,7 +16,8 @@ function boot() {
   function camState() { const G = app.G; cam.x = G.camPos.x; cam.y = G.camPos.y; cam.z = G.camPos.z; cam.pitch = G.camPitch; cam.fov = TUNING.FOV + G.fovPunch; cam.aspect = app.R.width / app.R.height; return cam; }
   function setTouch(sx, sy) {
     const G = app.G; if (!G) return;
-    if(G.overview||app.resultsOpen||app.finale||document.hidden)return;
+    if (G.overview || app.resultsOpen || app.finale || document.hidden || app.contextLost ||
+        (!app.simMode && (!app.running || gamePaused()))) return;
     screenToGround(camState(), sx, sy, app.R.width, app.R.height, groundPt);
     const wasDown = G.finger.down;
     G.finger.down = true; G.finger.x = groundPt.x; G.finger.z = groundPt.z;
@@ -29,6 +30,8 @@ function boot() {
     if (app.R) app.R.reset();
     const theme = (stageId || 'town') !== 'town' ? null : opts.theme !== undefined ? opts.theme : themeForLoop(app.loop);
     app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode, theme);
+    const stageIndex = LEVEL_NAMES.findIndex(([id]) => id === app.G.stage);
+    readout('hud-stage', (themeInfo(app.G.theme)?.name || LEVEL_NAMES[stageIndex][1]) + ' · ' + (stageIndex + 1) + ' of ' + LEVEL_NAMES.length);
     if(!app.run||app.G.stage==='town')app.run=createRunStats();
     if(!app.runLevels||app.G.stage==='town')app.runLevels={};
     app.run.stages[app.G.stage]=app.G.massStats;
@@ -88,16 +91,21 @@ function boot() {
   function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
   function bestFor(mode, id) { const b = loadBest(); const v = b[mode] && b[mode][id]; return Number.isFinite(v) ? v : null; }
   function setBest(mode, id, t) { const b = loadBest(); b[mode] = b[mode] || {}; b[mode][id] = t; writeStore(BEST_KEY, JSON.stringify(b)); }
-  // A level only sets a best time when it was finished before the clock ran out.
+  // The clock can complete an unattended level. Only played levels finished before 0 can rank.
   function recordLevel(G, e) {
     const t = Number.isFinite(e.levelT) ? e.levelT : G.levelT, prev = bestFor(G.timerMode, G.stage);
-    const newBest = !e.timedOut && (prev === null || t < prev - 1e-6);
+    const ranked = !e.timedOut && G.lastInputTick >= 0;
+    const newBest = ranked && (prev === null || t < prev - 1e-6);
     if (newBest) setBest(G.timerMode, G.stage, t);
-    app.runLevels[G.stage] = { t, timedOut: !!e.timedOut, limit: G.levelLimit, prev, newBest, mode: G.timerMode };
+    app.runLevels[G.stage] = { t, ranked, newBest, mode: G.timerMode };
     if (newBest && prev !== null) { showToast('★ New best ' + formatDuration(t)); app.audio.chime(); }
   }
   const timerPick = document.getElementById('timer-pick');
-  function syncTimerPick() { for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.getAttribute('data-timer') === app.timerMode)); }
+  function syncTimerPick() {
+    for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.dataset.timer === app.timerMode));
+    const { town, space } = TUNING.LEVEL_TIMERS[app.timerMode];
+    readout('timer-summary', 'Up to ' + formatDuration(town + 3 * space) + ' on the four level clocks');
+  }
   timerPick.addEventListener('click', e => { const b = e.target.closest('[data-timer]'); if (!b || app.simMode) return; app.timerMode = b.getAttribute('data-timer'); writeStore(TIMER_KEY, app.timerMode); syncTimerPick(); });
   syncTimerPick();
   app.resultsOpen=false;app.completedRun=null;
@@ -133,7 +141,8 @@ function boot() {
     arrowEl.classList.toggle('hidden', !showArrow);
     if (!showArrow) return;
     // Keep clear of the countdown ring (top centre) and the HUD: the arrow's box is inset from every edge, deepest at the top.
-    const W = app.R.width, H = app.R.height, m = 56, top = 150;
+    const W = app.R.width, H = app.R.height, m = 56;
+    const top = Math.min(W <= 340 ? 248 : W <= 520 ? 184 : 150, H - 2 * m);
     _gv.set(g.x, g.size * 0.6, g.z).project(app.R.camera);
     let x = (_gv.x + 1) / 2 * W, y = (1 - _gv.y) / 2 * H; const behind = _gv.z > 1; if (behind) { x = W - x; y = H - y; }
     let deg;
@@ -146,17 +155,15 @@ function boot() {
     arrowEl.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
   }
   function showResults() {
-    const s=app.completedRun;lift();app.resultsOpen=true;app.acc=0;
+    const s=app.completedRun;app.resultsOpen=true;syncPause();
     if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
     fillLevelTable(app.completedLevels||{});
     // the 5-minute setting ends the other way round: the biggest black hole pulls you in
     document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
     document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
-//#ios
     pauseButton.classList.add('hidden');
-//#end
-    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();
+    results.classList.remove('hidden');updateRunHud();
     document.getElementById('result-details').scrollTop = 0;
     document.getElementById('play-again').focus({ preventScroll: true });
   }
@@ -224,23 +231,22 @@ function boot() {
     let total = 0, complete = true, clean = true;
     for (const [id, name] of LEVEL_NAMES) {
       const L = levels[id], b = bestFor(mode, id), fb = b === null ? '–' : formatDuration(b); if (!L) { complete = false; row(name, '–', fb, false); continue; }
-      total += L.t; if (L.timedOut) clean = false;
-      row(name, formatDuration(L.t) + (L.timedOut ? ' ⏱' : ''), fb + (L.newBest ? ' ★' : ''), L.newBest);
+      total += L.t; if (!L.ranked) clean = false;
+      row(name, formatDuration(L.t) + (L.ranked ? '' : ' ⏱'), fb + (L.newBest ? ' ★' : ''), L.newBest);
     }
     const stars = document.getElementById('result-stars'); stars.textContent = '';
-    for (const [id, name] of LEVEL_NAMES) { const L = levels[id], on = !!L && !L.timedOut, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
-    { const sm = document.createElement('small'); sm.textContent = 'beat the clock'; stars.appendChild(sm); }
+    for (const [id, name] of LEVEL_NAMES) { const on = levels[id]?.ranked, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
+    { const sm = document.createElement('small'); sm.textContent = 'Steered and beat the clock'; stars.appendChild(sm); }
+    readout('result-clock-help', clean ? '' : '⏱ Finished with clock help');
     const next = themeInfo(app.G.theme); document.getElementById('next-world').textContent = next ? 'Next world: ' + next.icon + ' ' + next.name : '';
     // a run the clock had to finish still shows its total, but only a run that beat every clock can set the best
     if (complete) { const prev = bestFor(mode, 'run'), nb = clean && (prev === null || total < prev - 1e-6); if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), nb ? formatDuration(total) + ' ★' : prev === null ? '–' : formatDuration(prev), nb); }
   }
   document.getElementById('play-again').addEventListener('click',()=>{
     setTimeout(() => showWorldCard(app.G.theme), 250);
-//#ios
     pauseButton.classList.remove('hidden');
-//#end
     if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
-    app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');app.audio.setPaused(false);lift();app.last=performance.now();app.acc=0;updateRunHud();
+    app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');syncPause();updateRunHud();
   });
   const fadeEl = document.getElementById('fade');
   function setFade(opacity, white) { if (!fadeEl) return; fadeEl.style.background = white ? '#ffffff' : '#000000'; fadeEl.style.opacity = String(clamp(opacity, 0, 1)); }
@@ -264,7 +270,7 @@ function boot() {
   window.addEventListener('resize', onResize);
   document.getElementById('space-map').addEventListener('click',()=>{
     if(!app.G||app.G.stage==='town'||app.resultsOpen||app.finale)return;
-    app.G.overview=!app.G.overview;lift();app.acc=0;
+    app.G.overview=!app.G.overview;releaseInput();app.acc=0;
     const button=document.getElementById('space-map');button.setAttribute('aria-pressed',String(app.G.overview));button.setAttribute('aria-label',app.G.overview?'Return to game':'Show space overview');
     const caption=document.getElementById('map-caption'),copy={solar:['The Solar System','Eight planets · One star · Worlds in motion'],galaxy:['The Milky Way','Our home galaxy · A barred spiral of stars, gas and dust'],universe:['The Cosmic Web','Galaxies gather in clusters and filaments around immense voids']}[app.G.stage];
     caption.querySelector('h1').textContent=copy[0];caption.querySelector('p').textContent=copy[1];caption.classList.toggle('hidden',!app.G.overview);document.getElementById('map-note').classList.toggle('hidden',!app.G.overview);
@@ -275,49 +281,97 @@ function boot() {
 
   // ---- touch input (one finger, always) ----
   const touchOpts = { passive: false };
-  function tp(e) { const t = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches[0]); return t; }
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); const t = tp(e); if (t && !app.simMode) setTouch(t.clientX, t.clientY); }, touchOpts);
-  canvas.addEventListener('touchmove', e => { e.preventDefault(); const t = tp(e); if (t && !app.simMode) setTouch(t.clientX, t.clientY); }, touchOpts);
-  canvas.addEventListener('touchend', e => { e.preventDefault(); if (!e.touches || e.touches.length === 0) { if (!app.simMode) lift(); } }, touchOpts);
-  canvas.addEventListener('touchcancel', e => { e.preventDefault(); if (!app.simMode) lift(); }, touchOpts);
-  // mouse fallback for desktop testing only (iPad uses touch)
+  let activeTouch = null;
   let mouseDown = false;
-  canvas.addEventListener('mousedown', e => { if (app.simMode) return; mouseDown = true; setTouch(e.clientX, e.clientY); });
-  window.addEventListener('mousemove', e => { if (mouseDown && !app.simMode) setTouch(e.clientX, e.clientY); });
-  window.addEventListener('mouseup', () => { mouseDown = false; if (!app.simMode) lift(); });
+  function releaseInput() {
+    activeTouch = null;
+    mouseDown = false;
+    if (!app.simMode) lift();
+  }
+  const findTouch = touches => Array.from(touches).find(t => t.identifier === activeTouch);
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (app.simMode || activeTouch !== null || !e.changedTouches.length) return;
+    const t = e.changedTouches[0];
+    activeTouch = t.identifier;
+    setTouch(t.clientX, t.clientY);
+  }, touchOpts);
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = findTouch(e.changedTouches);
+    if (t && !app.simMode) setTouch(t.clientX, t.clientY);
+  }, touchOpts);
+  function endTouch(e) {
+    e.preventDefault();
+    if (activeTouch !== null && !findTouch(e.touches)) releaseInput();
+  }
+  canvas.addEventListener('touchend', endTouch, touchOpts);
+  canvas.addEventListener('touchcancel', endTouch, touchOpts);
+  canvas.addEventListener('mousedown', e => {
+    if (app.simMode || e.button !== 0) return;
+    mouseDown = true;
+    setTouch(e.clientX, e.clientY);
+  });
+  window.addEventListener('mousemove', e => {
+    if (!mouseDown || app.simMode) return;
+    if (e.buttons & 1) setTouch(e.clientX, e.clientY);
+    else releaseInput();
+  });
+  window.addEventListener('mouseup', e => { if (mouseDown && e.button === 0) releaseInput(); });
+  window.addEventListener('blur', releaseInput);
   document.addEventListener('gesturestart', e => e.preventDefault());
   document.addEventListener('touchmove', e => { if (e.target !== canvas&&!e.target.closest('#results')) e.preventDefault(); }, touchOpts);
 //#web
-  document.addEventListener('visibilitychange',()=>{app.last=performance.now();app.acc=0;lift();app.audio.setPaused(document.hidden||app.resultsOpen);});
+  const pauseButton = document.getElementById('web-pause');
+  const pauseMenu = document.getElementById('pause-menu');
+  const gamePaused = () => pauseMenu.open;
+  const returnToStart = () => location.reload();
+  function pauseGame() {
+    if (!app.running || app.resultsOpen || app.finale || gamePaused()) return;
+    pauseMenu.showModal();
+    syncPause();
+  }
+  function resumeGame() {
+    pauseMenu.close();
+    syncPause();
+  }
+  pauseButton.addEventListener('click', pauseGame);
+  document.getElementById('resume-game').addEventListener('click', resumeGame);
+  document.getElementById('end-run').addEventListener('click', returnToStart);
+  pauseMenu.addEventListener('cancel', event => { event.preventDefault(); resumeGame(); });
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !gamePaused() && app.running && !app.resultsOpen && !app.finale) {
+      event.preventDefault();
+      pauseGame();
+    }
+  });
 //#end
 //#ios
+  const pauseButton = document.getElementById('ios-pause');
+  const gamePaused = () => window.twistyHost.paused;
+  const returnToStart = () => window.twistyHost.open('restart');
+  pauseButton.addEventListener('click', () => window.twistyHost.open('pause'));
+  document.getElementById('ios-privacy').addEventListener('click', () => window.twistyHost.open('privacy'));
+  document.addEventListener('twisty-pause', syncPause);
+//#end
   function syncPause() {
     app.last = performance.now();
     app.acc = 0;
-    lift();
-    app.audio.setPaused(document.hidden || app.resultsOpen || window.twistyHost.paused);
+    releaseInput();
+    app.audio.setPaused(document.hidden || app.contextLost || app.resultsOpen || gamePaused());
   }
   document.addEventListener('visibilitychange', syncPause);
-  document.addEventListener('twisty-pause', syncPause);
-  const pauseButton = document.getElementById('ios-pause');
-  pauseButton.addEventListener('click', () => window.twistyHost.open('pause'));
-  document.getElementById('ios-privacy').addEventListener('click', () => window.twistyHost.open('privacy'));
-//#end
+  document.getElementById('results-home').addEventListener('click', returnToStart);
 
   // ---- WebGL context loss ----
-  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); app.contextLost = true; }, false);
-  canvas.addEventListener('webglcontextrestored', () => { app.contextLost = false; app.last = performance.now(); }, false);
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); app.contextLost = true; syncPause(); }, false);
+  canvas.addEventListener('webglcontextrestored', () => { app.contextLost = false; syncPause(); }, false);
 
   // ---- live loop: fixed-timestep logic, render every frame ----
   function frame(now) {
     if (!app.running) return;
     app.raf = requestAnimationFrame(frame);
-//#web
-    if (app.contextLost||document.hidden||app.resultsOpen) {app.last=now;app.acc=0;return;}
-//#end
-//#ios
-    if (app.contextLost || document.hidden || app.resultsOpen || window.twistyHost.paused) { app.last = now; app.acc = 0; return; }
-//#end
+    if (app.contextLost || document.hidden || app.resultsOpen || gamePaused()) { app.last = now; app.acc = 0; return; }
     const G = app.G;
     const activeSeconds=Math.max(0,(now-app.last)/1000);
     let elapsed = Math.min(0.1, activeSeconds); app.last = now;
@@ -325,13 +379,23 @@ function boot() {
     if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();updateRunHud();return;}
     if(!app.finale){advanceRunTime(app.run,G.stage,activeSeconds);if(!app.simMode)window.TwistyMetrics?.tick(activeSeconds,G.stage,G.tier);}
     if(!app.finale){
+      advanceLevelClock(G, activeSeconds);
       app.acc += elapsed;
       let n = 0;
-      while (app.acc >= DT && n < 4) { stepGame(G); app.acc -= DT; n++; }
+      while (app.acc >= DT && n < 4) { stepGame(G, 0); app.acc -= DT; n++; }
       if (n === 4) app.acc = 0;
     }else app.acc=0;
     if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
-    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;app.completedSwallowed=!!G.swallowed;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
+    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) {
+      if (!G.stageDef.last) { nextStage(); return; }
+      app.completedRun = summarizeRun(app.run);
+      app.completedLevels = app.runLevels;
+      app.completedSwallowed = !!G.swallowed;
+      releaseInput();
+      pauseButton.classList.add('hidden');
+      document.getElementById('space-map').classList.add('hidden');
+      app.finale = { t: 0, reborn: false, flashed: false };
+    }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
     updatePickupGuide();
@@ -342,9 +406,7 @@ function boot() {
     try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId || app.G.timerMode !== app.timerMode) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
-//#ios
     pauseButton.classList.remove('hidden');
-//#end
     showWorldCard(app.G.theme);
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();

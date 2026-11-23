@@ -53,7 +53,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <!--#ios-->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:">
 <!--#end-->
-<meta name="twisty-build" content="2026-11-22-twisty-v19-first-run">
+<meta name="twisty-build" content="2026-11-22-twisty-v20-journeys">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <!--#web-->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -73,22 +73,26 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
+<div id="run-hud" class="hidden" aria-label="Current run statistics"><div id="hud-stage">Farm city · 1 of 4</div><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
 <section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
   <div class="card">
     <h1 id="results-title">What a whirlwind!</h1>
     <div id="result-details" tabindex="0" role="region" aria-label="Run statistics">
       <p id="results-subtitle" class="subtitle">Your journey from farm city to universe</p>
-      <div id="result-stars" aria-label="Levels finished before the clock"></div>
+      <div id="result-stars" aria-label="Levels played and finished before the clock"></div>
       <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
       <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
       <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
       <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
+      <p id="result-clock-help"></p>
       <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
     </div>
     <div class="result-actions">
       <p id="next-world"></p>
-      <button id="play-again" type="button">Play again</button>
+      <div class="game-actions">
+        <button id="play-again" class="primary-action" type="button">Play again</button>
+        <button id="results-home" type="button">Back to start</button>
+      </div>
     </div>
   </div>
 </section>
@@ -102,7 +106,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   <div id="metrics-parent"><div id="metrics-parent-panel" hidden><label><input id="metrics-parent-check" type="checkbox">Share play milestones in this local test</label><p>Local testing only: sends stage progress and play time to a private dashboard on this computer. No name or location. Turn this off here at any time.</p></div><button id="metrics-parent-open" type="button" hidden>Local test metrics</button></div>
 <!--#end-->
 <!--#ios-->
-  <button id="ios-privacy" class="ios-control" type="button">Privacy</button>
+  <button id="ios-privacy" class="corner-control" type="button">Privacy</button>
 <!--#end-->
   <div class="row">
     <button type="button" class="disc" data-color="blue" aria-label="Start with a blue tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#3a86ff" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
@@ -111,14 +115,25 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <button type="button" class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
     <button type="button" class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
   </div>
-  <div id="timer-pick" role="group" aria-label="Time for each level">
+  <div id="timer-pick" role="group" aria-label="Time for each level" aria-describedby="timer-summary">
     <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
     <button type="button" data-timer="normal" aria-pressed="true" aria-label="Normal: 90 seconds for the town, 60 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor"/></svg>Normal</button>
     <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
   </div>
+  <p id="timer-summary"></p>
 </div>
+<!--#web-->
+<button id="web-pause" class="corner-control pause-control hidden" type="button" aria-label="Pause game">Ⅱ</button>
+<dialog id="pause-menu" aria-labelledby="pause-title">
+  <h2 id="pause-title">Game paused</h2>
+  <div class="game-actions">
+    <button id="resume-game" class="primary-action" type="button" autofocus>Resume</button>
+    <button id="end-run" type="button">End this run</button>
+  </div>
+</dialog>
+<!--#end-->
 <!--#ios-->
-<button id="ios-pause" class="ios-control hidden" type="button" aria-label="Pause game">Ⅱ</button>
+<button id="ios-pause" class="corner-control pause-control hidden" type="button" aria-label="Pause game">Ⅱ</button>
 <!--#end-->
 <button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
 <div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>

@@ -1,11 +1,4 @@
   #rotate:not(.hidden) { display:none; }
-  .ios-control {
-    position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(14px + env(safe-area-inset-bottom));
-    z-index:10; min-width:48px; min-height:48px; padding:0 12px;
-    border:1px solid #ffffff66; border-radius:24px; background:#12232de6; color:#fff;
-    font:600 14px -apple-system,sans-serif; touch-action:manipulation; cursor:pointer;
-  }
-  #ios-pause { font-size:22px; }
   @media (max-width: 340px), (max-height: 360px) {
     #ios-privacy { position:static; order:1; min-height:44px; }
   }

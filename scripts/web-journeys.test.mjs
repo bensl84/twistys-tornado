@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import test from 'node:test';
-import { chromium } from 'playwright';
 
+const require = createRequire(import.meta.url);
+let playwright;
+try {
+  playwright = require('playwright');
+} catch (error) {
+  if (!process.env.PLAYWRIGHT_PATH || error.code !== 'MODULE_NOT_FOUND') throw error;
+  playwright = require(process.env.PLAYWRIGHT_PATH);
+}
 const url = new URL('../index.html', import.meta.url).href;
 
 test('web pause, interrupted drags, and returning to the start screen', { timeout: 120_000 }, async () => {
-  const browser = await chromium.launch(process.env.BROWSER_EXECUTABLE
+  const browser = await playwright.chromium.launch(process.env.BROWSER_EXECUTABLE
     ? { executablePath: process.env.BROWSER_EXECUTABLE }
     : { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   try {

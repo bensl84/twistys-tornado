@@ -108,11 +108,12 @@ test('the packaged game teaches a first pickup, pauses, and replays offline', { 
         titleVisible: true, replayVisible: true, detailsStartAtTop: true, detailsScroll: true,
       });
       await results.getByText('Next world: 🐄 Animal Farm').waitFor({ state: 'visible' });
+      await results.getByRole('button', { name: 'Back to start' }).tap();
       await results.getByRole('button', { name: 'Play again' }).tap();
       await page.waitForFunction(() => !window.__app.resultsOpen && window.__app.G.tick > 3);
       assert.equal(await page.locator('#pickup-hint').isVisible(), false);
 
-      assert.deepEqual(await page.evaluate(() => window.hostActions), ['privacy', 'pause']);
+      assert.deepEqual(await page.evaluate(() => window.hostActions), ['privacy', 'pause', 'restart']);
       assert.deepEqual(requests, [localURL]);
       assert.deepEqual(errors, []);
     } finally {

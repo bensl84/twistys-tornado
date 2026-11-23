@@ -31,7 +31,7 @@ jobs:
         run: npm test
       - name: Truth audit
         run: ruby scripts/truth_audit.rb
-      - name: WebGL context loss and restore (real browser)
+      - name: Browser journeys and WebGL context recovery
         run: npm run test:browser
       - name: Packaged iOS game works offline
         run: node --test scripts/ios-game.test.mjs

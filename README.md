@@ -40,13 +40,13 @@ Each level has a maximum time so nobody gets bored. The start screen has three s
 | Normal (default) | 90 s | 60 s |
 | 5 min | 5:00 | 5:00 |
 
-The clock only ever helps. At 10 seconds left the player grows to the level's biggest size over one second, everything becomes edible, a big countdown ring appears, and an arrow points to the goal. At 0 the goal flies in and the level ends as a normal win. The level clock counts simulation ticks, so it pauses with the space overview, background time and results, and stops at the win. Tapping a setting never starts the game; only a color disc does.
+The start screen shows the selected level-clock budget across all four stages. Picking a pace keeps the color picker open. The clock helps the player finish. At 10 seconds left the player grows to the level's biggest size, everything becomes edible, a countdown ring appears, and an arrow points to the goal. At 0 the goal flies in. The countdown uses foreground play time independently of the rendering rate. It freezes during pauses, space overviews, backgrounding and graphics recovery, and stops at the win.
 
 The last level's goal is a big black hole, drawn about one and a half times the player's own black hole. On Quick and Normal the player swallows it. On **5 min** it is the other way round: reaching it, or running out of time, gets the player pulled in over 2.2 seconds, and the results say *Swallowed by the black hole!* The universe's galaxies are drawn in five different looks (arm count, winding, flattening and colour), so neighbours differ.
 
-Best times are kept per setting and per level in this browser's local storage (`twisty-best-v1`), never sent anywhere. A level only sets a best time when it was finished before its clock ran out. The results card shows each level's time (⏱ when the clock finished it) and marks new bests with ★.
+Best times are kept per setting and per level in local storage (`twisty-best-v1`). Steer during a level and finish before its clock runs out to earn a star and qualify for a best time. The results card shows each level's time, uses ⏱ when the clock finished it or the player left it unattended, and marks new bests with ★. Assisted runs still unlock the next world.
 
-After the universe finale, the summary stays open with three rows: **Tornado**, **Black hole**, and **Total**. Each shows time and consumption. The next world and **Play again** stay visible while the statistics scroll. Replay starts a fresh town with the same color and zeroed statistics; reloading also starts fresh. Results are not saved between page visits.
+After the universe finale, the summary shows time and consumption for **Tornado**, **Black hole**, and **Total**. The next world and both actions stay visible while the statistics scroll. **Play again** starts the next town with the same color and pace. **Back to start** lets you pick a new color or pace while keeping unlocked worlds, best times and sound preferences. During a run, **Pause game** offers **Resume** and **End this run**. In a browser, Escape also opens or dismisses the pause menu.
 
 - Farm-city mass: consumed collectible mass ÷ all generated town collectible mass.
 - Game-universe mass: average of the consumed-mass fractions in solar, galaxy and universe stages, weighted equally. Unvisited stages contribute zero.
@@ -56,7 +56,7 @@ Each object's mass proxy is its generated size cubed. Dust counts, but shaking o
 
 ## Discovery worlds, sound and helpers
 
-Every trip through the black hole lands in a town with one new kind of thing mixed in. The first visit is the plain farm city; then Animal Farm 🐄, Dino Valley 🦖, Candy Town 🍭, Snow Town ⛄ and Castle Town 🏰; from the sixth trip on, Everything Town 🌈 mixes them all at reduced density. Each world adds things at every tier (for example chicks up to giraffes, gumdrops up to a gingerbread house), snow and candy towns get their own ground colour, and a picture card names the world when she lands in it. The trip count is kept in this browser's local storage (`twisty-loop-v1`); clearing site data returns to the plain town. The results card shows a star for every level finished before its clock and names the next world.
+Every trip through the black hole lands in a town with one new kind of thing mixed in. The first visit is the plain farm city; then Animal Farm 🐄, Dino Valley 🦖, Candy Town 🍭, Snow Town ⛄ and Castle Town 🏰; from the sixth trip on, Everything Town 🌈 mixes them all at reduced density. Each world adds things at every tier (for example chicks up to giraffes, gumdrops up to a gingerbread house), snow and candy towns get their own ground colour, and a picture card names the world when she lands in it. The game display shows the current stage and its place in the four-stage run. On the web the trip count is kept in local storage (`twisty-loop-v1`). Clearing site data returns to the plain town.
 
 - **Sound:** a quiet generated tune (bright in town, slow in space), an extra sound layer by material on every absorb (rustle, clank, knock, animal boop, dino growl, candy chime, snow crunch, stone thud, star shimmer), a low hum as a black hole, and a rate limit so a super-size feast never starts more than ten sounds in 0.2 s. The 🔊 button in the bottom-right corner mutes everything and is remembered on the device.
 - **Goal beacon:** a soft column of light stands over each level's goal and brightens once the clock super-sizes her.
@@ -71,7 +71,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
 - `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-11-22-twisty-v19-first-run`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-11-22-twisty-v20-journeys`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).
@@ -82,6 +82,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `scripts/level-timer.test.mjs` — level-clock presets, super size at 10 s left, the goal fly-in at 0 and the clock stopping at the win.
 - `scripts/worlds.test.mjs` — trip order, themed generation, a finite mesh for every themed thing, and tiers that match sizes.
 - `scripts/context-loss.test.mjs` — real-browser check that a lost WebGL context freezes the game and level clock and a restored one draws again.
+- `scripts/web-journeys.test.mjs` — browser regression for pause, trapped input, timing through slow frames, and returning to the picker with preferences and progress saved.
 - `scripts/graphics-gate.mjs` and `docs/graphics-exit-gate.md` — repeatable browser graphics checks and the acceptance contract.
 - `scripts/truth_audit.rb` — documentation classification and local-link check, copied from truth-audit skill version 2.0.0.
 - `metrics-client.js` and `metrics-config.js` — optional first-party web play milestones. The published-site endpoint is empty, so this branch does not send public play data.
@@ -157,7 +158,7 @@ The runner requires Node.js 22.5+ plus Playwright with Chromium. `npm ci` instal
 ```sh
 npm ci && npx playwright install chromium
 npm test               # unit tests
-npm run test:browser   # WebGL context loss and restore
+npm run test:browser   # browser journeys and WebGL recovery
 ```
 
 ```sh
@@ -192,7 +193,7 @@ The iOS CI workflow runs the app’s startup, pause and persistence smoke test o
 
 ## iPhone and iPad support
 
-Pick a color to start and drag one finger across the scene to move. Switch the level timer before you pick a color. During a run, tap the pause button to resume or return to the start screen.
+Pick a color to start and drag one finger across the scene to move. Switch the level timer before you pick a color. During a run, tap the pause button to resume or return to the start screen. After finishing, **Play again** continues into the next world and **Back to start** takes you to the color and timer picker.
 
 To report a problem, use the [Twisty’s Tornado support tracker](https://github.com/bensl84/twistys-tornado/issues). Reports are public. Include your device model, iOS or iPadOS version, and what happened. Leave out personal information.
 

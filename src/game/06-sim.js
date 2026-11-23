@@ -87,17 +87,18 @@ function updateOrbits(G, dt) {
     o.ry += dt * 0.12;
   }
 }
-function stepGame(G) {
+function advanceLevelClock(G, seconds) {
+  if (G.won) return;
+  G.levelT += seconds;
+  const left = G.levelLimit - G.levelT;
+  if (!G.superSized && left <= TUNING.SUPER_SIZE_AT_S + 1e-9) startSuperSize(G);
+  if (!G.timedOut && left <= 1e-9) timeUp(G);
+}
+function stepGame(G, clockSeconds = DT) {
   G.tick++;
   const T = TUNING;
-  // ---- level clock: real ticks (it pauses whenever the simulation does), stops at the win ----
-  if (!G.won) {
-    G.levelT += DT;
-    const left = G.levelLimit - G.levelT;
-    if (!G.superSized && left <= T.SUPER_SIZE_AT_S) startSuperSize(G);
-    if (!G.timedOut && left <= 0) timeUp(G);
-  }
-  if (G.swallowT > 0) stepSwallow(G, DT); // real ticks, like the clock: hitstop and slow-mo cannot stretch it
+  if (clockSeconds) advanceLevelClock(G, clockSeconds);
+  if (G.swallowT > 0) stepSwallow(G, DT); // hitstop and slow-mo cannot stretch the pull-in
   if (G.superT > 0) {
     G.superT = Math.max(0, G.superT - DT);
     const k = easeOut(1 - G.superT / T.SUPER_GROW_S);

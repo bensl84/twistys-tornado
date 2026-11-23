@@ -50,7 +50,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <head>
 <meta charset="utf-8">
 <title>Twisty’s Tornado</title>
-<meta name="twisty-build" content="2026-11-22-twisty-v19-first-run">
+<meta name="twisty-build" content="2026-11-22-twisty-v20-journeys">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -66,6 +66,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #start { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,3vmin,30px); box-sizing:border-box; padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); background:linear-gradient(#07192299,#07192240,#07192299); touch-action:none; }
   .game-title { margin:0; color:#fff3d6; font-size:clamp(28px,8vmin,72px); line-height:1.1; text-align:center; text-shadow:0 4px 18px #071922; }
   .start-instruction { margin:0; color:#fff; font-size:clamp(15px,4vmin,24px); font-weight:600; }
+  #timer-summary { margin:calc(0px - clamp(5px,1.5vmin,15px)) 0 0; color:#fff3d6; font-size:clamp(13px,2.8vmin,15px); text-align:center; }
   #timer-pick { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; touch-action:manipulation; }
   #timer-pick button { display:flex; align-items:center; gap:8px; min-height:48px; padding:8px clamp(6px,2.6vw,16px); border-radius:24px; border:2px solid #ffffff70; background:#12232dd9; color:#fff5e3; font:600 16px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
   #timer-pick button[aria-pressed="true"] { background:#fff3d6; color:#12232d; border-color:#fff3d6; box-shadow:0 6px 20px #0005; }
@@ -96,10 +97,17 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #result-levels td, #result-levels th { padding:5px 0; text-align:left; } #result-levels th { color:#b7cdd6; font-weight:500; font-size:12px; }
   #result-levels td:nth-child(n+2), #result-levels th:nth-child(n+2) { text-align:right; }
   #result-levels .star { color:#ffd447; font-weight:700; }
+  #result-clock-help { margin:7px 0 0; color:#c0d3d9; font-size:12px; }
+  #result-clock-help:empty { display:none; }
   #start .disc { border:0; padding:0; cursor:pointer; font:inherit; -webkit-tap-highlight-color:transparent; }
   #start .disc:focus-visible { outline:4px solid #ffd447; outline-offset:4px; }
   #mute { position:absolute; right:calc(14px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:19; width:48px; height:48px; border-radius:50%; border:1px solid #ffffff50; background:#12232dcc; color:#fff; font-size:22px; line-height:1; touch-action:manipulation; cursor:pointer; }
   #mute[aria-pressed="true"] { background:#3a2a2acc; }
+  .corner-control { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:10; min-width:48px; min-height:48px; padding:0 12px; border:1px solid #ffffff66; border-radius:24px; background:#12232de6; color:#fff; font:600 14px -apple-system,sans-serif; touch-action:manipulation; cursor:pointer; }
+  .pause-control { font-size:22px; }
+  #pause-menu { box-sizing:border-box; width:min(420px,calc(100% - 32px)); border:1px solid #c9e1dc38; border-radius:24px; padding:24px; background:#122632; color:#f6f2e7; box-shadow:0 20px 70px #0007; }
+  #pause-menu::backdrop { background:#071521b0; }
+  #pause-title { margin:0 0 18px; font-size:24px; }
   #start .row { display:flex; flex-wrap:wrap; gap:clamp(7px,2.5vmin,32px); justify-content:center; align-items:center; max-width:100%; }
   #start .disc { width:clamp(44px,15vmin,144px); height:clamp(44px,15vmin,144px); border-radius:50%; background:#fff3d6; box-shadow:0 12px 40px rgba(0,0,0,0.45), inset 0 -6px 0 rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; animation:pulse 1.6s ease-in-out infinite; }
   #start .disc:nth-child(2) { animation-delay:0.2s } #start .disc:nth-child(3) { animation-delay:0.4s } #start .disc:nth-child(4) { animation-delay:0.6s } #start .disc:nth-child(5) { animation-delay:0.8s }
@@ -124,6 +132,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   #map-note { position:absolute; bottom:calc(20px + env(safe-area-inset-bottom)); left:26px; right:26px; color:#91a4bc; font-size:11px; text-align:center; pointer-events:none; }
   #run-hud { position:absolute; top:calc(14px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); z-index:6; pointer-events:none; color:#fff5e3; background:#12232ddd; border:1px solid #ffffff24; border-radius:16px; padding:10px 14px; font-size:12px; line-height:1.6; font-variant-numeric:tabular-nums; box-shadow:0 4px 16px #0002; }
   #run-hud strong { font-size:17px; margin-left:10px; } #hud-mass { color:#b5e3d5; }
+  #hud-stage { color:#b5e3d5; font-weight:700; }
   #results { position:absolute; inset:0; z-index:18; display:flex; align-items:center; justify-content:center; padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); background:#071521bf; box-sizing:border-box; touch-action:pan-y; }
   #results .card { display:flex; flex-direction:column; box-sizing:border-box; width:min(560px,100%); max-height:100%; overflow:hidden; border-radius:24px; border:1px solid #c9e1dc38; padding:clamp(16px,3.5vmin,28px); background:#122632; color:#f6f2e7; box-shadow:0 20px 70px #0007; }
   #results h1 { flex:none; margin:0 0 5px; font-size:clamp(25px,5vmin,36px); } #results .subtitle { margin:0 0 16px; color:#c0d3d9; font-size:14px; }
@@ -134,8 +143,10 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   .result-row { display:grid; grid-template-columns:1fr auto; gap:6px 14px; padding:15px 0; border-top:1px solid #ffffff22; font-variant-numeric:tabular-nums; }
   .result-row h2 { margin:0; font-size:18px; } .result-row .time { font-size:20px; font-weight:650; } .result-row .mass-label { color:#b7cdd6; font-size:13px; } .result-row .mass { color:#99e5c8; text-align:right; font-weight:650; }
   #results .note { font-size:12px; line-height:1.5; color:#b7cdd6; margin:12px 0 18px; }
-  #play-again { width:100%; min-height:52px; border:0; border-radius:14px; background:#b5efca; color:#102a23; font:700 17px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
-  #play-again:focus-visible { outline:3px solid #fff; outline-offset:4px; }
+  .game-actions { display:grid; grid-template-columns:1fr auto; gap:10px; }
+  .game-actions button { min-height:52px; padding:0 14px; border:1px solid #ffffff55; border-radius:14px; background:#1a3544; color:#fff; font:700 15px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
+  .game-actions .primary-action { border-color:transparent; background:#b5efca; color:#102a23; font-size:17px; }
+  .game-actions button:focus-visible { outline:3px solid #fff; outline-offset:2px; }
   @media (prefers-reduced-motion: reduce) {
     #start .disc, #countdown.beat span { animation:none; }
   }
@@ -143,22 +154,26 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="run-hud" class="hidden" aria-label="Current run statistics"><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
+<div id="run-hud" class="hidden" aria-label="Current run statistics"><div id="hud-stage">Farm city · 1 of 4</div><div><span id="hud-form">Tornado</span><strong id="hud-time">0:00</strong></div><div id="hud-mass">Farm city consumed: 0.0%</div><div>Run time <span id="hud-total">0:00</span></div><div id="hud-clock">Level time left <span id="hud-left">1:30</span> · Best <span id="hud-best">–</span></div></div>
 <section id="results" class="hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
   <div class="card">
     <h1 id="results-title">What a whirlwind!</h1>
     <div id="result-details" tabindex="0" role="region" aria-label="Run statistics">
       <p id="results-subtitle" class="subtitle">Your journey from farm city to universe</p>
-      <div id="result-stars" aria-label="Levels finished before the clock"></div>
+      <div id="result-stars" aria-label="Levels played and finished before the clock"></div>
       <div class="result-row"><h2>Tornado</h2><span id="result-tornado-time" class="time">0:00</span><span class="mass-label">Farm-city mass consumed</span><span id="result-tornado-mass" class="mass">0.0%</span></div>
       <div class="result-row"><h2>Black hole</h2><span id="result-blackhole-time" class="time">0:00</span><span class="mass-label">Game-universe mass consumed</span><span id="result-blackhole-mass" class="mass">0.0%</span></div>
       <div class="result-row"><h2>Total</h2><span id="result-total-time" class="time">0:00</span><span class="mass-label">Combined consumption score</span><span id="result-total-mass" class="mass">0.0%</span></div>
       <div id="result-levels"><h2 id="result-levels-title">Level times</h2><table><thead><tr><th>Level</th><th>This run</th><th>Best</th></tr></thead><tbody id="result-levels-body"></tbody></table></div>
+      <p id="result-clock-help"></p>
       <p class="note">Mass is estimated from object size in this game, not real-world measurements. The three space stages count equally; the combined score averages the farm-city and universe percentages. Time excludes overviews, background time and the ending animation.</p>
     </div>
     <div class="result-actions">
       <p id="next-world"></p>
-      <button id="play-again" type="button">Play again</button>
+      <div class="game-actions">
+        <button id="play-again" class="primary-action" type="button">Play again</button>
+        <button id="results-home" type="button">Back to start</button>
+      </div>
     </div>
   </div>
 </section>
@@ -176,12 +191,21 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <button type="button" class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
     <button type="button" class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
   </div>
-  <div id="timer-pick" role="group" aria-label="Time for each level">
+  <div id="timer-pick" role="group" aria-label="Time for each level" aria-describedby="timer-summary">
     <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
     <button type="button" data-timer="normal" aria-pressed="true" aria-label="Normal: 90 seconds for the town, 60 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor"/></svg>Normal</button>
     <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
   </div>
+  <p id="timer-summary"></p>
 </div>
+<button id="web-pause" class="corner-control pause-control hidden" type="button" aria-label="Pause game">Ⅱ</button>
+<dialog id="pause-menu" aria-labelledby="pause-title">
+  <h2 id="pause-title">Game paused</h2>
+  <div class="game-actions">
+    <button id="resume-game" class="primary-action" type="button" autofocus>Resume</button>
+    <button id="end-run" type="button">End this run</button>
+  </div>
+</dialog>
 <button id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">🔊</button>
 <div id="world-card" class="hidden" aria-live="polite"><div class="icon"></div><div class="name"></div></div>
 <div id="toast" class="hidden" aria-live="polite"></div>
@@ -1162,17 +1186,18 @@ function updateOrbits(G, dt) {
     o.ry += dt * 0.12;
   }
 }
-function stepGame(G) {
+function advanceLevelClock(G, seconds) {
+  if (G.won) return;
+  G.levelT += seconds;
+  const left = G.levelLimit - G.levelT;
+  if (!G.superSized && left <= TUNING.SUPER_SIZE_AT_S + 1e-9) startSuperSize(G);
+  if (!G.timedOut && left <= 1e-9) timeUp(G);
+}
+function stepGame(G, clockSeconds = DT) {
   G.tick++;
   const T = TUNING;
-  // ---- level clock: real ticks (it pauses whenever the simulation does), stops at the win ----
-  if (!G.won) {
-    G.levelT += DT;
-    const left = G.levelLimit - G.levelT;
-    if (!G.superSized && left <= T.SUPER_SIZE_AT_S) startSuperSize(G);
-    if (!G.timedOut && left <= 0) timeUp(G);
-  }
-  if (G.swallowT > 0) stepSwallow(G, DT); // real ticks, like the clock: hitstop and slow-mo cannot stretch it
+  if (clockSeconds) advanceLevelClock(G, clockSeconds);
+  if (G.swallowT > 0) stepSwallow(G, DT); // hitstop and slow-mo cannot stretch the pull-in
   if (G.superT > 0) {
     G.superT = Math.max(0, G.superT - DT);
     const k = easeOut(1 - G.superT / T.SUPER_GROW_S);
@@ -2549,7 +2574,8 @@ function boot() {
   function camState() { const G = app.G; cam.x = G.camPos.x; cam.y = G.camPos.y; cam.z = G.camPos.z; cam.pitch = G.camPitch; cam.fov = TUNING.FOV + G.fovPunch; cam.aspect = app.R.width / app.R.height; return cam; }
   function setTouch(sx, sy) {
     const G = app.G; if (!G) return;
-    if(G.overview||app.resultsOpen||app.finale||document.hidden)return;
+    if (G.overview || app.resultsOpen || app.finale || document.hidden || app.contextLost ||
+        (!app.simMode && (!app.running || gamePaused()))) return;
     screenToGround(camState(), sx, sy, app.R.width, app.R.height, groundPt);
     const wasDown = G.finger.down;
     G.finger.down = true; G.finger.x = groundPt.x; G.finger.z = groundPt.z;
@@ -2562,6 +2588,8 @@ function boot() {
     if (app.R) app.R.reset();
     const theme = (stageId || 'town') !== 'town' ? null : opts.theme !== undefined ? opts.theme : themeForLoop(app.loop);
     app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode, theme);
+    const stageIndex = LEVEL_NAMES.findIndex(([id]) => id === app.G.stage);
+    readout('hud-stage', (themeInfo(app.G.theme)?.name || LEVEL_NAMES[stageIndex][1]) + ' · ' + (stageIndex + 1) + ' of ' + LEVEL_NAMES.length);
     if(!app.run||app.G.stage==='town')app.run=createRunStats();
     if(!app.runLevels||app.G.stage==='town')app.runLevels={};
     app.run.stages[app.G.stage]=app.G.massStats;
@@ -2615,16 +2643,21 @@ function boot() {
   function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
   function bestFor(mode, id) { const b = loadBest(); const v = b[mode] && b[mode][id]; return Number.isFinite(v) ? v : null; }
   function setBest(mode, id, t) { const b = loadBest(); b[mode] = b[mode] || {}; b[mode][id] = t; writeStore(BEST_KEY, JSON.stringify(b)); }
-  // A level only sets a best time when it was finished before the clock ran out.
+  // The clock can complete an unattended level. Only played levels finished before 0 can rank.
   function recordLevel(G, e) {
     const t = Number.isFinite(e.levelT) ? e.levelT : G.levelT, prev = bestFor(G.timerMode, G.stage);
-    const newBest = !e.timedOut && (prev === null || t < prev - 1e-6);
+    const ranked = !e.timedOut && G.lastInputTick >= 0;
+    const newBest = ranked && (prev === null || t < prev - 1e-6);
     if (newBest) setBest(G.timerMode, G.stage, t);
-    app.runLevels[G.stage] = { t, timedOut: !!e.timedOut, limit: G.levelLimit, prev, newBest, mode: G.timerMode };
+    app.runLevels[G.stage] = { t, ranked, newBest, mode: G.timerMode };
     if (newBest && prev !== null) { showToast('★ New best ' + formatDuration(t)); app.audio.chime(); }
   }
   const timerPick = document.getElementById('timer-pick');
-  function syncTimerPick() { for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.getAttribute('data-timer') === app.timerMode)); }
+  function syncTimerPick() {
+    for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.dataset.timer === app.timerMode));
+    const { town, space } = TUNING.LEVEL_TIMERS[app.timerMode];
+    readout('timer-summary', 'Up to ' + formatDuration(town + 3 * space) + ' on the four level clocks');
+  }
   timerPick.addEventListener('click', e => { const b = e.target.closest('[data-timer]'); if (!b || app.simMode) return; app.timerMode = b.getAttribute('data-timer'); writeStore(TIMER_KEY, app.timerMode); syncTimerPick(); });
   syncTimerPick();
   app.resultsOpen=false;app.completedRun=null;
@@ -2673,14 +2706,15 @@ function boot() {
     arrowEl.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
   }
   function showResults() {
-    const s=app.completedRun;lift();app.resultsOpen=true;app.acc=0;
+    const s=app.completedRun;app.resultsOpen=true;syncPause();
     if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
     fillLevelTable(app.completedLevels||{});
     // the 5-minute setting ends the other way round: the biggest black hole pulls you in
     document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
     document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
-    results.classList.remove('hidden');app.audio.setPaused(true);updateRunHud();
+    pauseButton.classList.add('hidden');
+    results.classList.remove('hidden');updateRunHud();
     document.getElementById('result-details').scrollTop = 0;
     document.getElementById('play-again').focus({ preventScroll: true });
   }
@@ -2748,20 +2782,22 @@ function boot() {
     let total = 0, complete = true, clean = true;
     for (const [id, name] of LEVEL_NAMES) {
       const L = levels[id], b = bestFor(mode, id), fb = b === null ? '–' : formatDuration(b); if (!L) { complete = false; row(name, '–', fb, false); continue; }
-      total += L.t; if (L.timedOut) clean = false;
-      row(name, formatDuration(L.t) + (L.timedOut ? ' ⏱' : ''), fb + (L.newBest ? ' ★' : ''), L.newBest);
+      total += L.t; if (!L.ranked) clean = false;
+      row(name, formatDuration(L.t) + (L.ranked ? '' : ' ⏱'), fb + (L.newBest ? ' ★' : ''), L.newBest);
     }
     const stars = document.getElementById('result-stars'); stars.textContent = '';
-    for (const [id, name] of LEVEL_NAMES) { const L = levels[id], on = !!L && !L.timedOut, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
-    { const sm = document.createElement('small'); sm.textContent = 'beat the clock'; stars.appendChild(sm); }
+    for (const [id, name] of LEVEL_NAMES) { const on = levels[id]?.ranked, sp = document.createElement('span'); sp.className = on ? 'on' : 'off'; sp.textContent = on ? '★' : '☆'; sp.title = name; stars.appendChild(sp); }
+    { const sm = document.createElement('small'); sm.textContent = 'Steered and beat the clock'; stars.appendChild(sm); }
+    readout('result-clock-help', clean ? '' : '⏱ Finished with clock help');
     const next = themeInfo(app.G.theme); document.getElementById('next-world').textContent = next ? 'Next world: ' + next.icon + ' ' + next.name : '';
     // a run the clock had to finish still shows its total, but only a run that beat every clock can set the best
     if (complete) { const prev = bestFor(mode, 'run'), nb = clean && (prev === null || total < prev - 1e-6); if (nb) setBest(mode, 'run', total); row('Whole run', formatDuration(total), nb ? formatDuration(total) + ' ★' : prev === null ? '–' : formatDuration(prev), nb); }
   }
   document.getElementById('play-again').addEventListener('click',()=>{
     setTimeout(() => showWorldCard(app.G.theme), 250);
+    pauseButton.classList.remove('hidden');
     if (!app.simMode) window.TwistyMetrics?.replay(app.G.stage,app.G.tier);
-    app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');app.audio.setPaused(false);lift();app.last=performance.now();app.acc=0;updateRunHud();
+    app.resultsOpen=false;app.completedRun=null;results.classList.add('hidden');syncPause();updateRunHud();
   });
   const fadeEl = document.getElementById('fade');
   function setFade(opacity, white) { if (!fadeEl) return; fadeEl.style.background = white ? '#ffffff' : '#000000'; fadeEl.style.opacity = String(clamp(opacity, 0, 1)); }
@@ -2785,7 +2821,7 @@ function boot() {
   window.addEventListener('resize', onResize);
   document.getElementById('space-map').addEventListener('click',()=>{
     if(!app.G||app.G.stage==='town'||app.resultsOpen||app.finale)return;
-    app.G.overview=!app.G.overview;lift();app.acc=0;
+    app.G.overview=!app.G.overview;releaseInput();app.acc=0;
     const button=document.getElementById('space-map');button.setAttribute('aria-pressed',String(app.G.overview));button.setAttribute('aria-label',app.G.overview?'Return to game':'Show space overview');
     const caption=document.getElementById('map-caption'),copy={solar:['The Solar System','Eight planets · One star · Worlds in motion'],galaxy:['The Milky Way','Our home galaxy · A barred spiral of stars, gas and dust'],universe:['The Cosmic Web','Galaxies gather in clusters and filaments around immense voids']}[app.G.stage];
     caption.querySelector('h1').textContent=copy[0];caption.querySelector('p').textContent=copy[1];caption.classList.toggle('hidden',!app.G.overview);document.getElementById('map-note').classList.toggle('hidden',!app.G.overview);
@@ -2796,29 +2832,87 @@ function boot() {
 
   // ---- touch input (one finger, always) ----
   const touchOpts = { passive: false };
-  function tp(e) { const t = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches[0]); return t; }
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); const t = tp(e); if (t && !app.simMode) setTouch(t.clientX, t.clientY); }, touchOpts);
-  canvas.addEventListener('touchmove', e => { e.preventDefault(); const t = tp(e); if (t && !app.simMode) setTouch(t.clientX, t.clientY); }, touchOpts);
-  canvas.addEventListener('touchend', e => { e.preventDefault(); if (!e.touches || e.touches.length === 0) { if (!app.simMode) lift(); } }, touchOpts);
-  canvas.addEventListener('touchcancel', e => { e.preventDefault(); if (!app.simMode) lift(); }, touchOpts);
-  // mouse fallback for desktop testing only (iPad uses touch)
+  let activeTouch = null;
   let mouseDown = false;
-  canvas.addEventListener('mousedown', e => { if (app.simMode) return; mouseDown = true; setTouch(e.clientX, e.clientY); });
-  window.addEventListener('mousemove', e => { if (mouseDown && !app.simMode) setTouch(e.clientX, e.clientY); });
-  window.addEventListener('mouseup', () => { mouseDown = false; if (!app.simMode) lift(); });
+  function releaseInput() {
+    activeTouch = null;
+    mouseDown = false;
+    if (!app.simMode) lift();
+  }
+  const findTouch = touches => Array.from(touches).find(t => t.identifier === activeTouch);
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (app.simMode || activeTouch !== null || !e.changedTouches.length) return;
+    const t = e.changedTouches[0];
+    activeTouch = t.identifier;
+    setTouch(t.clientX, t.clientY);
+  }, touchOpts);
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = findTouch(e.changedTouches);
+    if (t && !app.simMode) setTouch(t.clientX, t.clientY);
+  }, touchOpts);
+  function endTouch(e) {
+    e.preventDefault();
+    if (activeTouch !== null && !findTouch(e.touches)) releaseInput();
+  }
+  canvas.addEventListener('touchend', endTouch, touchOpts);
+  canvas.addEventListener('touchcancel', endTouch, touchOpts);
+  canvas.addEventListener('mousedown', e => {
+    if (app.simMode || e.button !== 0) return;
+    mouseDown = true;
+    setTouch(e.clientX, e.clientY);
+  });
+  window.addEventListener('mousemove', e => {
+    if (!mouseDown || app.simMode) return;
+    if (e.buttons & 1) setTouch(e.clientX, e.clientY);
+    else releaseInput();
+  });
+  window.addEventListener('mouseup', e => { if (mouseDown && e.button === 0) releaseInput(); });
+  window.addEventListener('blur', releaseInput);
   document.addEventListener('gesturestart', e => e.preventDefault());
   document.addEventListener('touchmove', e => { if (e.target !== canvas&&!e.target.closest('#results')) e.preventDefault(); }, touchOpts);
-  document.addEventListener('visibilitychange',()=>{app.last=performance.now();app.acc=0;lift();app.audio.setPaused(document.hidden||app.resultsOpen);});
+  const pauseButton = document.getElementById('web-pause');
+  const pauseMenu = document.getElementById('pause-menu');
+  const gamePaused = () => pauseMenu.open;
+  const returnToStart = () => location.reload();
+  function pauseGame() {
+    if (!app.running || app.resultsOpen || app.finale || gamePaused()) return;
+    pauseMenu.showModal();
+    syncPause();
+  }
+  function resumeGame() {
+    pauseMenu.close();
+    syncPause();
+  }
+  pauseButton.addEventListener('click', pauseGame);
+  document.getElementById('resume-game').addEventListener('click', resumeGame);
+  document.getElementById('end-run').addEventListener('click', returnToStart);
+  pauseMenu.addEventListener('cancel', event => { event.preventDefault(); resumeGame(); });
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !gamePaused() && app.running && !app.resultsOpen && !app.finale) {
+      event.preventDefault();
+      pauseGame();
+    }
+  });
+  function syncPause() {
+    app.last = performance.now();
+    app.acc = 0;
+    releaseInput();
+    app.audio.setPaused(document.hidden || app.contextLost || app.resultsOpen || gamePaused());
+  }
+  document.addEventListener('visibilitychange', syncPause);
+  document.getElementById('results-home').addEventListener('click', returnToStart);
 
   // ---- WebGL context loss ----
-  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); app.contextLost = true; }, false);
-  canvas.addEventListener('webglcontextrestored', () => { app.contextLost = false; app.last = performance.now(); }, false);
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); app.contextLost = true; syncPause(); }, false);
+  canvas.addEventListener('webglcontextrestored', () => { app.contextLost = false; syncPause(); }, false);
 
   // ---- live loop: fixed-timestep logic, render every frame ----
   function frame(now) {
     if (!app.running) return;
     app.raf = requestAnimationFrame(frame);
-    if (app.contextLost||document.hidden||app.resultsOpen) {app.last=now;app.acc=0;return;}
+    if (app.contextLost || document.hidden || app.resultsOpen || gamePaused()) { app.last = now; app.acc = 0; return; }
     const G = app.G;
     const activeSeconds=Math.max(0,(now-app.last)/1000);
     let elapsed = Math.min(0.1, activeSeconds); app.last = now;
@@ -2826,13 +2920,23 @@ function boot() {
     if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();updateRunHud();return;}
     if(!app.finale){advanceRunTime(app.run,G.stage,activeSeconds);if(!app.simMode)window.TwistyMetrics?.tick(activeSeconds,G.stage,G.tier);}
     if(!app.finale){
+      advanceLevelClock(G, activeSeconds);
       app.acc += elapsed;
       let n = 0;
-      while (app.acc >= DT && n < 4) { stepGame(G); app.acc -= DT; n++; }
+      while (app.acc >= DT && n < 4) { stepGame(G, 0); app.acc -= DT; n++; }
       if (n === 4) app.acc = 0;
     }else app.acc=0;
     if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
-    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) { if (G.stageDef.last) {app.completedRun=summarizeRun(app.run);app.completedLevels=app.runLevels;app.completedSwallowed=!!G.swallowed;lift();app.finale = { t: 0, reborn: false, flashed: false };} else { nextStage(); return; } }
+    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) {
+      if (!G.stageDef.last) { nextStage(); return; }
+      app.completedRun = summarizeRun(app.run);
+      app.completedLevels = app.runLevels;
+      app.completedSwallowed = !!G.swallowed;
+      releaseInput();
+      pauseButton.classList.add('hidden');
+      document.getElementById('space-map').classList.add('hidden');
+      app.finale = { t: 0, reborn: false, flashed: false };
+    }
     const Gn = app.G; app.R.update(Gn, elapsed); app.audio.update(Gn); app.R.render();
     updateRunHud();
     updatePickupGuide();
@@ -2843,6 +2947,7 @@ function boot() {
     try { if (!app.G || app.G.won || app.G.stage !== 'town' || app.G.colorId !== app.colorId || app.G.timerMode !== app.timerMode) { newGame((Date.now() % 100000) | 0, {}); app.winShown = false; } }
     catch (e) { console.error('start failed', e); showFailure('This viewer could not start 3D graphics (' + String(e && e.message || e).slice(0, 80) + ').'); return; }
     startEl.classList.add('hidden');
+    pauseButton.classList.remove('hidden');
     showWorldCard(app.G.theme);
     setTimeout(() => { const r = document.getElementById('rotate'); if (r) r.classList.add('hidden'); }, 4000);
     app.audio.start();

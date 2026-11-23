@@ -7,7 +7,7 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs --check",
     "test": "node --test scripts/level-timer.test.mjs scripts/worlds.test.mjs scripts/run-stats.test.mjs scripts/space.test.mjs scripts/graphics.test.mjs metrics/server.test.mjs",
-    "test:browser": "node --test scripts/context-loss.test.mjs",
+    "test:browser": "node --test --test-concurrency=1 scripts/context-loss.test.mjs scripts/web-journeys.test.mjs",
     "sim": "node sim.mjs"
   },
   "devDependencies": {

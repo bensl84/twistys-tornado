@@ -61,6 +61,31 @@ final class TwistyUITests: XCTestCase {
     }
 
     @MainActor
+    func testReturnsToStartFromCompletedQuickRun() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launch()
+
+        let blue = app.buttons["Start with a blue tornado"]
+        XCTAssertTrue(blue.waitForExistence(timeout: 35))
+        let quick = app.switches
+            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Quick")).firstMatch
+        XCTAssertTrue(quick.waitForExistence(timeout: 8))
+        quick.tap()
+        blue.tap()
+
+        let backToStart = app.buttons["Back to start"]
+        XCTAssertTrue(backToStart.waitForExistence(timeout: 240))
+        XCTAssertTrue(backToStart.isHittable)
+        screenshot("Completed Quick Run", app)
+        backToStart.tap()
+
+        XCTAssertTrue(blue.waitForExistence(timeout: 25))
+        XCTAssertFalse(app.buttons["Pause game"].exists)
+        XCTAssertTrue(app.staticTexts["Up to 2:15 on the four level clocks"].exists)
+    }
+
+    @MainActor
     private func screenshot(_ name: String, _ app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

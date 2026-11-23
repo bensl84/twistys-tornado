@@ -104,6 +104,8 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKScript
             defaults.set(value, forKey: key)
         case "pause":
             showPauseMenu()
+        case "restart":
+            loadGame()
         case "privacy":
             showPrivacy()
         default:

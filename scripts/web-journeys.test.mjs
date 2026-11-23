@@ -121,10 +121,14 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
     assert.deepEqual(best, { unattended: false, solar: undefined, galaxy: 0.1 });
 
     await page.evaluate(() => {
+      // Run the real finale handoff without a burst of queued software-rendered frames.
+      window.__TUNING.FINALE_ZOOM_S = 0.01;
+      window.__TUNING.FINALE_DARK_S = 0.01;
+      window.__TUNING.FINALE_FLASH_S = 0.01;
       window.__jumpStage('universe');
       window.__finishStage();
       window.__app.G.winT -= 3;
-      for (let i = 0; i < 120; i++) window.advanceFrame(50);
+      for (let i = 0; i < 6; i++) window.advanceFrame(50);
     });
     const results = page.getByRole('dialog', { name: 'What a whirlwind!' });
     await results.waitFor();

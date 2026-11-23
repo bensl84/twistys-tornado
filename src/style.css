@@ -21,7 +21,7 @@
   #world-card { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:16; text-align:center; pointer-events:none; color:#fff; text-shadow:0 4px 18px #000b; animation:card 3.2s ease-out forwards; }
   #world-card .icon { font-size:clamp(90px,20vmin,160px); line-height:1.1; } #world-card .name { font:800 clamp(28px,6vmin,46px) -apple-system,"Helvetica Neue",Arial,sans-serif; }
   @keyframes card { 0% { opacity:0; transform:translate(-50%,-50%) scale(.6); } 15% { opacity:1; transform:translate(-50%,-50%) scale(1.08); } 25% { transform:translate(-50%,-50%) scale(1); } 80% { opacity:1; } 100% { opacity:0; } }
-  #toast { position:absolute; left:50%; top:calc(118px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:8; pointer-events:none; width:max-content; max-width:calc(100% - 32px); box-sizing:border-box; padding:10px 18px; border-radius:22px; background:#ffd447; color:#12232d; font:800 18px -apple-system,"Helvetica Neue",Arial,sans-serif; box-shadow:0 6px 22px #0006; animation:toast 2.6s ease-out forwards; }
+  #toast { position:absolute; left:50%; top:calc(148px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:8; pointer-events:none; width:max-content; max-width:calc(100% - 32px); box-sizing:border-box; padding:10px 18px; border-radius:22px; background:#ffd447; color:#12232d; font:800 18px -apple-system,"Helvetica Neue",Arial,sans-serif; box-shadow:0 6px 22px #0006; animation:toast 2.6s ease-out forwards; }
   @keyframes toast { 0% { opacity:0; transform:translate(-50%,-12px); } 12% { opacity:1; transform:translate(-50%,0); } 80% { opacity:1; } 100% { opacity:0; } }
   #pickup-marker { position:absolute; top:0; left:0; width:34px; height:34px; box-sizing:border-box; z-index:7; pointer-events:none; border:3px solid #ffe685; border-radius:50%; box-shadow:0 0 0 1px #402c00, 0 0 14px #ffd447, inset 0 0 8px #ffd44799; }
   #pickup-hint { position:absolute; left:calc(70px + env(safe-area-inset-left)); right:calc(70px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:8; margin:0; text-align:center; pointer-events:none; }
@@ -88,11 +88,11 @@
   @media (max-width: 520px) {
     #countdown { left:auto; right:calc(14px + env(safe-area-inset-right)); top:calc(82px + env(safe-area-inset-top)); transform:none; width:68px; height:68px; }
     #countdown span { font-size:34px; }
+    #map-note { bottom:calc(72px + env(safe-area-inset-bottom)); }
   }
   @media (max-width: 340px) {
     #countdown { top:calc(146px + env(safe-area-inset-top)); }
   }
-  #toast { top:calc(148px + env(safe-area-inset-top)); }
   @media (prefers-reduced-motion: reduce) {
     #start .disc, #countdown.beat span { animation:none; }
   }

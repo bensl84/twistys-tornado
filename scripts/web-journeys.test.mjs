@@ -97,8 +97,16 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
     await showHome(() => paused.getByRole('button', { name: 'End this run' }).click());
 
     await blue.click();
+    await page.evaluate(() => window.__jumpStage('solar'));
+    await page.getByRole('button', { name: 'Show space overview' }).click();
+    assert.ok(await page.evaluate(() => {
+      const note = document.getElementById('map-note').getBoundingClientRect();
+      const pause = document.getElementById('web-pause').getBoundingClientRect();
+      const mute = document.getElementById('mute').getBoundingClientRect();
+      return note.height > 0 && note.bottom < Math.min(pause.top, mute.top);
+    }), 'the portrait overview caption clears both corner controls');
+    await page.getByRole('button', { name: 'Return to game' }).click();
     const best = await page.evaluate(() => {
-      window.__jumpStage('solar');
       window.__finishStage();
       const unattended = window.__app.runLevels.solar.ranked;
       window.__jumpStage('galaxy');

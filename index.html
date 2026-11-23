@@ -147,6 +147,14 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
   .game-actions button { min-height:52px; padding:0 14px; border:1px solid #ffffff55; border-radius:14px; background:#1a3544; color:#fff; font:700 15px -apple-system,"Helvetica Neue",Arial,sans-serif; touch-action:manipulation; cursor:pointer; }
   .game-actions .primary-action { border-color:transparent; background:#b5efca; color:#102a23; font-size:17px; }
   .game-actions button:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+  @media (max-width: 520px) {
+    #countdown { left:auto; right:calc(14px + env(safe-area-inset-right)); top:calc(82px + env(safe-area-inset-top)); transform:none; width:68px; height:68px; }
+    #countdown span { font-size:34px; }
+  }
+  @media (max-width: 340px) {
+    #countdown { top:calc(146px + env(safe-area-inset-top)); }
+  }
+  #toast { top:calc(148px + env(safe-area-inset-top)); }
   @media (prefers-reduced-motion: reduce) {
     #start .disc, #countdown.beat span { animation:none; }
   }
@@ -2693,7 +2701,8 @@ function boot() {
     arrowEl.classList.toggle('hidden', !showArrow);
     if (!showArrow) return;
     // Keep clear of the countdown ring (top centre) and the HUD: the arrow's box is inset from every edge, deepest at the top.
-    const W = app.R.width, H = app.R.height, m = 56, top = 150;
+    const W = app.R.width, H = app.R.height, m = 56;
+    const top = Math.min(W <= 340 ? 248 : W <= 520 ? 184 : 150, H - 2 * m);
     _gv.set(g.x, g.size * 0.6, g.z).project(app.R.camera);
     let x = (_gv.x + 1) / 2 * W, y = (1 - _gv.y) / 2 * H; const behind = _gv.z > 1; if (behind) { x = W - x; y = H - y; }
     let deg;

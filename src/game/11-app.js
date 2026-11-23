@@ -141,7 +141,8 @@ function boot() {
     arrowEl.classList.toggle('hidden', !showArrow);
     if (!showArrow) return;
     // Keep clear of the countdown ring (top centre) and the HUD: the arrow's box is inset from every edge, deepest at the top.
-    const W = app.R.width, H = app.R.height, m = 56, top = 150;
+    const W = app.R.width, H = app.R.height, m = 56;
+    const top = Math.min(W <= 340 ? 248 : W <= 520 ? 184 : 150, H - 2 * m);
     _gv.set(g.x, g.size * 0.6, g.z).project(app.R.camera);
     let x = (_gv.x + 1) / 2 * W, y = (1 - _gv.y) / 2 * H; const behind = _gv.z > 1; if (behind) { x = W - x; y = H - y; }
     let deg;

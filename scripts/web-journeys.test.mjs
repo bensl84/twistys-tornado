@@ -74,6 +74,16 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
     });
     assert.deepEqual(input, { mouseStarts: true, noStuckMouse: true, touchStarts: true, noSecondFingerTakeover: true });
 
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.evaluate(() => window.advanceFrame(34000));
+    const overlaps = await page.evaluate(() => {
+      const hud = document.getElementById('run-hud').getBoundingClientRect();
+      const countdown = document.getElementById('countdown').getBoundingClientRect();
+      return !countdown.width || (countdown.left < hud.right && countdown.right > hud.left &&
+        countdown.top < hud.bottom && countdown.bottom > hud.top);
+    });
+    assert.equal(overlaps, false, 'the portrait countdown is visible and clear of the stats');
+
     await page.keyboard.press('Escape');
     await paused.waitFor();
     const clock = () => page.evaluate(() => [window.__app.G.levelT, window.__app.run.seconds.tornado]);

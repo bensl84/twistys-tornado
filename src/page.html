@@ -53,7 +53,7 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
 <!--#ios-->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:">
 <!--#end-->
-<meta name="twisty-build" content="2026-11-22-twisty-v20-journeys">
+<meta name="twisty-build" content="2026-11-26-twisty-v21-run-lengths">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <!--#web-->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -115,10 +115,10 @@ Cut (not measurable here): narrative framing, relatedness/social play, music ada
     <button type="button" class="disc" data-color="pink" aria-label="Start with a pink tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#ff5fa2" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
     <button type="button" class="disc" data-color="red" aria-label="Start with a red tornado"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#e63946" stroke-width="8" stroke-linecap="round"><path d="M18 22 Q50 8 82 22"/><path d="M24 36 Q50 26 76 36"/><path d="M32 50 Q50 43 68 50"/><path d="M40 63 Q50 58 60 63"/><path d="M46 76 Q50 74 54 76"/><path d="M48 88 L50 90"/></g></svg></button>
   </div>
-  <div id="timer-pick" role="group" aria-label="Time for each level" aria-describedby="timer-summary">
-    <button type="button" data-timer="quick" aria-pressed="false" aria-label="Quick: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Quick</button>
+  <div id="timer-pick" role="group" aria-label="Run length" aria-describedby="timer-summary">
+    <button type="button" data-timer="quick" aria-pressed="false" aria-label="Short: 45 seconds for the town, 30 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 20.7 7 L12 12 Z" fill="currentColor"/></svg>Short</button>
     <button type="button" data-timer="normal" aria-pressed="true" aria-label="Normal: 90 seconds for the town, 60 seconds for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 12 L12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor"/></svg>Normal</button>
-    <button type="button" data-timer="adult" aria-pressed="false" aria-label="5 minutes for every level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>5 min <small>each level</small></button>
+    <button type="button" data-timer="long" aria-pressed="false" aria-label="Long: 4 minutes for the town, 3 minutes for each space level"><svg class="clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2.5"/></svg>Long</button>
   </div>
   <p id="timer-summary"></p>
 </div>

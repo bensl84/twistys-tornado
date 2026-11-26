@@ -12,6 +12,21 @@ try {
 }
 const url = new URL('../index.html', import.meta.url).href;
 
+function installFrameClock() {
+  let now = 0;
+  let id = 0;
+  const frames = new Map();
+  Object.defineProperty(performance, 'now', { value: () => now });
+  window.requestAnimationFrame = callback => { frames.set(++id, callback); return id; };
+  window.cancelAnimationFrame = frame => frames.delete(frame);
+  window.advanceFrame = milliseconds => {
+    now += milliseconds;
+    const pending = [...frames.values()];
+    frames.clear();
+    for (const callback of pending) callback(now);
+  };
+}
+
 test('web pause, interrupted drags, and returning to the start screen', { timeout: 120_000 }, async () => {
   const browser = await playwright.chromium.launch(process.env.BROWSER_EXECUTABLE
     ? { executablePath: process.env.BROWSER_EXECUTABLE }
@@ -20,23 +35,10 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
     const page = await browser.newPage({
       viewport: { width: 667, height: 375 }, deviceScaleFactor: 0.5, offline: true, reducedMotion: 'reduce',
     });
-    await page.addInitScript(() => {
-      let now = 0;
-      let id = 0;
-      const frames = new Map();
-      Object.defineProperty(performance, 'now', { value: () => now });
-      window.requestAnimationFrame = callback => { frames.set(++id, callback); return id; };
-      window.cancelAnimationFrame = frame => frames.delete(frame);
-      window.advanceFrame = milliseconds => {
-        now += milliseconds;
-        const pending = [...frames.values()];
-        frames.clear();
-        for (const callback of pending) callback(now);
-      };
-    });
+    await page.addInitScript(installFrameClock);
     await page.goto(url);
     const home = page.getByRole('heading', { name: 'Twisty’s Tornado' });
-    const quick = page.getByRole('button', { name: /^Quick:/ });
+    const quick = page.getByRole('button', { name: /^Short:/ });
     const blue = page.getByRole('button', { name: 'Start with a blue tornado' });
     const paused = page.getByRole('dialog', { name: 'Game paused' });
     const showHome = async action => {
@@ -46,7 +48,7 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
       assert.equal(await page.getByRole('button', { name: 'Turn sound on' }).isVisible(), true);
     };
     await quick.click();
-    assert.equal(await page.locator('#timer-summary').textContent(), 'Up to 2:15 on the four level clocks');
+    assert.equal(await page.locator('#timer-summary').textContent(), 'Up to 3 min for the full run');
     await page.getByRole('button', { name: 'Turn sound off' }).click();
     await blue.click();
 
@@ -135,7 +137,7 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
       window.__TUNING.FINALE_FLASH_S = 0.01;
       window.__jumpStage('universe');
       window.__finishStage();
-      window.__app.G.winT -= 3;
+      window.__app.postWinSeconds = 3;
       for (let i = 0; i < 6; i++) window.advanceFrame(50);
     });
     const results = page.getByRole('dialog', { name: 'What a whirlwind!' });
@@ -144,6 +146,61 @@ test('web pause, interrupted drags, and returning to the start screen', { timeou
     await showHome(() => results.getByRole('button', { name: 'Back to start' }).click());
     assert.equal(await page.evaluate(() => localStorage.getItem('twisty-loop-v1')), '1');
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('twisty-best-v1')).quick.galaxy), 0.1);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Short and Long finish all four stages and the finale within 15 minutes even with slow frames', { timeout: 120_000 }, async () => {
+  const browser = await playwright.chromium.launch({
+    ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}),
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+  });
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 375, height: 667 }, deviceScaleFactor: 0.5, offline: true, reducedMotion: 'reduce',
+    });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(installFrameClock);
+    await page.goto(url);
+    await page.evaluate(() => localStorage.setItem('twisty-timer-v1', 'adult'));
+    await page.reload();
+    const long = page.getByRole('button', { name: /^Long:/ });
+    assert.equal(await long.getAttribute('aria-pressed'), 'true', 'the former 5-minute preference becomes Long');
+
+    for (const [mode, minutes, title] of [
+      ['Short', 3, 'What a whirlwind!'],
+      ['Long', 14, 'Swallowed by the black hole!'],
+    ]) {
+      await page.getByRole('button', { name: new RegExp('^' + mode + ':') }).click();
+      assert.equal(await page.locator('#timer-summary').textContent(), `Up to ${minutes} min for the full run`);
+      await page.getByRole('button', { name: 'Start with a blue tornado' }).click();
+      const run = await page.evaluate(() => {
+        const app = window.__app;
+        const startingTime = performance.now();
+        const stages = [];
+        // Keep the production clocks, physics, and stage transitions. Skip idle time before
+        // each deadline, then advance at one frame per second through the ending animations.
+        while (!app.resultsOpen && !app.finale && stages.length < 4) {
+          const level = app.G;
+          stages.push(level.stage);
+          window.advanceFrame(level.levelLimit * 1000);
+          for (let i = 0; i < 12 && app.G === level && !app.finale; i++) window.advanceFrame(1000);
+          if (app.G === level && !app.finale) throw new Error('Level did not progress: ' + level.stage);
+        }
+        for (let i = 0; i < 7 && !app.resultsOpen; i++) window.advanceFrame(1000);
+        return { stages, elapsed: (performance.now() - startingTime) / 1000 };
+      });
+      assert.deepEqual(run.stages, ['town', 'solar', 'galaxy', 'universe']);
+      assert.ok(run.elapsed <= minutes * 60, `${mode} took ${run.elapsed}s including the finale`);
+      const results = page.getByRole('dialog', { name: title });
+      await results.waitFor({ state: 'visible' });
+      assert.equal(await results.getByText('Level times · ' + mode).isVisible(), true);
+      console.info(`${mode}: ${run.elapsed} seconds from start through results at one frame per second near each deadline`);
+      await results.getByRole('button', { name: 'Back to start' }).click();
+    }
+    assert.deepEqual(errors, []);
   } finally {
     await browser.close();
   }

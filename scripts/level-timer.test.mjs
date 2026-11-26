@@ -9,15 +9,20 @@ const game=vm.runInNewContext(source+'\nTornadoGame;',{console});
 const T=game.TUNING,DT=1/60;
 const run=(G,seconds)=>{const n=Math.round(seconds/DT);for(let i=0;i<n;i++)game.stepGame(G);};
 
-test('three start-screen settings; the top one gives five minutes to every level',()=>{
-  assert.deepEqual(Object.keys(T.LEVEL_TIMERS),['quick','normal','adult']);
+test('the start-screen settings budget less than 15 minutes including transitions and the finale',()=>{
+  assert.deepEqual(Object.keys(T.LEVEL_TIMERS),['quick','normal','long']);
   assert.equal(T.LEVEL_TIMER_DEFAULT,'normal');
-  assert.equal(T.LEVEL_TIMERS.adult.town,300);assert.equal(T.LEVEL_TIMERS.adult.space,300);
+  assert.equal(T.LEVEL_TIMERS.long.town,240);assert.equal(T.LEVEL_TIMERS.long.space,180);
   for(const [mode,t] of Object.entries(T.LEVEL_TIMERS)){
     assert.equal(game.createGame(1,'town',null,mode).levelLimit,t.town);
     for(const stage of ['solar','galaxy','universe'])assert.equal(game.createGame(1,stage,null,mode).levelLimit,t.space);
+    const seconds = t.town + 3 * t.space + 4 * T.LEVEL_FINISH_GRACE_S +
+      3 * T.LEVEL_CELEBRATION_S + T.LAST_LEVEL_CELEBRATION_S +
+      T.FINALE_ZOOM_S + T.FINALE_DARK_S + T.FINALE_FLASH_S;
+    assert.ok(seconds < 15 * 60, `${mode} budgets ${seconds} seconds`);
   }
   assert.equal(game.createGame(1,'town',null,'nonsense').timerMode,'normal');
+  assert.equal(game.createGame(1,'town',null,'constructor').timerMode,'normal');
   assert.equal(game.createGame(1,'town').levelLimit,T.LEVEL_TIMERS.normal.town);
 });
 
@@ -66,7 +71,7 @@ test('the goal bobs at its normal highlight size through the whole countdown (ne
   }
 });
 
-test('last level: you swallow the big black hole, except on the 5-minute setting where it swallows you',()=>{
+test('the last black hole swallows the player on Long',()=>{
   const reach=(mode)=>{
     const G=game.createGame(2,'universe',null,mode),g=G.goalRef,seen=[];G.listeners.push(e=>seen.push(e));
     G.power=G.goalSize*1.05;game.checkTierUps(G);G.pos.x=g.x+g.foot*0.5;G.pos.z=g.z;
@@ -76,18 +81,17 @@ test('last level: you swallow the big black hole, except on the 5-minute setting
   const normal=reach('normal');
   assert.ok(normal.win,'normal: the level is won');assert.equal(normal.g.state,2,'normal: the black hole is swallowed');
   assert.ok(!normal.win.swallowed);assert.equal(normal.G.swallowed,false);
-  const adult=reach('adult');
-  assert.ok(adult.win,'adult: the run still ends');assert.equal(adult.win.swallowed,true);assert.equal(adult.G.swallowed,true);
-  assert.equal(adult.g.state,0,'adult: the black hole is still there');
-  assert.ok(Math.hypot(adult.G.pos.x-adult.g.x,adult.G.pos.z-adult.g.z)<1e-6,'adult: pulled right into the middle');
-  assert.ok(adult.seen.some(e=>e.kind==='swallow'));
-  // only the last level: earlier levels on the 5-minute setting are eaten normally
-  const G=game.createGame(2,'galaxy',null,'adult'),g=G.goalRef;G.power=G.goalSize*1.05;game.checkTierUps(G);G.pos.x=g.x;G.pos.z=g.z;
+  const long=reach('long');
+  assert.ok(long.win,'the run still ends');assert.equal(long.win.swallowed,true);assert.equal(long.G.swallowed,true);
+  assert.equal(long.g.state,0,'the black hole is still there');
+  assert.ok(Math.hypot(long.G.pos.x-long.g.x,long.G.pos.z-long.g.z)<1e-6,'pulled right into the middle');
+  assert.ok(long.seen.some(e=>e.kind==='swallow'));
+  const G=game.createGame(2,'galaxy',null,'long'),g=G.goalRef;G.power=G.goalSize*1.05;game.checkTierUps(G);G.pos.x=g.x;G.pos.z=g.z;
   run(G,T.SPIRAL_S_BIG+0.5);assert.equal(g.state,2);assert.equal(G.swallowed,false);
 });
 
-test('5-minute setting: when the clock runs out on the last level, the black hole pulls you in',()=>{
-  const G=game.createGame(2,'universe',null,'adult'),seen=[];G.listeners.push(e=>seen.push(e));
+test('on Long, when the clock runs out on the last level, the black hole pulls you in',()=>{
+  const G=game.createGame(2,'universe',null,'long'),seen=[];G.listeners.push(e=>seen.push(e));
   G.levelT=G.levelLimit-0.05;run(G,0.1);
   assert.equal(G.timedOut,true);assert.ok(G.swallowT>0,'swallow started');
   run(G,T.SWALLOW_S+0.2);

@@ -16,11 +16,11 @@ final class TwistyUITests: XCTestCase {
         XCTAssertTrue(app.alerts["Privacy"].waitForExistence(timeout: 5))
         app.alerts.buttons["Done"].tap()
 
-        let quick = app.switches
-            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Quick")).firstMatch
-        XCTAssertTrue(quick.waitForExistence(timeout: 8), app.debugDescription)
-        XCTAssertTrue(quick.isHittable, app.debugDescription)
-        quick.tap()
+        let short = app.switches
+            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Short")).firstMatch
+        XCTAssertTrue(short.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(short.isHittable, app.debugDescription)
+        short.tap()
         let mute = app.switches["Turn sound off"]
         let unmute = app.switches["Turn sound on"]
         if mute.exists {
@@ -55,34 +55,34 @@ final class TwistyUITests: XCTestCase {
         XCTAssertTrue(unmute.waitForExistence(timeout: 5), app.debugDescription)
         blue.tap()
         XCTAssertTrue(pause.waitForExistence(timeout: 15))
-        // A retained Quick choice starts at 0:45; Normal would show 1:30.
-        let quickCountdown = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", ".*0:4[0-5].*")).firstMatch
-        XCTAssertTrue(quickCountdown.waitForExistence(timeout: 5), app.debugDescription)
+        // A retained Short choice starts at 0:45.
+        let shortCountdown = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", ".*0:4[0-5].*")).firstMatch
+        XCTAssertTrue(shortCountdown.waitForExistence(timeout: 5), app.debugDescription)
     }
 
     @MainActor
-    func testReturnsToStartFromCompletedQuickRun() {
+    func testReturnsToStartFromCompletedShortRun() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launch()
 
         let blue = app.buttons["Start with a blue tornado"]
         XCTAssertTrue(blue.waitForExistence(timeout: 35))
-        let quick = app.switches
-            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Quick")).firstMatch
-        XCTAssertTrue(quick.waitForExistence(timeout: 8))
-        quick.tap()
+        let short = app.switches
+            .matching(NSPredicate(format: "label BEGINSWITH[c] %@", "Short")).firstMatch
+        XCTAssertTrue(short.waitForExistence(timeout: 8))
+        short.tap()
         blue.tap()
 
         let backToStart = app.buttons["Back to start"]
         XCTAssertTrue(backToStart.waitForExistence(timeout: 240))
         XCTAssertTrue(backToStart.isHittable)
-        screenshot("Completed Quick Run", app)
+        screenshot("Completed Short Run", app)
         backToStart.tap()
 
         XCTAssertTrue(blue.waitForExistence(timeout: 25))
         XCTAssertFalse(app.buttons["Pause game"].exists)
-        XCTAssertTrue(app.staticTexts["Up to 2:15 on the four level clocks"].exists)
+        XCTAssertTrue(app.staticTexts["Up to 3 min for the full run"].exists)
     }
 
     @MainActor

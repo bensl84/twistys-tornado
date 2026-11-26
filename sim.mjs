@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Headless self-test runner for index.html.
 // Usage: node sim.mjs [--seeds 1-5] [--seconds 600] [--render 0|1] [--dpr 1.5] [--gates] [--json out.json] [--shot dir]
-//                     [--timer quick|normal|adult] [--slow] [--theme animals|dinos|candy|snow|castle|all]
+//                     [--timer quick|normal|long] [--slow] [--theme animals|dinos|candy|snow|castle|all]
 // --timer picks the level-clock setting (default normal). --slow drives a slow child: the bot drags ~2 s, then stops ~3 s.
 // With --timer other than normal, or --slow, only the timer and safety gates apply (pacing gates assume the normal bot).
 // The gate table is always printed; with --gates the process exits 1 when any gate fails (for CI), otherwise it exits 0.

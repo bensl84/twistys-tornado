@@ -43,8 +43,11 @@ const TUNING = {
   // ---- Level clock (Ben, 2026-09-24): a max time per level so nobody gets bored. It only ever helps: at
   // SUPER_SIZE_AT_S seconds left the player grows to the level's biggest size, and at 0 the goal flies in.
   // Seconds per level for each start-screen setting. 'space' covers solar, galaxy and universe.
-  LEVEL_TIMERS: { quick: { town: 45, space: 30 }, normal: { town: 90, space: 60 }, adult: { town: 300, space: 300 } },
+  LEVEL_TIMERS: { quick: { town: 45, space: 30 }, normal: { town: 90, space: 60 }, long: { town: 240, space: 180 } },
   LEVEL_TIMER_DEFAULT: 'normal',
+  LEVEL_FINISH_GRACE_S: 4,    // Maximum foreground time for the goal animation after the clock expires.
+  LEVEL_CELEBRATION_S: 6,
+  LAST_LEVEL_CELEBRATION_S: 2.5,
   // ---- Discovery worlds: every trip through the black hole lands in a town with one new kind of thing in it. ----
   // Scatter counts per theme type (whole plain). Trip 6 and later mix every theme at THEME_MIX_SCALE of these counts.
   THEME_ORDER: ['animals', 'dinos', 'candy', 'snow', 'castle'],
@@ -60,7 +63,7 @@ const TUNING = {
   SUPER_SIZE_AT_S: 10,       // Seconds left on the level clock when the player becomes the biggest size.
   SUPER_GROW_S: 1.0,         // Seconds the super-size grow takes (log-space ease, so it reads as one big whoosh).
   TIMEOUT_PULL_S: 1.8,       // Seconds the goal takes to fly in when the clock reaches 0.
-  SWALLOW_S: 2.2,            // 5-min setting, last level: seconds the big black hole takes to pull the player in.
+  SWALLOW_S: 2.2,            // Long run, last level: seconds the big black hole takes to pull the player in.
   SPIN: 2.6,                 // Playtest 1: 'twirl really fast'. Multiplies funnel twist and debris orbit speed.
   COLORS: { blue: 0x3a86ff, teal: 0x2ec4b6, purple: 0x8b5cf6, pink: 0xff5fa2, red: 0xe63946 }, // Start discs.
   COLOR_MIX: 0.6,            // How strongly the chosen color tints the dust funnel (0 = plain dust).

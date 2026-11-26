@@ -50,7 +50,7 @@ test('the packaged game teaches a first pickup, pauses, and replays offline', { 
       await page.goto(localURL);
       await page.waitForFunction(() => window.__app?.G);
       await page.getByRole('button', { name: 'Privacy', exact: true }).tap();
-      await page.getByRole('button', { name: /^Quick:/ }).tap();
+      await page.getByRole('button', { name: /^Short:/ }).tap();
       await page.getByRole('button', { name: 'Turn sound off' }).tap();
       assert.equal(await page.evaluate(() => window.twistyHost.storage.getItem('twisty-timer-v1')), 'quick');
       assert.equal(await page.evaluate(() => window.twistyHost.storage.getItem('twisty-mute-v1')), '1');
@@ -110,7 +110,7 @@ test('the packaged game teaches a first pickup, pauses, and replays offline', { 
         window.__TUNING.FINALE_FLASH_S = 0.01;
         window.__jumpStage('universe');
         window.__finishStage();
-        window.__app.G.winT -= 3;
+        window.__app.postWinSeconds = 3;
       });
       const results = page.getByRole('dialog', { name: 'What a whirlwind!' });
       await results.waitFor({ state: 'visible', timeout: 30_000 });

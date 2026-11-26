@@ -34,15 +34,15 @@ A small live display shows time in the current form, total run time and consumed
 
 Each level has a maximum time so nobody gets bored. The start screen has three settings, remembered on the device:
 
-| Setting | Town | Each space level |
-|---|---|---|
-| Quick | 45 s | 30 s |
-| Normal (default) | 90 s | 60 s |
-| 5 min | 5:00 | 5:00 |
+| Setting | Town clock | Each space clock | Full run estimate |
+|---|---|---|---|
+| Short | 45 s | 30 s | Up to 3 min |
+| Normal (default) | 90 s | 60 s | Up to 6 min |
+| Long | 4:00 | 3:00 | Up to 14 min |
 
-The start screen shows the selected level-clock budget across all four stages. Picking a pace keeps the color picker open. The clock helps the player finish. At 10 seconds left the player grows to the level's biggest size, everything becomes edible, a countdown ring appears, and an arrow points to the goal. At 0 the goal flies in. The countdown uses foreground play time independently of the rendering rate. It freezes during pauses, space overviews, backgrounding and graphics recovery, and stops at the win.
+The start screen estimates the time from town to results, including the four clocks, celebrations and finale. Pauses, space overviews, backgrounding and graphics recovery suspend the run. Picking a pace keeps the color picker open. At 10 seconds left the player grows to the level's biggest size, everything becomes edible, a countdown ring appears, and an arrow points to the goal. At 0 the clock helps finish the stage. The countdown and transitions use foreground time independently of the rendering rate.
 
-The last level's goal is a big black hole, drawn about one and a half times the player's own black hole. On Quick and Normal the player swallows it. On **5 min** it is the other way round: reaching it, or running out of time, gets the player pulled in over 2.2 seconds, and the results say *Swallowed by the black hole!* The universe's galaxies are drawn in five different looks (arm count, winding, flattening and colour), so neighbours differ.
+The last level's goal is a big black hole, drawn about one and a half times the player's own black hole. On Short and Normal the player swallows it. On **Long**, reaching it or running out of time gets the player pulled in, and the results say *Swallowed by the black hole!* The universe's galaxies are drawn in five different looks (arm count, winding, flattening and colour), so neighbours differ.
 
 Best times are kept per setting and per level in local storage (`twisty-best-v1`). Steer during a level and finish before its clock runs out to earn a star and qualify for a best time. The results card shows each level's time, uses ⏱ when the clock finished it or the player left it unattended, and marks new bests with ★. Assisted runs still unlock the next world.
 
@@ -71,7 +71,7 @@ Every trip through the black hole lands in a town with one new kind of thing mix
 - `package.json` / `package-lock.json` — pins Playwright 1.56.1 for the browser tests and `sim.mjs`.
 - `.github/workflows/ci.yml` — on every pull request and push to `main`: build check, unit tests, truth audit, context-loss browser test and the logic gates.
 - `sim.mjs` — Playwright runner for deterministic offline simulation and acceptance gates.
-- `sw.js` — cache-first service worker. This branch's cache build is `2026-11-22-twisty-v20-journeys`.
+- `sw.js` — cache-first service worker. This branch's cache build is `2026-11-26-twisty-v21-run-lengths`.
 - `manifest.webmanifest` and `icon-*.png` — install metadata and icons, linked from the page head.
 - `docs/screenshot.png` — v9 smoothing reference screenshot, with a fixed close-view camera; unchanged geometry in v10, before the timer HUD.
 - `docs/audit.md` — the last full repository and product audit (v10 baseline).
@@ -171,7 +171,7 @@ Timer settings, a slow child and discovery worlds each have their own run; these
 ```sh
 node sim.mjs --seeds 1-5 --render 0 --gates --timer quick
 node sim.mjs --seeds 1-5 --render 0 --gates --slow
-node sim.mjs --seeds 1-5 --render 0 --gates --timer adult --slow
+node sim.mjs --seeds 1-5 --render 0 --gates --timer long --slow
 node sim.mjs --seeds 1-5 --render 0 --gates --theme all
 ```
 

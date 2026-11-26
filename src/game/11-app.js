@@ -30,6 +30,7 @@ function boot() {
     if (app.R) app.R.reset();
     const theme = (stageId || 'town') !== 'town' ? null : opts.theme !== undefined ? opts.theme : themeForLoop(app.loop);
     app.G = createGame(seed, stageId || 'town', app.colorId, app.timerMode, theme);
+    app.postWinSeconds = 0;
     const stageIndex = LEVEL_NAMES.findIndex(([id]) => id === app.G.stage);
     readout('hud-stage', (themeInfo(app.G.theme)?.name || LEVEL_NAMES[stageIndex][1]) + ' · ' + (stageIndex + 1) + ' of ' + LEVEL_NAMES.length);
     if(!app.run||app.G.stage==='town')app.run=createRunStats();
@@ -87,7 +88,9 @@ function boot() {
   const writeStore = (k, v) => { try { window.twistyHost.storage.setItem(k, v); } catch (e) { /* private mode: skip */ } };
 //#end
   app.loop = Math.max(0, Math.min(99, parseInt(readStore(LOOP_KEY, '0'), 10) || 0)); // trips through the black hole on this device
-  app.timerMode = TUNING.LEVEL_TIMERS[readStore(TIMER_KEY, '')] ? readStore(TIMER_KEY, '') : TUNING.LEVEL_TIMER_DEFAULT;
+  const savedTimerMode = readStore(TIMER_KEY, '');
+  app.timerMode = savedTimerMode === 'adult' ? 'long' :
+    Object.hasOwn(TUNING.LEVEL_TIMERS, savedTimerMode) ? savedTimerMode : TUNING.LEVEL_TIMER_DEFAULT;
   function loadBest() { try { const b = JSON.parse(readStore(BEST_KEY, '{}')); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
   function bestFor(mode, id) { const b = loadBest(); const v = b[mode] && b[mode][id]; return Number.isFinite(v) ? v : null; }
   function setBest(mode, id, t) { const b = loadBest(); b[mode] = b[mode] || {}; b[mode][id] = t; writeStore(BEST_KEY, JSON.stringify(b)); }
@@ -103,8 +106,11 @@ function boot() {
   const timerPick = document.getElementById('timer-pick');
   function syncTimerPick() {
     for (const b of timerPick.querySelectorAll('[data-timer]')) b.setAttribute('aria-pressed', String(b.dataset.timer === app.timerMode));
-    const { town, space } = TUNING.LEVEL_TIMERS[app.timerMode];
-    readout('timer-summary', 'Up to ' + formatDuration(town + 3 * space) + ' on the four level clocks');
+    const T = TUNING, { town, space } = T.LEVEL_TIMERS[app.timerMode];
+    const seconds = town + 3 * space + 4 * T.LEVEL_FINISH_GRACE_S +
+      3 * T.LEVEL_CELEBRATION_S + T.LAST_LEVEL_CELEBRATION_S +
+      T.FINALE_ZOOM_S + T.FINALE_DARK_S + T.FINALE_FLASH_S;
+    readout('timer-summary', 'Up to ' + Math.ceil(seconds / 60) + ' min for the full run');
   }
   timerPick.addEventListener('click', e => { const b = e.target.closest('[data-timer]'); if (!b || app.simMode) return; app.timerMode = b.getAttribute('data-timer'); writeStore(TIMER_KEY, app.timerMode); syncTimerPick(); });
   syncTimerPick();
@@ -122,7 +128,7 @@ function boot() {
   }
   const countdownEl = document.getElementById('countdown'), ringEl = document.getElementById('countdown-ring'), arrowEl = document.getElementById('goal-arrow'), hudClock = document.getElementById('hud-clock');
   const RING = 276.46, _gv = new THREE.Vector3(); app.lastCount = null;
-  const TIMER_NAMES = { quick: 'Quick', normal: 'Normal', adult: '5 min' };
+  const TIMER_NAMES = { quick: 'Short', normal: 'Normal', long: 'Long' };
   function updateLevelClock() {
     const G = app.G, T = TUNING, left = Math.max(0, G.levelLimit - G.levelT);
     const live = app.running && !app.resultsOpen && !app.finale && !G.overview;
@@ -159,7 +165,7 @@ function boot() {
     if (!app.simMode) window.TwistyMetrics?.results('universe',6);
     for(const [id,value] of [['tornado-time',formatDuration(s.tornadoSeconds)],['blackhole-time',formatDuration(s.blackholeSeconds)],['total-time',formatDuration(s.totalSeconds)],['tornado-mass',formatPercent(s.tornadoPercent)],['blackhole-mass',formatPercent(s.blackholePercent)],['total-mass',formatPercent(s.totalPercent)]])document.getElementById('result-'+id).textContent=value;
     fillLevelTable(app.completedLevels||{});
-    // the 5-minute setting ends the other way round: the biggest black hole pulls you in
+    // The biggest black hole pulls you in on Long.
     document.getElementById('results-title').textContent = app.completedSwallowed ? 'Swallowed by the black hole!' : 'What a whirlwind!';
     document.getElementById('results-subtitle').textContent = app.completedSwallowed ? 'You reached the biggest black hole, and it was hungrier than you' : 'Your journey from farm city to universe';
     pauseButton.classList.add('hidden');
@@ -379,14 +385,15 @@ function boot() {
     if(G.overview){updateOrbits(G,elapsed);app.R.update(G,elapsed);app.R.render();updateRunHud();return;}
     if(!app.finale){advanceRunTime(app.run,G.stage,activeSeconds);if(!app.simMode)window.TwistyMetrics?.tick(activeSeconds,G.stage,G.tier);}
     if(!app.finale){
+      if (G.won) app.postWinSeconds += activeSeconds;
       advanceLevelClock(G, activeSeconds);
       app.acc += elapsed;
       let n = 0;
       while (app.acc >= DT && n < 4) { stepGame(G, 0); app.acc -= DT; n++; }
       if (n === 4) app.acc = 0;
     }else app.acc=0;
-    if (app.finale) { stepFinale(elapsed); if (app.finale && app.finale.reborn && app.G !== G) return; }
-    else if (G.won && G.time - G.winT > (G.stageDef.last ? 2.5 : 6)) {
+    if (app.finale) { stepFinale(activeSeconds); if (app.finale && app.finale.reborn && app.G !== G) return; }
+    else if (G.won && app.postWinSeconds >= (G.stageDef.last ? TUNING.LAST_LEVEL_CELEBRATION_S : TUNING.LEVEL_CELEBRATION_S)) {
       if (!G.stageDef.last) { nextStage(); return; }
       app.completedRun = summarizeRun(app.run);
       app.completedLevels = app.runLevels;
@@ -456,7 +463,7 @@ function boot() {
     app.resultsOpen=false;app.completedRun=null;app.finale=null;results.classList.add('hidden');hud.classList.add('hidden');setFade(0,false);
     if (opts.tuning) for (const k in opts.tuning) { if (typeof TUNING[k] === 'object' && !Array.isArray(TUNING[k])) Object.assign(TUNING[k], opts.tuning[k]); else TUNING[k] = opts.tuning[k]; }
     const errBefore = consoleErrors;
-    const prevTimerMode = app.timerMode; app.timerMode = TUNING.LEVEL_TIMERS[opts.timerMode] ? opts.timerMode : TUNING.LEVEL_TIMER_DEFAULT;
+    const prevTimerMode = app.timerMode; app.timerMode = Object.hasOwn(TUNING.LEVEL_TIMERS, opts.timerMode) ? opts.timerMode : TUNING.LEVEL_TIMER_DEFAULT;
     if (opts.slowBot === true) opts.slowBot = { cycle: 300, duty: 0.35 }; // a child who drags for ~2 s, then stops to look for ~3 s
     if (app.R && app.R.renderer.getPixelRatio() !== Math.min(opts.dpr, TUNING.MAX_DPR)) app.R.renderer.setPixelRatio(Math.min(opts.dpr, TUNING.MAX_DPR));
     newGame(seed, Object.assign({}, opts, { theme: opts.theme || null }));

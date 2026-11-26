@@ -34,9 +34,9 @@ function createGame(seed, stageId, colorId, timerMode, theme) {
     camDist: 0, camDistTarget: 0, camPitch: TUNING.CAM_PITCH, focus: { x: 0, z: 0 }, camPos: { x: 0, y: 0, z: 0 },
     events: [],                                // {t, kind, size, tier, id}
     absorbCount: 0, tierUps: 0, won: false, winT: null, firstAbsorbOfTier: {},
-    timerMode: TUNING.LEVEL_TIMERS[timerMode] ? timerMode : TUNING.LEVEL_TIMER_DEFAULT, levelT: 0, levelLimit: 0, levelWinT: null, // level clock: ticks * DT, stops at the win
+    timerMode: Object.hasOwn(TUNING.LEVEL_TIMERS, timerMode) ? timerMode : TUNING.LEVEL_TIMER_DEFAULT, levelT: 0, levelLimit: 0, levelWinT: null,
     superSized: false, superT: 0, superFrom: 0, superTo: 0, timedOut: false,
-    swallowT: 0, swallowK: 0, swallowFromX: 0, swallowFromZ: 0, swallowed: false, // 5-min setting: the last black hole eats you
+    swallowT: 0, swallowK: 0, swallowFromX: 0, swallowFromZ: 0, swallowed: false, // Long run: the last black hole eats you
     distSinceDust: 0, timeSinceDust: 0, lastResponseTick: -1, lastInputTick: -1, stuckT: 0, squeeze: 0, lastBlockT: -99, bestDF: Infinity, prevX: sp[0], prevZ: sp[1],
     grid: null, absorbing: [], rattleQueue: [],
     listeners: [],
@@ -93,6 +93,15 @@ function advanceLevelClock(G, seconds) {
   const left = G.levelLimit - G.levelT;
   if (!G.superSized && left <= TUNING.SUPER_SIZE_AT_S + 1e-9) startSuperSize(G);
   if (!G.timedOut && left <= 1e-9) timeUp(G);
+  // Slow rendering must not stretch the end-of-level animation indefinitely.
+  if (!G.won && left <= -TUNING.LEVEL_FINISH_GRACE_S) {
+    if (G.swallowT > 0) {
+      stepSwallow(G, G.swallowT);
+    } else {
+      G.absorbing = G.absorbing.filter(o => o !== G.goalRef);
+      finishAbsorb(G, G.goalRef);
+    }
+  }
 }
 function stepGame(G, clockSeconds = DT) {
   G.tick++;
@@ -222,8 +231,8 @@ function stepGame(G, clockSeconds = DT) {
   updateCamera(G, dt);
 }
 
-// 5-min setting on the last level: reaching for the big black hole gets you swallowed by it instead.
-function blackHoleWins(G) { return !!G.stageDef.last && G.timerMode === 'adult'; }
+// On a Long run, the last black hole swallows the player.
+function blackHoleWins(G) { return !!G.stageDef.last && G.timerMode === 'long'; }
 function startSwallow(G) {
   if (G.swallowT > 0 || G.swallowed) return;
   G.swallowT = TUNING.SWALLOW_S; G.swallowK = 0; G.swallowFromX = G.pos.x; G.swallowFromZ = G.pos.z;

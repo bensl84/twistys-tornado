@@ -71,13 +71,34 @@ test('the packaged game teaches a first pickup, pauses, and replays offline', { 
       const starterId = await page.evaluate(() => window.__app.starterPickup.id);
       const target = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
       const touch = await page.context().newCDPSession(page);
+      // Capture the transient toast even if the browser is busy while the touch ends.
+      await page.evaluate(() => {
+        const toast = document.getElementById('toast');
+        const observer = new MutationObserver(() => {
+          if (toast.classList.contains('hidden') || toast.textContent !== 'Nice! Keep collecting to grow.') return;
+          window.sawPickupToast = true;
+          observer.disconnect();
+        });
+        observer.observe(toast, { attributes: true, attributeFilter: ['class'], childList: true });
+      });
       await touch.send('Input.dispatchTouchEvent', {
         type: 'touchStart', touchPoints: [{ x: target.x - 24, y: target.y + 24 }],
       });
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [target] });
-      await page.waitForFunction(id => window.__app.G.objs[id].state === 2, starterId, { timeout: 8000 });
+      // Keep dragging toward the marker as the camera follows the player.
+      for (let move = 0; move < 12; move++) {
+        const { state, tick, point } = await marker.evaluate((element, id) => {
+          const { x, y, width, height } = element.getBoundingClientRect();
+          const { objs, tick } = window.__app.G;
+          return { state: objs[id].state, tick, point: { x: x + width / 2, y: y + height / 2 } };
+        }, starterId);
+        if (state !== 0) break;
+        await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+        await page.waitForFunction(through => window.__app.G.tick >= through, tick + 8, { timeout: 8000 });
+      }
+      // A software-rendered browser can take longer to animate an attached pickup.
+      await page.waitForFunction(id => window.__app.G.objs[id].state === 2, starterId, { timeout: 25000 });
       await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await page.getByText('Nice! Keep collecting to grow.').waitFor({ state: 'visible' });
+      assert.equal(await page.evaluate(() => window.sawPickupToast), true, 'the pickup toast appeared');
       assert.equal(await page.locator('#pickup-hint').isVisible(), false);
       assert.equal(await marker.isVisible(), false);
 
